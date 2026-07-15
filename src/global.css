@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --zinc-25: 0.992 0 0;
+    --canvas: 0.992 0 0;
+    --surface: 1 0 0;
+    --surface-muted: 0.967 0.001 286.375;
+    --ink: 0.141 0.005 285.823;
+    --ink-muted: 0.442 0.017 285.786;
+    --ink-on-action: 1 0 0;
+    --divider: 0.92 0.004 286.32;
+    --action-primary: 0.141 0.005 285.823;
+    --action-primary-soft: 0.967 0.001 286.375;
+    --action-primary-pressed: 0.274 0.006 286.033;
+    --focus-ring: 0.552 0.016 285.938;
+    --scope-personal: 0.37 0.013 285.805;
+    --scope-personal-soft: 0.967 0.001 286.375;
+    --scope-company: 0.141 0.005 285.823;
+    --scope-company-soft: 0.967 0.001 286.375;
+    --money-protected: 0.92 0.004 286.32;
+    --status-recent: 0.274 0.006 286.033;
+    --status-recent-soft: 0.967 0.001 286.375;
+    --status-warning: 0.37 0.013 285.805;
+    --status-warning-soft: 0.92 0.004 286.32;
+    --status-danger: 0.141 0.005 285.823;
+    --status-danger-soft: 0.871 0.006 286.286;
+  }
+
+}
