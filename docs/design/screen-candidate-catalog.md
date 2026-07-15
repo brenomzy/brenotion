@@ -18,7 +18,7 @@ Cada superfície possui três candidatos (`A`, `B`, `C`) e um modo **Comparar la
 
 | ID | Superfície | Candidatos locais | Referências |
 |---|---|---|---|
-| A02 | Início | decisão empilhada; mapa do ciclo; painel compacto | Ubank, YNAB, Quicken |
+| A02 | Início | decisão empilhada; mapa do ciclo; painel compacto | Wise, Cash App, Ubank |
 | A04 | Organização do recebimento | recibo; cascata determinística; lista de execução | Cash App, Kit, Chime |
 | A07 | Central de Obrigações | fila por risco; calendário; por patrimônio | Ubank, Quicken, YNAB |
 | A10 | Revisão semanal | guiada; inbox; resumo e três ações | Rocket Money, Ubank, Quicken |

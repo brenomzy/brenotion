@@ -10,6 +10,13 @@ Pesquisa realizada no Mobbin em 14 de julho de 2026. Os links canônicos preserv
 - mantém utilidade quando os dados estão incompletos ou desatualizados;
 - evita transformar patrimônio, saldo ou investimento em sinônimo de disponibilidade.
 
+## Tela inicial e linguagem visual
+
+| Referência | O que funciona | Adaptação para o Brenotion | Evitar |
+|---|---|---|---|
+| [Wise — fluxo Home](https://mobbin.com/flows/7848a738-e6f7-4d92-8e6d-70b40270fd9d) | título editorial forte, ações compactas, superfícies claras e seções com leitura progressiva | usar espaço e tipografia para separar Disponível para Gastar, dinheiro protegido e próxima decisão | reproduzir o saldo total como decisão principal ou importar a identidade verde |
+| [Cash App — fluxo Home](https://mobbin.com/flows/1e97fe3c-6138-4ad4-97d6-4340a3d08753) | valor central dominante, botões em cápsula e cartões compactos sobre canvas neutro | dar máxima força ao Disponível para Gastar e manter ações imediatas próximas ao valor | confundir saldo bancário com disponibilidade ou copiar superfícies promocionais |
+
 ## Revisão e classificação
 
 | Referência | O que funciona | Adaptação para o Brenotion | Evitar |
