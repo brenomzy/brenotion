@@ -41,6 +41,8 @@ O GitHub não é necessário para esta documentação, mas deve existir antes de
 - secret scanning habilitado;
 - fluxo de PR documentado.
 
+Enquanto o secret scanning nativo do GitHub não estiver disponível para o repositório privado, o gate é atendido por Gitleaks em todo pull request e push para `main`. O recurso nativo e o push protection devem ser adicionados como segunda camada se o plano do GitHub passar a oferecê-los.
+
 ## 4. Fase 1 — Spikes de risco
 
 Antes dos spikes de interface, manter uma exploração visual leve e versionada em

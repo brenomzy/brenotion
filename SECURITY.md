@@ -18,8 +18,10 @@ Dados de desenvolvimento devem ser sintéticos. Fixtures sanitizadas precisam se
 - Segredos de backend não usam prefixos públicos nem entram no bundle Expo.
 - Ambientes de desenvolvimento e produção usam credenciais distintas.
 - `.env.example` registra apenas nomes de variáveis, nunca valores.
-- Antes de cada push, revise os arquivos staged e os resultados do secret scanning.
+- Antes de cada push, revise os arquivos staged e o resultado do workflow `Secret scan`, executado com Gitleaks em cada pull request e push para `main`.
 - Um segredo exposto deve ser revogado e rotacionado imediatamente; removê-lo apenas do último commit não é suficiente.
+
+O secret scanning nativo do GitHub não está disponível no plano atual deste repositório privado. Se essa disponibilidade mudar, ele e o push protection devem ser habilitados como uma camada adicional; o workflow não deve ser removido sem um controle equivalente.
 
 ## Relato de vulnerabilidades
 
