@@ -71,7 +71,7 @@ sem esperar a conclusão das integrações financeiras.
 7. [ ] Consultar a matriz de adoção do React Native Reusables em cada nova tela e incorporar Dialog, Select, Tabs ou outro primitivo somente quando o primeiro fluxo real exigir.
 8. [ ] Evoluir tema escuro, teclado web, leitor de tela e alvos de toque junto das telas; a primeira fatia permanece explicitamente clara até a validação do dark mode.
 9. [x] Validar os tokens NativeWind no Android com fallbacks sRGB e uma verificação automatizada de compilação nativa.
-10. [ ] Configurar CI com lint, tipos, export web e verificação de segredos.
+10. [x] Configurar CI com lint, tipos, estilos Android, export web, Expo Doctor e verificação de segredos.
 
 ### Primeira tela funcional
 
@@ -299,7 +299,7 @@ degradado e nunca finge recência que não possui.
 1. [x] Concluir e instalar a Development Build Android.
 2. [x] Abrir a aplicação pelo Metro no celular e validar o Fast Refresh.
 3. [x] Construir a tela Início com retrato sintético, tokens, NativeWind, Button e Card.
-4. [ ] Configurar os checks de código no CI.
+4. [x] Configurar os checks de código no CI.
 5. [ ] Implementar a fatia de autenticação e backend.
 6. [ ] Implementar o primeiro Lote de Importação OFX.
 7. [ ] Construir o núcleo determinístico por regressões.
