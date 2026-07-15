@@ -208,14 +208,18 @@ Upload não concede confiança ao conteúdo. Tipo real, tamanho, hash e parser c
 ## 12. Interface e design system
 
 - NativeWind é a base de estilo.
-- NativeWind v4 estável é o ponto de partida; versões são fixadas após o spike de compatibilidade.
-- React Native Reusables é avaliado como fonte de código para `Button`, `Card`, `Dialog`, `Select` e `Tabs`.
-- O catálogo não será instalado integralmente.
-- Código copiado é tratado como código próprio, com acessibilidade e testes.
+- NativeWind v4 estável é o ponto de partida; a compatibilidade é validada na primeira fatia de interface e a versão efetivamente usada fica fixada no lockfile.
+- A primeira fatia validou NativeWind `4.2.6` com Tailwind CSS `3.4.19`, conforme a cadeia estável da v4; tokens semânticos vivem em `src/global.css` e o mapeamento de utilitários em `tailwind.config.js`.
+- OKLCH é a fonte dos tokens web; Android e iOS recebem fallbacks sRGB derivados no build, pois `react-native-css-interop` `0.2.6` descarta `oklch()` como valor nativo. A compilação Android dos utilitários semânticos é verificada por `npm run check:styles`.
+- A primeira fatia usa somente tema claro. Tema escuro será ativado apenas depois de validar tokens, contraste e superfícies como uma capacidade completa.
+- React Native Reusables é a primeira fonte consultada antes de criar um primitivo genérico. A matriz em `docs/design/react-native-reusables-adoption-matrix.md` cruza o catálogo oficial com as telas planejadas.
+- `Text`, `Button` e `Card` foram incorporados como código do projeto a partir do React Native Reusables e adaptados aos tokens, alvos de toque, estados de foco e motion do Brenotion.
+- O catálogo não será instalado integralmente: cada componente entra somente quando um fluxo real demonstra a necessidade e suas dependências são justificadas.
+- Código copiado é tratado como código próprio, com origem e data registradas, acessibilidade, testes e atualização manual deliberada.
 - Valores financeiros usam numerais tabulares e formatação centralizada.
 - Componentes do domínio são construídos sobre os primitivos, sem acoplar cálculos à apresentação.
 
-Referências: [React Native Reusables](https://reactnativereusables.com/docs), [instalação manual](https://reactnativereusables.com/docs/installation/manual) e [NativeWind](https://www.nativewind.dev/docs/getting-started/installation).
+Referências: [matriz de adoção](./design/react-native-reusables-adoption-matrix.md), [React Native Reusables](https://reactnativereusables.com/docs), [instalação manual](https://reactnativereusables.com/docs/installation/manual) e [NativeWind](https://www.nativewind.dev/docs/getting-started/installation).
 
 ## 13. Estrutura inicial proposta
 

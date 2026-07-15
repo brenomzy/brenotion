@@ -1,6 +1,6 @@
 # Inventário inicial de telas
 
-Este inventário deriva da especificação e do plano atuais. Ele organiza superfícies de exploração; não antecipa a aprovação de integrações ou funcionalidades ainda sujeitas a spike.
+Este inventário deriva da especificação e do plano atuais. Ele orienta a construção incremental; uma tela pode nascer com dados sintéticos sem antecipar a aprovação do adapter que fornecerá os dados reais.
 
 ## Prioridades
 
@@ -12,7 +12,7 @@ Este inventário deriva da especificação e do plano atuais. Ele organiza super
 
 | ID | Superfície | Decisão principal | Prioridade | Fase prevista |
 |---|---|---|---|---|
-| A01 | Entrada e desbloqueio | Entrar com a identidade autorizada ou usar biometria | P1 | Spikes / scaffold |
+| A01 | Entrada e desbloqueio | Entrar com a identidade autorizada ou usar biometria | P1 | Base executável |
 | A02 | Início | Entender o Disponível para Gastar, confiança e próxima ação | P0 | Alpha histórica / MVP diário |
 | A03 | Detalhe do Disponível para Gastar | Entender entradas, descontos, data de referência e incerteza | P0 | Núcleo financeiro / MVP diário |
 | A04 | Organização do recebimento | Revisar o Plano Financeiro e executar ações manualmente | P0 | MVP diário |
@@ -25,7 +25,7 @@ Este inventário deriva da especificação e do plano atuais. Ele organiza super
 | A11 | Detalhe de anomalia | Confirmar ou corrigir classificação e criar Regra de Classificação | P1 | Alpha histórica / MVP diário |
 | A12 | Fechamento Mensal | Conciliar pagamentos, retiradas, sobras e documentos | P1 | MVP diário |
 | A13 | Alteração de Plano | Comparar antes, proposta, impacto e confirmar ou rejeitar | P1 | Advisor |
-| A14 | Estado das conexões | Entender recência, falha, cobertura parcial e reconexão | P0 | Spikes / MVP diário |
+| A14 | Estado das conexões | Entender recência, falha, cobertura parcial e reconexão | P0 | Integração / MVP diário |
 | A15 | Advisor | Pedir explicação ou comparar cenários sem confundir IA com cálculo oficial | P2 | Advisor |
 
 ## Onboarding histórico

@@ -20,13 +20,20 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 
 ## Plataforma
 
+- [Meu Pluggy — Data Passport](https://meu.pluggy.ai/) — portal pessoal usado para conectar o Itaú PF e compartilhar a conexão com a Application `Brenotion Spike`; validado em 14 de julho de 2026.
+- [Pluggy — fluxo oficial do Meu Pluggy para desenvolvedores](https://github.com/pluggyai/meu-pluggy) — descreve a autorização do conector MeuPluggy como proxy da conexão original e a atualização diária; validado em 14 de julho de 2026.
+- [Pluggy — criação de Item por Open Finance](https://docs.pluggy.ai/docs/creating-an-item) — referência do consentimento delegado no ambiente da instituição; validado em 14 de julho de 2026.
+- [Pluggy — cobertura dos conectores](https://docs.pluggy.ai/docs/connectors-coverage) — fonte dinâmica para produtos e atualização automática por conector; revisitar antes da decisão final do adapter.
 - [Expo Router](https://docs.expo.dev/router/introduction/)
 - [Expo — publicação web](https://docs.expo.dev/guides/publishing-websites/)
 - [Clerk — Expo SDK](https://clerk.com/docs/reference/expo/overview)
 - [Clerk — suporte web para Expo](https://clerk.com/docs/guides/development/web-support/overview)
-- [NativeWind — instalação](https://www.nativewind.dev/docs/getting-started/installation)
-- [React Native Reusables — documentação](https://reactnativereusables.com/docs)
-- [React Native Reusables — instalação manual](https://reactnativereusables.com/docs/installation/manual)
+- [NativeWind — instalação](https://www.nativewind.dev/docs/getting-started/installation) — configuração Expo da v4 estável, com Tailwind CSS 3.4; validado em 15 de julho de 2026 para NativeWind `4.2.6`.
+- [React Native Reusables — documentação](https://reactnativereusables.com/docs) — catálogo usado como fonte dos primitivos incorporados; validado em 15 de julho de 2026.
+- [React Native Reusables — instalação manual](https://reactnativereusables.com/docs/installation/manual) — dependências e estrutura manual; validado em 15 de julho de 2026.
+- [React Native Reusables — CLI](https://reactnativereusables.com/docs/cli) — adição seletiva, diagnóstico e atualização deliberada dos componentes copiados; validado em 15 de julho de 2026.
+- [React Native Reusables — registry NativeWind](https://github.com/founded-labs/react-native-reusables/blob/main/apps/docs/registry/nativewind.json) — fonte mais completa para itens, dependências e helpers do catálogo; consultado em 15 de julho de 2026 para a [matriz de adoção](./design/react-native-reusables-adoption-matrix.md).
+- [React Native Reusables — código-fonte](https://github.com/founded-labs/react-native-reusables/tree/main/packages/registry/src/nativewind/components/ui) — fonte de `Button`, `Card` e `Text` adaptada pelo projeto; consultado em 15 de julho de 2026.
 
 ## Exploração visual
 
@@ -36,6 +43,6 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 
 - Fontes fiscais devem ser revistas na competência em que a regra for usada.
 - Regras confirmadas pelo contador registram autor, data e vigência.
-- Versões de Expo, Clerk, Convex, NativeWind e componentes são fixadas somente depois dos spikes.
+- Versões usadas pela aplicação são fixadas no lockfile quando entram em uma fatia executável. Clerk, Convex, NativeWind e adapters externos só se tornam escolhas definitivas depois de funcionar de ponta a ponta no produto.
 - O resultado da prova de conceito prevalece sobre uma suposição de cobertura do agregador financeiro.
 - Referências visuais são reavaliadas quando a jornada ou um invariante do produto muda; nenhuma referência externa define sozinha a identidade do Brenotion.
