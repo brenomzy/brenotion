@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1080" viewBox="0 0 1800 1080" role="img" aria-labelledby="title description">
+  <title id="title">Exploração visual do companion web do Brenotion</title>
+  <desc id="description">Conceitos para prévia de importação bancária e Cofre Fiscal em desktop.</desc>
+  <defs>
+    <filter id="frame-shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#18241A" flood-opacity="0.14"/>
+    </filter>
+    <filter id="card-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#18241A" flood-opacity="0.08"/>
+    </filter>
+    <style>
+      .sans { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .ink { fill: #18241A; }
+      .muted { fill: #4E5C51; }
+      .white { fill: #FAF8F5; }
+      .title { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
+      .screen-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+      .section { font-size: 17px; font-weight: 700; }
+      .body { font-size: 14px; font-weight: 500; }
+      .label { font-size: 12px; font-weight: 650; }
+      .caption { font-size: 11px; font-weight: 520; }
+      .tabular { font-variant-numeric: tabular-nums; }
+      .product-ui rect { rx: 12px; ry: 12px; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1080" fill="#F3EFE7"/>
+  <circle cx="1740" cy="80" r="260" fill="#D1EDD9" opacity="0.65"/>
+  <circle cx="120" cy="1080" r="260" fill="#D1E2FF" opacity="0.5"/>
+  <g class="sans ink">
+    <text x="80" y="72" class="label" fill="#FF4D29" letter-spacing="0.09em">EXPLORAÇÃO 01 · COMPANION WEB</text>
+    <text x="80" y="118" class="title">Importar com segurança, guardar com significado</text>
+    <text x="80" y="150" class="body muted">Duas rotas diretas; densidade desktop sem transformar o produto em um ERP genérico.</text>
+    <rect x="1500" y="68" width="220" height="44" rx="22" fill="#FEFDFB"/>
+    <circle cx="1525" cy="90" r="5" fill="#FF4D29"/>
+    <text x="1540" y="95" class="caption muted">dados inteiramente sintéticos</text>
+  </g>
+
+  <!-- Import frame -->
+  <g transform="translate(80 210)" filter="url(#frame-shadow)">
+    <rect width="790" height="740" rx="28" fill="#FEFDFB"/>
+    <g class="sans ink product-ui">
+      <rect width="790" height="58" rx="28" fill="#18241A"/>
+      <circle cx="26" cy="29" r="6" fill="#F6D6CF"/>
+      <circle cx="46" cy="29" r="6" fill="#EAC578"/>
+      <circle cx="66" cy="29" r="6" fill="#68B986"/>
+      <text x="395" y="34" text-anchor="middle" class="caption white" opacity="0.76">brenotion.local/importar</text>
+
+      <rect y="58" width="162" height="682" fill="#F9F6F1"/>
+      <text x="24" y="98" class="section">Brenotion</text>
+      <rect x="16" y="126" width="130" height="42" rx="12" fill="#D1EDD9"/>
+      <text x="34" y="152" class="label" fill="#FF4D29">Importar dados</text>
+      <text x="34" y="198" class="label muted">Cofre Fiscal</text>
+      <text x="34" y="242" class="label muted">Sair</text>
+      <text x="24" y="694" class="caption muted">Companion web</text>
+      <text x="24" y="716" class="caption muted">perímetro reduzido</text>
+
+      <g transform="translate(198 94)">
+        <text class="caption muted">LOTE DE IMPORTAÇÃO</text>
+        <text y="34" class="screen-title">Conferir extrato antes de importar</text>
+        <text y="62" class="body muted">itau-pf-junho.ofx · 1–30 jun 2026 · arquivo sintético</text>
+
+        <g transform="translate(0 92)">
+          <circle cx="12" cy="12" r="12" fill="#21763C"/>
+          <text x="12" y="17" text-anchor="middle" class="label white">✓</text>
+          <text x="34" y="17" class="label">Arquivo</text>
+          <line x1="96" y1="12" x2="146" y2="12" stroke="#21763C" stroke-width="2"/>
+          <circle cx="162" cy="12" r="12" fill="#21763C"/>
+          <text x="162" y="17" text-anchor="middle" class="label white">✓</text>
+          <text x="184" y="17" class="label">Validar</text>
+          <line x1="244" y1="12" x2="294" y2="12" stroke="#FF4D29" stroke-width="2"/>
+          <circle cx="310" cy="12" r="12" fill="#FF4D29"/>
+          <text x="310" y="17" text-anchor="middle" class="label ink">3</text>
+          <text x="332" y="17" class="label">Confirmar</text>
+        </g>
+
+        <g transform="translate(0 148)">
+          <rect width="172" height="82" rx="18" fill="#F9F6F1"/>
+          <text x="16" y="27" class="caption muted">Movimentações</text>
+          <text x="16" y="56" class="section tabular">148</text>
+          <rect x="184" width="172" height="82" rx="18" fill="#F9F6F1"/>
+          <text x="200" y="27" class="caption muted">Entradas</text>
+          <text x="200" y="56" class="section tabular">R$ 27.460</text>
+          <rect x="368" width="172" height="82" rx="18" fill="#FFF1D1"/>
+          <text x="384" y="27" class="caption muted">Requerem revisão</text>
+          <text x="384" y="56" class="section tabular">3 itens</text>
+        </g>
+
+        <g transform="translate(0 250)">
+          <rect width="540" height="238" rx="18" fill="#FEFDFB" filter="url(#card-shadow)"/>
+          <text x="18" y="30" class="label">Prévia</text>
+          <text x="522" y="30" text-anchor="end" class="caption" fill="#FF4D29">Ver todos os 148 itens</text>
+          <rect x="14" y="46" width="512" height="34" rx="10" fill="#F9F6F1"/>
+          <text x="28" y="68" class="caption muted">Data</text>
+          <text x="104" y="68" class="caption muted">Descrição normalizada</text>
+          <text x="402" y="68" class="caption muted">Valor</text>
+          <text x="498" y="68" text-anchor="end" class="caption muted">Estado</text>
+          <text x="28" y="106" class="caption tabular">28 jun</text>
+          <text x="104" y="106" class="caption">Supermercado Aurora</text>
+          <text x="402" y="106" class="caption tabular">− R$ 286</text>
+          <text x="498" y="106" text-anchor="end" class="caption" fill="#21763C">válido</text>
+          <line x1="18" y1="122" x2="522" y2="122" stroke="#18241A" stroke-opacity="0.08"/>
+          <text x="28" y="150" class="caption tabular">26 jun</text>
+          <text x="104" y="150" class="caption">Transferência interna</text>
+          <text x="402" y="150" class="caption tabular">R$ 4.200</text>
+          <text x="498" y="150" text-anchor="end" class="caption" fill="#A06A00">revisar</text>
+          <line x1="18" y1="166" x2="522" y2="166" stroke="#18241A" stroke-opacity="0.08"/>
+          <text x="28" y="194" class="caption tabular">24 jun</text>
+          <text x="104" y="194" class="caption">Energia</text>
+          <text x="402" y="194" class="caption tabular">− R$ 198</text>
+          <text x="498" y="194" text-anchor="end" class="caption" fill="#21763C">válido</text>
+          <text x="18" y="222" class="caption muted">1 possível duplicidade será ignorada na confirmação.</text>
+        </g>
+
+        <rect y="508" width="540" height="62" rx="16" fill="#D1EDD9"/>
+        <text x="18" y="533" class="label">Após confirmar</text>
+        <text x="18" y="554" class="caption muted">O bruto será apagado após a ingestão validada; hash e auditoria serão preservados.</text>
+
+        <rect x="340" y="590" width="200" height="46" rx="10" fill="#FF4D29"/>
+        <text x="440" y="619" text-anchor="middle" class="label ink">Confirmar importação</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Vault frame -->
+  <g transform="translate(930 210)" filter="url(#frame-shadow)">
+    <rect width="790" height="740" rx="28" fill="#FEFDFB"/>
+    <g class="sans ink product-ui">
+      <rect width="790" height="58" rx="28" fill="#18241A"/>
+      <circle cx="26" cy="29" r="6" fill="#F6D6CF"/>
+      <circle cx="46" cy="29" r="6" fill="#EAC578"/>
+      <circle cx="66" cy="29" r="6" fill="#68B986"/>
+      <text x="395" y="34" text-anchor="middle" class="caption white" opacity="0.76">brenotion.local/cofre</text>
+
+      <rect y="58" width="162" height="682" fill="#F9F6F1"/>
+      <text x="24" y="98" class="section">Brenotion</text>
+      <text x="34" y="152" class="label muted">Importar dados</text>
+      <rect x="16" y="170" width="130" height="42" rx="12" fill="#D1EDD9"/>
+      <text x="34" y="196" class="label" fill="#FF4D29">Cofre Fiscal</text>
+      <text x="34" y="244" class="label muted">Sair</text>
+
+      <g transform="translate(198 94)">
+        <text class="caption muted">DOCUMENTOS FISCAIS</text>
+        <text y="34" class="screen-title">Cofre Fiscal</text>
+        <text y="62" class="body muted">Documentos relacionados a competências e Obrigações.</text>
+        <rect x="406" y="4" width="134" height="44" rx="10" fill="#FF4D29"/>
+        <text x="473" y="31" text-anchor="middle" class="label ink">Enviar documento</text>
+
+        <g transform="translate(0 92)">
+          <rect width="112" height="40" rx="12" fill="#674E90"/>
+          <text x="56" y="25" text-anchor="middle" class="label white">Empresa · 18</text>
+          <rect x="120" width="104" height="40" rx="12" fill="#F9F6F1"/>
+          <text x="172" y="25" text-anchor="middle" class="label muted">Pessoal · 9</text>
+          <rect x="338" width="202" height="40" rx="12" fill="#F9F6F1" stroke="#18241A" stroke-opacity="0.16"/>
+          <text x="358" y="25" class="caption muted">Buscar documento…</text>
+        </g>
+
+        <g transform="translate(0 152)">
+          <rect width="170" height="78" rx="18" fill="#F9F6F1"/>
+          <text x="16" y="26" class="caption muted">Competência</text>
+          <text x="16" y="52" class="label">Julho de 2026⌄</text>
+          <rect x="184" width="170" height="78" rx="18" fill="#FFF1D1"/>
+          <text x="200" y="26" class="caption muted">Pendências</text>
+          <text x="200" y="52" class="label">2 documentos</text>
+          <rect x="368" width="172" height="78" rx="18" fill="#D1EDD9"/>
+          <text x="384" y="26" class="caption muted">Validados</text>
+          <text x="384" y="52" class="label">6 documentos</text>
+        </g>
+
+        <text y="270" class="section">Julho de 2026</text>
+        <rect y="290" width="540" height="272" rx="18" fill="#FEFDFB" filter="url(#card-shadow)"/>
+        <rect x="16" y="308" width="42" height="42" rx="13" fill="#D1EDD9"/>
+        <text x="37" y="334" text-anchor="middle" class="label" fill="#036035">PDF</text>
+        <text x="72" y="322" class="label">NFS-e · cliente exterior</text>
+        <text x="72" y="343" class="caption muted">Emissão · 13 jul · Obrigação concluída</text>
+        <rect x="430" y="314" width="92" height="28" rx="14" fill="#D1EDD9"/>
+        <text x="476" y="332" text-anchor="middle" class="caption" fill="#036035">validado</text>
+        <line x1="16" y1="364" x2="524" y2="364" stroke="#18241A" stroke-opacity="0.08"/>
+
+        <rect x="16" y="382" width="42" height="42" rx="13" fill="#FFF1D1"/>
+        <text x="37" y="408" text-anchor="middle" class="label" fill="#A06A00">DAS</text>
+        <text x="72" y="396" class="label">DAS · julho de 2026</text>
+        <text x="72" y="417" class="caption muted">Vence em 5 dias · documento ausente</text>
+        <rect x="430" y="388" width="92" height="28" rx="14" fill="#FFF1D1"/>
+        <text x="476" y="406" text-anchor="middle" class="caption" fill="#7A5100">pendente</text>
+        <line x1="16" y1="438" x2="524" y2="438" stroke="#18241A" stroke-opacity="0.08"/>
+
+        <rect x="16" y="456" width="42" height="42" rx="13" fill="#D1E2FF"/>
+        <text x="37" y="482" text-anchor="middle" class="label" fill="#2B6399">PDF</text>
+        <text x="72" y="470" class="label">Pró-labore · julho de 2026</text>
+        <text x="72" y="491" class="caption muted">Recebido do contador · 11 jul</text>
+        <rect x="430" y="462" width="92" height="28" rx="14" fill="#D1E2FF"/>
+        <text x="476" y="480" text-anchor="middle" class="caption" fill="#2B6399">recebido</text>
+        <text x="16" y="540" class="caption muted">Extratos bancários brutos não aparecem no Cofre Fiscal.</text>
+
+        <rect y="584" width="540" height="70" rx="18" fill="#18241A"/>
+        <text x="18" y="611" class="label white">Pacote do contador</text>
+        <text x="18" y="634" class="caption white" opacity="0.76">Exportar somente Empresa · jul/2026 · 8 documentos</text>
+        <rect x="420" y="597" width="102" height="40" rx="12" fill="#FAF8F5"/>
+        <text x="471" y="622" text-anchor="middle" class="label">Revisar</text>
+      </g>
+    </g>
+  </g>
+
+  <g class="sans muted">
+    <text x="80" y="1014" class="caption">Padrões adaptados: prévia antes da confirmação, status documental e relação por contexto.</text>
+    <text x="80" y="1038" class="caption">Hipótese aberta: duas rotas diretas podem substituir uma navegação lateral no primeiro perímetro.</text>
+    <text x="1720" y="1038" text-anchor="end" class="caption">Board vetorial editável · 14 jul 2026</text>
+  </g>
+</svg>
