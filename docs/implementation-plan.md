@@ -28,18 +28,18 @@ O GitHub não é necessário para esta documentação, mas deve existir antes de
 
 ### Ações
 
-1. Criar repositório GitHub privado.
-2. Inicializar Git local e fazer um commit exclusivo da documentação.
-3. Adicionar `.gitignore`, `.editorconfig`, licença privada e política de segredos.
-4. Configurar branch principal protegida quando houver CI.
-5. Configurar CodeRabbit somente depois dos primeiros checks automatizados.
+1. [x] Criar repositório GitHub privado.
+2. [x] Inicializar Git local e fazer um commit exclusivo da documentação.
+3. [x] Adicionar `.gitignore`, `.editorconfig`, licença privada e política de segredos.
+4. [ ] Configurar branch principal protegida quando houver CI completo.
+5. [ ] Configurar CodeRabbit somente depois dos primeiros checks automatizados.
 
 ### Critérios de aceite
 
-- nenhum identificador ou arquivo financeiro real no histórico;
-- documentação navegável a partir do README;
-- secret scanning habilitado;
-- fluxo de PR documentado.
+- [x] nenhum identificador ou arquivo financeiro real identificado no histórico inicial;
+- [x] documentação navegável a partir do README;
+- [ ] secret scanning ativo em `main` — workflow Gitleaks validado no PR #1, ainda pendente de merge;
+- [x] fluxo de PR documentado.
 
 Enquanto o secret scanning nativo do GitHub não estiver disponível para o repositório privado, o gate é atendido por Gitleaks em todo pull request e push para `main`. O recurso nativo e o push protection devem ser adicionados como segunda camada se o plano do GitHub passar a oferecê-los.
 
@@ -59,6 +59,17 @@ adicionadas, comparadas e substituídas sem quebrar a linguagem já confirmada.
 - tokens candidatos para cor, tipografia, espaço, forma e elevação;
 - componentes de domínio separados dos primitivos de interface;
 - nenhuma imagem ou fixture contém dado financeiro pessoal real.
+
+### Preparação das contas
+
+- [ ] criar conta, Team e Application no Pluggy Dashboard para sandbox e solicitação de acesso aos conectores live;
+- [ ] criar conta Expo para EAS Development Build e Internal Distribution no Android;
+- [ ] criar conta Convex; o projeto será criado pelo scaffold ou por `npx convex dev`;
+- [ ] criar conta e Application no Clerk para o spike de identidade;
+- [ ] garantir acesso ao Google Cloud Console; criar o projeto e as credenciais OAuth somente depois de definir package name, redirect URI e certificado Android;
+- [ ] confirmar acesso ativo e MFA nos Itaú PF/PJ e Wise Business/Pessoal existentes, sem registrar credenciais no projeto.
+
+Google Play Console, Apple Developer Program e conta da OpenAI não são necessários para os spikes da Fase 1.
 
 ### 4.1 Integração financeira
 
@@ -427,8 +438,9 @@ Advisor completo, Cofre Fiscal amplo e NFS-e assistida podem continuar depois do
 
 Quando o Titular decidir começar a implementação:
 
-1. criar o repositório GitHub privado;
-2. inicializar Git neste diretório e fazer o commit da documentação;
-3. abrir contas ou trials necessários sem compartilhar credenciais;
-4. executar o spike financeiro com consentimento interativo do Titular;
-5. registrar o relatório do spike antes de escolher o adapter definitivo.
+1. [x] criar o repositório GitHub privado;
+2. [x] inicializar Git neste diretório e fazer o commit da documentação;
+3. [ ] fazer merge do PR #1 para ativar o Gitleaks em `main`;
+4. [ ] abrir as contas necessárias sem compartilhar credenciais, começando pelo Pluggy Dashboard;
+5. [ ] executar o spike financeiro com consentimento interativo do Titular;
+6. [ ] registrar o relatório do spike antes de escolher o adapter definitivo.
