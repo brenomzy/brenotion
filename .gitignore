@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Expo and build output
+.expo/
+.expo-shared/
+dist/
+web-build/
+coverage/
+expo-env.d.ts
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# Sensitive financial source files
+private-data/
+data/raw/
+uploads/
+*.ofx
+*.qfx
+!**/fixtures/sanitized/**/*.ofx
+!**/fixtures/sanitized/**/*.qfx
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+tmp/
+.cache/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
