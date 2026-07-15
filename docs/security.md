@@ -136,6 +136,7 @@ Eventos de auditoria são append-only e usam IDs, não payloads completos.
 - Repositório GitHub privado.
 - Proteção de branch e PRs para mudanças relevantes.
 - TypeScript estrito, lint, testes e verificação de dependências.
+- Gitleaks em pull requests e pushes para `main`, enquanto o secret scanning nativo do GitHub não estiver disponível para o repositório privado.
 - CodeRabbit auxilia revisão, mas não substitui revisão humana, testes ou threat modeling.
 - Dependências são fixadas e atualizadas deliberadamente.
 - Adapters externos recebem testes de contrato.
