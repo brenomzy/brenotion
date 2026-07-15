@@ -56,11 +56,11 @@ sincronizados.
 ## Verificações
 
 ```powershell
-npx tsc --noEmit
 npm run lint
+npm run typecheck
 npm run check:styles
-npx expo export --platform web
-npx expo-doctor
+npm run export:web
+npm run doctor
 ```
 
 `check:styles` compila a folha NativeWind como Android e falha quando um token
