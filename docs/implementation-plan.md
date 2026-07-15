@@ -63,7 +63,8 @@ adicionadas, comparadas e substituídas sem quebrar a linguagem já confirmada.
 ### Preparação das contas
 
 - [x] criar conta, Team e Application `Brenotion Spike` no Pluggy Dashboard;
-- [ ] validar o sandbox, os limites da assinatura gratuita, o acesso aos conectores live e o custo além desses limites;
+- [x] validar o sandbox com sincronização sintética de conta, cartão e movimentações;
+- [ ] validar os limites da assinatura gratuita, o acesso aos conectores live e o custo além desses limites;
 - [ ] criar conta Expo para EAS Development Build e Internal Distribution no Android;
 - [ ] criar conta Convex; o projeto será criado pelo scaffold ou por `npx convex dev`;
 - [ ] criar conta e Application no Clerk para o spike de identidade;
@@ -443,7 +444,8 @@ Quando o Titular decidir começar a implementação:
 2. [x] inicializar Git neste diretório e fazer o commit da documentação;
 3. [ ] fazer merge do PR #1 para ativar o Gitleaks em `main`;
 4. [x] criar a conta Pluggy e a Application `Brenotion Spike`, sem compartilhar credenciais;
-5. [ ] validar o sandbox e então conectar Itaú PF pelo Pluggy Connect com consentimento interativo do Titular;
-6. [ ] abrir as demais contas necessárias sem compartilhar credenciais;
-7. [ ] executar os demais cenários do spike financeiro;
-8. [ ] registrar o relatório do spike antes de escolher o adapter definitivo.
+5. [x] validar o sandbox com dados inteiramente sintéticos;
+6. [ ] conectar Itaú PF pelo Pluggy Connect com consentimento interativo do Titular;
+7. [ ] abrir as demais contas necessárias sem compartilhar credenciais;
+8. [ ] executar os demais cenários do spike financeiro;
+9. [ ] registrar o relatório do spike antes de escolher o adapter definitivo.
