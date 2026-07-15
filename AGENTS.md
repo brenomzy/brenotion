@@ -27,7 +27,7 @@ Em caso de divergência, sinalize-a antes de implementar. Uma decisão mais rece
 
 ## Estado e direção do projeto
 
-- O projeto está em fase de especificação e validação de riscos. Não trate integrações candidatas ou versões mencionadas no plano como aprovadas antes dos respectivos spikes.
+- O projeto está em desenvolvimento incremental sobre uma aplicação universal Expo executável. Valide hipóteses dentro de fatias verticais pequenas; não transforme uma integração candidata em decisão definitiva antes de demonstrá-la de ponta a ponta e registrar limitações e fallback.
 - A experiência principal é Android. A web começa como companion para upload e Cofre Fiscal, dentro de uma aplicação universal Expo Router.
 - Convex é a fonte de verdade planejada para dados em nuvem. Clerk deve autenticar um único Titular com autorização também aplicada no backend.
 - Pluggy é o primeiro candidato para integração financeira, ainda sujeito à prova de conceito de cobertura, recência, estabilidade, segurança e custo.
@@ -72,7 +72,7 @@ Ao concluir uma mudança relevante:
 - crie ou altere um ADR quando uma decisão arquitetural difícil de reverter for tomada;
 - atualize a especificação quando o comportamento ou o perímetro do produto mudar;
 - atualize arquitetura e segurança quando interfaces, fluxos de dados, controles ou classificação de dados mudarem;
-- atualize o plano quando um spike aprovar ou rejeitar uma hipótese e registrar versão, custo ou limitação relevante;
+- atualize o plano quando uma fatia aprovar ou rejeitar uma hipótese e registrar versão, custo ou limitação relevante;
 - registre fontes e data de validação para regras fiscais, contábeis ou APIs sujeitas a mudança.
 
 Não deixe decisões importantes existirem apenas na conversa, em comentários de código ou na memória de uma sessão.

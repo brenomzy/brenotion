@@ -38,6 +38,8 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - Renda da esposa fora do cálculo inicial.
 - Despesas familiares pagas pelo Titular dentro do planejamento.
 - Itaú PF, Itaú PJ e um cartão de crédito Itaú.
+- Compras do cartão e Pix do Itaú PF exigem ingestão automática no acompanhamento cotidiano; digitação recorrente por movimentação não é um fallback aceitável.
+- A automação do Itaú PJ é desejável, mas não bloqueia o MVP enquanto o baixo volume permitir importação periódica em lote por OFX ou CSV, com PDF como último recurso.
 - Wise Business para recebimento e Wise Pessoal para a Reserva em Dólar.
 - Empresa optante pelo Simples Nacional, com regras confirmadas posteriormente pelo contador quando necessário.
 - Município de prestação configurado como Paranavaí, Paraná.
