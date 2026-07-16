@@ -267,4 +267,4 @@ Os testes atravessam a mesma interface usada pelos callers. Refatorações inter
 - Android por EAS Internal Distribution.
 - Web por hosting com HTTPS e cabeçalhos de segurança.
 - Ambientes separados para desenvolvimento e produção.
-- GitHub privado será necessário antes de CodeRabbit, CI e revisão por PR, mas não é pré-requisito para a especificação local.
+- O repositório GitHub é público e contém somente código, documentação e dados sintéticos; CI e revisão por PR permanecem obrigatórios para mudanças relevantes.

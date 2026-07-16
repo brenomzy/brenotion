@@ -56,7 +56,7 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - Ambientes de desenvolvimento e produção usam credenciais distintas.
 - Rotação é documentada e testada antes da produção.
 - `.env.example` contém somente nomes e descrições, nunca valores reais.
-- Secret scanning entra no CI quando o repositório GitHub privado for criado.
+- Secret scanning e push protection nativos do GitHub devem ser habilitados quando disponíveis; o Gitleaks permanece no CI como controle independente.
 
 ## 7. Integração financeira
 
@@ -133,10 +133,10 @@ Eventos de auditoria são append-only e usam IDs, não payloads completos.
 
 ## 13. Desenvolvimento seguro
 
-- Repositório GitHub privado.
+- Repositório GitHub público, limitado a código, documentação e dados sintéticos ou irreversivelmente sanitizados.
 - Proteção de branch e PRs para mudanças relevantes.
 - TypeScript estrito, lint, testes e verificação de dependências.
-- Gitleaks em pull requests e pushes para `main`, enquanto o secret scanning nativo do GitHub não estiver disponível para o repositório privado.
+- Gitleaks em pull requests e pushes para `main`, independentemente das camadas nativas de secret scanning do GitHub.
 - CodeRabbit auxilia revisão, mas não substitui revisão humana, testes ou threat modeling.
 - Dependências são fixadas e atualizadas deliberadamente.
 - Adapters externos recebem testes de contrato.

@@ -48,7 +48,7 @@ rotina de atualização.
 
 ### Estado
 
-1. [x] Criar repositório GitHub privado.
+1. [x] Criar repositório GitHub público, sem dados reais, credenciais ou documentos sensíveis.
 2. [x] Inicializar Git e registrar a documentação inicial.
 3. [x] Adicionar `.gitignore`, `.editorconfig`, licença privada e política de segredos.
 4. [x] Ativar Gitleaks em `main` pelo PR #1.
