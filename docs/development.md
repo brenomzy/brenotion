@@ -35,6 +35,33 @@ npx expo start --tunnel
 Uma nova build nativa só é necessária quando dependências ou configurações
 nativas mudarem.
 
+## Configurar acesso Clerk
+
+Crie `.env` localmente a partir de `.env.example` e preencha somente a Publishable Key da Application de desenvolvimento:
+
+```env
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=
+```
+
+Não envie o valor pela conversa nem o registre no Git. A ausência da variável exibe uma falha fechada e explícita. Depois de alterar `.env`, reinicie o Metro.
+
+O Android usa o `AuthView` de `@clerk/expo/native`, atualmente beta, e a web usa o `SignIn` de `@clerk/expo/web`. O fluxo escolhido não usa `brenotion://access/callback`: o Android autentica pela interface nativa e a web usa o popup administrado pelo Clerk. A localização `pt-BR` e os tokens visuais da aplicação são aplicados ao componente web; a interface Android segue os recursos nativos do SDK e do sistema.
+
+O Google nativo exige a conexão social com credenciais próprias e uma Native Application Android no Clerk Dashboard. Cadastre o package `com.brenomzy.brenotion` e a impressão SHA-256 do certificado que assinou a Development Build. Essa configuração é externa e não grava segredo no repositório.
+
+`@clerk/expo` e `expo-secure-store` incluem configuração nativa. A Development Build Android versionCode 2 já contém o plugin e os módulos necessários, inclusive o `AuthView`; alterações atuais em TypeScript e localização usam apenas o Metro. Uma nova build só será necessária se plugin, tema nativo ou outra configuração de prebuild mudar.
+
+## Configurar Convex com Clerk
+
+Vincule o projeto de desenvolvimento com `npx convex dev`. O CLI cria `.env.local` com a referência do deployment e `EXPO_PUBLIC_CONVEX_URL`; esse arquivo permanece ignorado pelo Git.
+
+No deployment de desenvolvimento, configure diretamente pelo Convex Dashboard:
+
+- `CLERK_JWT_ISSUER_DOMAIN`: Frontend API URL da integração Convex ativada no Clerk;
+- `AUTHORIZED_CLERK_USER_ID`: Clerk User ID do único Titular autorizado.
+
+Não coloque o Clerk User ID real em documentação, fixture, comando versionado ou conversa. `npx convex env list --names-only` verifica somente a presença dos nomes. `npx convex dev --once` aplica `auth.config.ts`, gera a API tipada e implanta as funções. `npm test` executa os cenários sintéticos de autorização; `npx convex run access:verifyOwner` sem identidade deve falhar com `AUTHENTICATION_REQUIRED`.
+
 ## Cenários sintéticos da tela Início
 
 A rota Início aceita `scenario` somente para desenvolvimento e QA. O padrão é

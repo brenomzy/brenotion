@@ -40,6 +40,10 @@ Referências: [Expo Router](https://docs.expo.dev/router/introduction/), [public
 
 Esconde sessões Clerk, allowlist, tokens, biometria e diferenças entre web e Android. Nenhum outro módulo decide autorização por conta própria.
 
+A primeira prova usa uma seam de interface por plataforma: `AuthView` de `@clerk/expo/native` no Android e `SignIn` de `@clerk/expo/web` na web. O componente nativo beta executa o fluxo Google sem callback do Expo Router; o componente web administra o OAuth em popup. No Android, o cache oficial do Clerk persiste o token com `expo-secure-store`; a aplicação não persiste tokens manualmente.
+
+Dentro do `ClerkProvider`, `ConvexProviderWithClerk` entrega o token ao Convex. O backend valida emissor e audiência antes de disponibilizar a identidade, e `requireAuthorizedOwner` compara o `subject` autenticado com a allowlist exclusiva do deployment. Depois da autorização, o helper entrega o `tokenIdentifier` qualificado pelo emissor como futuro `ownerId`; o Clerk User ID real não é persistido por esta prova. A consulta mínima `access.verifyOwner` não recebe identificador do cliente e não devolve identificadores; a aplicação só monta as telas internas depois dessa consulta. Ausência de identidade, allowlist ausente e identidade diferente falham fechadas. O retrato financeiro continua no adapter em memória e nenhum registro financeiro foi persistido nesta prova.
+
 ### 4.2 Integração Financeira
 
 **Interface**: sincroniza contas configuradas e entrega Movimentações de Origem normalizadas, com cursor, origem e estado de atualização.

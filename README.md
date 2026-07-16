@@ -36,8 +36,8 @@ configuração local. Nunca registre valores reais no Git.
 
 - Plataforma principal: Android.
 - Companion web inicial: upload e cofre documental.
-- Fonte de verdade planejada: Convex.
-- Autenticação planejada: Clerk, com allowlist de um único usuário.
+- Fonte de verdade planejada: Convex, com projeto de desenvolvimento vinculado e primeira consulta protegida implantada; o retrato financeiro ainda permanece sintético em memória.
+- Autenticação em integração: interface pronta do Clerk com `AuthView` nativo no Android, `SignIn` na web e sessão Android em armazenamento seguro; o Convex valida o JWT e aplica a allowlist server-side antes de liberar a aplicação.
 - Interface: Expo Router, NativeWind 4.2.6, tema inicial claro, tokens semânticos com fallbacks nativos e Button/Card adaptados do React Native Reusables na primeira tela Início.
 - Integração financeira: Pluggy é o primeiro candidato, ainda sujeito a prova de conceito.
 - Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados; tela Início navegável e visualmente validada no Android com retrato sintético.
