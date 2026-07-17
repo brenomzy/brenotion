@@ -1,14 +1,14 @@
 export type Currency = 'BRL';
 
 export type Money = Readonly<{
-  amountMinor: number;
+  amountMinor: bigint;
   currency: Currency;
 }>;
 
 export type MoneyScope = 'company' | 'personal';
 
 export type SnapshotConfidence = Readonly<{
-  kind: 'recent' | 'partial' | 'stale';
+  kind: 'recent' | 'partial' | 'stale' | 'offline' | 'error';
   title: string;
   description: string;
 }>;
@@ -16,7 +16,11 @@ export type SnapshotConfidence = Readonly<{
 export type ScopeSummary = Readonly<{
   scope: MoneyScope;
   label: 'Empresa' | 'Pessoal';
+  reserveLabel: 'Reserva Operacional' | 'Reserva Familiar';
   protectedAmount: Money;
+  targetAmount: Money;
+  progressPercent: number;
+  progressLabel: string;
   description: string;
 }>;
 
@@ -57,7 +61,14 @@ export type HomeSnapshotResult =
       description: string;
     }>;
 
-export type HomeScenario = 'recent' | 'partial' | 'stale' | 'empty' | 'error';
+export type HomeScenario =
+  | 'loading'
+  | 'recent'
+  | 'partial'
+  | 'stale'
+  | 'offline'
+  | 'empty'
+  | 'error';
 
 export interface HomeSnapshotSource {
   load(scenario: HomeScenario): Promise<HomeSnapshotResult>;
