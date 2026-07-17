@@ -18,7 +18,7 @@ Continuam sendo gates obrigatórios:
 - ausência de segredos e dados financeiros reais no repositório;
 - cálculos financeiros determinísticos, versionados e testados;
 - ingestão idempotente e arquivos bancários brutos efêmeros;
-- recência e confiança honestas antes de chamar a experiência de MVP diário.
+- recência e confiança honestas antes de chamar a experiência de MVP de revisão.
 
 ## 2. Estados de entrega
 
@@ -34,10 +34,10 @@ Importa arquivos, classifica o histórico, calcula bases e permite revisar o
 modelo financeiro. Não apresenta o Disponível para Gastar como atualizado
 durante o mês.
 
-### MVP diário
+### MVP de revisão
 
 Sincroniza conta e cartão com recência conhecida, reconcilia obrigações e
-sustenta o acompanhamento cotidiano com confiança explícita.
+sustenta revisões semanais ou mensais e decisões relevantes com confiança explícita.
 
 ### Produção pessoal
 
@@ -210,7 +210,7 @@ Conectar o núcleo às telas já existentes:
 O Titular deve conseguir explicar os 12 meses por categorias e ciclos, com
 lacunas e incertezas visíveis.
 
-## 9. Fase 6 — Sincronização e MVP diário
+## 9. Fase 6 — Sincronização e MVP de revisão
 
 ### Fatia vertical
 
@@ -234,36 +234,44 @@ lacunas e incertezas visíveis.
 ## 10. Trilha contínua — Integração financeira
 
 Pluggy permanece o primeiro candidato, não uma decisão definitiva. A validação
-acontece em paralelo ao aplicativo e só bloqueia o MVP diário.
+acontece em paralelo ao aplicativo e só bloqueia o MVP de revisão.
+
+Decisão de perímetro registrada em 16 de julho de 2026: a integração automática
+inicial fica limitada ao Itaú PF e ao cartão associado. Itaú PJ, Wise Business e
+Wise Pessoal permanecem fontes futuras; enquanto seus fluxos forem previsíveis e
+de baixo volume, entradas manuais explícitas são aceitáveis.
 
 ### Estado e cenários
 
 - [x] criar conta, Team e Application `Brenotion Spike` no Pluggy Dashboard;
 - [x] validar sandbox com conta, cartão e movimentações sintéticas;
 - [x] conectar Itaú PF pelo Meu Pluggy com consentimento delegado e somente leitura;
+- [x] validar a API real da Development Application: `GET /items` devolve `401` porque listagem foi desabilitada por segurança; `GET /items/{itemId}` e `GET /accounts?itemId=...` devolveram `200` em 16 de julho de 2026, com Item `UPDATED`/`SUCCESS`, uma conta bancária e um cartão, sem leitura de transações;
+- [x] implementar uma Action Convex autorizada que reduz Item e contas a metadados sanitizados de cobertura e recência, com testes sintéticos e sem persistência;
+- [x] validar a Action de ponta a ponta no Android autenticado em 16 de julho de 2026, após alinhar o Item ativo à mesma Pluggy Application das credenciais; o card exibiu `Conexão pronta` apenas com conector, recência e contagens sanitizadas, sem saldos, transações ou identificadores;
 - [ ] observar compras do cartão e Pix do Itaú PF durante um ciclo;
 - [ ] obter cartão, fatura, fechamento e vencimento;
-- [ ] tentar conectar Itaú PJ e validar lote OFX/CSV como fallback;
-- [ ] verificar Wise Business e Wise Pessoal;
 - [ ] medir histórico realmente retornado;
 - [ ] confirmar IDs estáveis e deduplicação após ressincronização;
 - [ ] identificar parcelas futuras;
-- [ ] testar atualização, webhook, expiração e reconexão;
+- [ ] testar leitura sob demanda, expiração e reconexão no Conector 200;
 - [ ] registrar limites do plano gratuito e custo mensal total.
 
-### Gate para MVP diário
+Próxima ação: observar a recência de compras do cartão e Pix do Itaú PF durante
+um ciclo e então adicionar uma leitura paginada e idempotente de movimentações,
+sem persistir respostas brutas nem registrar conteúdo financeiro em logs.
+
+### Gate para MVP de revisão
 
 | Critério | Exigência |
 |---|---|
 | Itaú PF | contas, Pix e movimentações confiáveis |
-| Itaú PJ | automação confiável ou lote periódico de baixo esforço |
 | Cartão | compras, fatura e pagamento reconhecíveis |
-| Wise | recebimentos e transferências necessários |
-| Recência | suficiente para o indicador diário |
+| Recência | conhecida e suficiente no momento da revisão ou decisão |
 | Idempotência | ressincronização não cria duplicatas |
 | Segurança | consentimento delegado e modo somente leitura |
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
-| Esforço manual | nenhuma digitação recorrente de compras ou Pix |
+| Esforço manual | nenhuma digitação recorrente de compras ou Pix do Itaú PF; demais fontes podem ser explícitas e manuais |
 
 Se o adapter falhar, a aplicação continua pela importação histórica ou modo
 degradado e nunca finge recência que não possui.

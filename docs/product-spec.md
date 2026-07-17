@@ -37,10 +37,10 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - Um único Titular e um único dispositivo Android principal.
 - Renda da esposa fora do cálculo inicial.
 - Despesas familiares pagas pelo Titular dentro do planejamento.
-- Itaú PF, Itaú PJ e um cartão de crédito Itaú.
-- Compras do cartão e Pix do Itaú PF exigem ingestão automática no acompanhamento cotidiano; digitação recorrente por movimentação não é um fallback aceitável.
-- A automação do Itaú PJ é desejável, mas não bloqueia o MVP enquanto o baixo volume permitir importação periódica em lote por OFX ou CSV, com PDF como último recurso.
-- Wise Business para recebimento e Wise Pessoal para a Reserva em Dólar.
+- Itaú PF e um cartão de crédito Itaú formam a única integração financeira automática do perímetro inicial.
+- Compras do cartão e Pix do Itaú PF exigem ingestão automática; digitação recorrente dessas movimentações não é um fallback aceitável.
+- Itaú PJ, Wise Business e Wise Pessoal permanecem fora da integração automática inicial. Enquanto os fluxos forem previsíveis e de baixo volume, valores necessários ao planejamento podem ser informados manualmente de forma explícita e auditável.
+- Novas fontes financeiras só entram depois que a revisão periódica com Itaú PF demonstrar valor e exigir menor esforço manual.
 - Empresa optante pelo Simples Nacional, com regras confirmadas posteriormente pelo contador quando necessário.
 - Município de prestação configurado como Paranavaí, Paraná.
 
@@ -76,7 +76,12 @@ No dia do recebimento, o produto cria um Plano Financeiro com esta ordem:
 
 O MVP não inicia Pix, transferências, pagamentos ou investimentos.
 
-### 5.3 Acompanhamento diário
+### 5.3 Acompanhamento periódico
+
+O Titular consulta o produto principalmente em revisões semanais ou mensais e
+antes de decisões financeiras relevantes. Ao abrir a aplicação, o último retrato
+persistido aparece imediatamente com sua recência explícita; uma atualização pode
+rodar em segundo plano quando os dados estiverem antigos.
 
 A tela inicial prioriza:
 

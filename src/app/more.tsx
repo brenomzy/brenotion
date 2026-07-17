@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
 import { useAccessSession } from '@/modules/access/clerk-access-session';
+import { ConnectionInspectionCard } from '@/modules/financial-integration/connection-inspection-card';
 
 export default function MoreRoute() {
   const access = useAccessSession();
@@ -34,6 +35,8 @@ export default function MoreRoute() {
           <Text variant="overline">Configurações</Text>
           <Text variant="screenTitle">Mais</Text>
         </View>
+
+        <ConnectionInspectionCard />
 
         <Card>
           <CardHeader>
