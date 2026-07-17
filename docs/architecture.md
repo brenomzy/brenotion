@@ -57,6 +57,11 @@ subtipos. Identificadores de conta, saldos, limites e respostas brutas são
 descartados na fronteira. A fatia ainda não persiste dados nem substitui o adapter
 sintético da tela Início.
 
+Na inspeção inicial, `Conexão pronta` exige atualização nas últimas 48 horas,
+consentimento não expirado e cobertura simultânea de conta bancária e cartão. A
+ausência de qualquer evidência rebaixa o resultado para parcial ou indisponível,
+sem impedir que o último retrato conhecido continue visível em telas futuras.
+
 ### 4.3 Pipeline de Importação
 
 **Interface**: recebe um arquivo, produz uma prévia auditável e confirma ou descarta um Lote de Importação.

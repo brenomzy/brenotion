@@ -8,12 +8,14 @@ import schema from './schema';
 
 const modules = import.meta.glob('./**/*.ts');
 const SYNTHETIC_OWNER_ID = 'user_test_authorized_owner';
+const SYNTHETIC_OTHER_ID = 'user_test_someone_else';
 
 describe('financialIntegration.inspectConnection', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('denies unauthenticated access before calling Pluggy', async () => {
@@ -28,7 +30,21 @@ describe('financialIntegration.inspectConnection', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('denies another authenticated identity before calling Pluggy', async () => {
+    stubEnvironment();
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetchMock);
+    const t = convexTest(schema, modules).withIdentity({ subject: SYNTHETIC_OTHER_ID });
+
+    await expect(t.action(api.financialIntegration.inspectConnection)).rejects.toMatchObject({
+      data: { code: 'ACCESS_DENIED' },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('returns sanitized coverage to the authorized owner', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-17T10:00:00.000Z'));
     stubEnvironment();
     const fetchMock = vi
       .fn<typeof fetch>()
@@ -39,6 +55,7 @@ describe('financialIntegration.inspectConnection', () => {
           executionStatus: 'SUCCESS',
           lastUpdatedAt: '2026-07-16T10:00:00.000Z',
           nextAutoSyncAt: null,
+          consentExpiresAt: null,
           connector: { name: 'MeuPluggy' },
         }),
       )

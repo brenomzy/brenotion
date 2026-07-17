@@ -248,7 +248,7 @@ de baixo volume, entradas manuais explícitas são aceitáveis.
 - [x] conectar Itaú PF pelo Meu Pluggy com consentimento delegado e somente leitura;
 - [x] validar a API real da Development Application: `GET /items` devolve `401` porque listagem foi desabilitada por segurança; `GET /items/{itemId}` e `GET /accounts?itemId=...` devolveram `200` em 16 de julho de 2026, com Item `UPDATED`/`SUCCESS`, uma conta bancária e um cartão, sem leitura de transações;
 - [x] implementar uma Action Convex autorizada que reduz Item e contas a metadados sanitizados de cobertura e recência, com testes sintéticos e sem persistência;
-- [x] validar a Action de ponta a ponta no Android autenticado em 16 de julho de 2026, após alinhar o Item ativo à mesma Pluggy Application das credenciais; o card exibiu `Conexão pronta` apenas com conector, recência e contagens sanitizadas, sem saldos, transações ou identificadores;
+- [x] validar a Action de ponta a ponta no Android autenticado em 16 de julho de 2026, após alinhar o Item ativo à mesma Pluggy Application das credenciais; o card exibiu `Conexão pronta` apenas com conector, recência e contagens sanitizadas, sem saldos, transações ou identificadores; após a revisão do PR, o diagnóstico passou a incluir a expiração do consentimento e a exigir atualização em até 48 horas e cobertura de conta bancária e cartão para o estado pronto;
 - [ ] observar compras do cartão e Pix do Itaú PF durante um ciclo;
 - [ ] obter cartão, fatura, fechamento e vencimento;
 - [ ] medir histórico realmente retornado;

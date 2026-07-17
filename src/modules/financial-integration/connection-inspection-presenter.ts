@@ -12,6 +12,7 @@ export type ConnectionInspectionPresentation = Readonly<{
   description: string;
   connectorLabel: string;
   lastUpdatedLabel: string;
+  consentLabel: string;
   coverageLabel: string;
 }>;
 
@@ -42,6 +43,7 @@ export function presentConnectionInspection(
     ...state,
     connectorLabel: inspection.connectorName,
     lastUpdatedLabel: formatLastUpdatedAt(inspection.lastUpdatedAt),
+    consentLabel: formatConsentExpiry(inspection.consentExpiresAt),
     coverageLabel: formatCoverage(inspection.accounts),
   };
 }
@@ -51,6 +53,14 @@ function formatLastUpdatedAt(value: string | null): string {
     return 'Atualização não informada';
   }
 
+  return formatDateTime(value);
+}
+
+function formatConsentExpiry(value: string | null): string {
+  return value ? `Válido até ${formatDateTime(value)}` : 'Sem vencimento definido';
+}
+
+function formatDateTime(value: string): string {
   const parts = new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',

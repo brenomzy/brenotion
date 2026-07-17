@@ -11,6 +11,7 @@ const SYNTHETIC_CONFIG = {
   clientSecret: 'secret_test_synthetic',
   itemId: 'item_test_synthetic',
 };
+const INSPECTION_NOW = Date.parse('2026-07-17T10:00:00.000Z');
 
 describe('inspectPluggyConnection', () => {
   it('returns only sanitized coverage metadata for a ready item', async () => {
@@ -48,7 +49,7 @@ describe('inspectPluggyConnection', () => {
         }),
       );
 
-    const result = await inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock);
+    const result = await inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW);
 
     expect(result).toEqual({
       availability: 'ready',
@@ -57,6 +58,7 @@ describe('inspectPluggyConnection', () => {
       executionStatus: 'SUCCESS',
       lastUpdatedAt: '2026-07-16T10:00:00.000Z',
       nextAutoSyncAt: '2026-07-17T10:00:00.000Z',
+      consentExpiresAt: null,
       accountWarningCount: 0,
       accounts: {
         total: 2,
@@ -74,6 +76,85 @@ describe('inspectPluggyConnection', () => {
     );
   });
 
+  it('marks stale item data as partial even when the last execution succeeded', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ apiKey: 'api_key_test_synthetic' }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: 'UPDATED',
+          executionStatus: 'SUCCESS',
+          lastUpdatedAt: '2026-07-14T09:59:59.000Z',
+          nextAutoSyncAt: null,
+          connector: { name: 'MeuPluggy' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [
+            { type: 'BANK', subtype: 'CHECKING_ACCOUNT' },
+            { type: 'CREDIT', subtype: 'CREDIT_CARD' },
+          ],
+        }),
+      );
+
+    await expect(
+      inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW),
+    ).resolves.toMatchObject({ availability: 'partial' });
+  });
+
+  it('marks coverage as partial when the required bank and credit accounts are incomplete', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ apiKey: 'api_key_test_synthetic' }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: 'UPDATED',
+          executionStatus: 'SUCCESS',
+          lastUpdatedAt: '2026-07-17T09:00:00.000Z',
+          nextAutoSyncAt: null,
+          connector: { name: 'MeuPluggy' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          results: [{ type: 'BANK', subtype: 'CHECKING_ACCOUNT' }],
+        }),
+      );
+
+    await expect(
+      inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW),
+    ).resolves.toMatchObject({
+      availability: 'partial',
+      accounts: { total: 1, bank: 1, credit: 0 },
+    });
+  });
+
+  it('does not fetch accounts when consent has expired', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ apiKey: 'api_key_test_synthetic' }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          status: 'UPDATED',
+          executionStatus: 'SUCCESS',
+          lastUpdatedAt: '2026-07-17T09:00:00.000Z',
+          nextAutoSyncAt: null,
+          consentExpiresAt: '2026-07-17T09:59:59.000Z',
+          connector: { name: 'MeuPluggy' },
+        }),
+      );
+
+    await expect(
+      inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW),
+    ).resolves.toMatchObject({
+      availability: 'unavailable',
+      consentExpiresAt: '2026-07-17T09:59:59.000Z',
+      accounts: null,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('does not fetch accounts while the item is unavailable', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
@@ -88,7 +169,9 @@ describe('inspectPluggyConnection', () => {
         }),
       );
 
-    await expect(inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock)).resolves.toMatchObject({
+    await expect(
+      inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW),
+    ).resolves.toMatchObject({
       availability: 'unavailable',
       accounts: null,
     });
@@ -116,7 +199,9 @@ describe('inspectPluggyConnection', () => {
         }),
       );
 
-    await expect(inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock)).resolves.toMatchObject({
+    await expect(
+      inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW),
+    ).resolves.toMatchObject({
       availability: 'partial',
       lastUpdatedAt: '2026-07-14T10:00:00.000Z',
       accountWarningCount: 1,
@@ -139,7 +224,7 @@ describe('inspectPluggyConnection', () => {
         ),
       );
 
-    const error = await inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock).catch(
+    const error = await inspectPluggyConnection(SYNTHETIC_CONFIG, fetchMock, INSPECTION_NOW).catch(
       (caught: unknown) => caught,
     );
 

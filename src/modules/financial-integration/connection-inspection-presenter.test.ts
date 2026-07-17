@@ -11,6 +11,7 @@ describe('presentConnectionInspection', () => {
       executionStatus: 'SUCCESS',
       lastUpdatedAt: '2026-07-16T10:00:00.000Z',
       nextAutoSyncAt: null,
+      consentExpiresAt: null,
       accountWarningCount: 0,
       accounts: {
         total: 2,
@@ -26,6 +27,7 @@ describe('presentConnectionInspection', () => {
       description: 'Os dados disponíveis foram atualizados com sucesso.',
       connectorLabel: 'Conector de teste',
       lastUpdatedLabel: '16/07/2026 às 07:00',
+      consentLabel: 'Sem vencimento definido',
       coverageLabel: '2 contas detectadas: 1 bancária e 1 cartão.',
     });
     expect(JSON.stringify(presentation)).not.toContain('CHECKING_ACCOUNT');
@@ -40,6 +42,7 @@ describe('presentConnectionInspection', () => {
       executionStatus: 'PARTIAL_SUCCESS',
       lastUpdatedAt: null,
       nextAutoSyncAt: null,
+      consentExpiresAt: '2026-08-16T10:00:00.000Z',
       accountWarningCount: 1,
       accounts: null,
     });
@@ -50,6 +53,7 @@ describe('presentConnectionInspection', () => {
       description: 'A conexão respondeu, mas a cobertura de contas está incompleta.',
       connectorLabel: 'Conector de teste',
       lastUpdatedLabel: 'Atualização não informada',
+      consentLabel: 'Válido até 16/08/2026 às 07:00',
       coverageLabel: 'Cobertura de contas não disponível.',
     });
   });
@@ -62,6 +66,7 @@ describe('presentConnectionInspection', () => {
       executionStatus: 'CREATED',
       lastUpdatedAt: null,
       nextAutoSyncAt: null,
+      consentExpiresAt: null,
       accountWarningCount: 0,
       accounts: null,
     });
@@ -72,6 +77,7 @@ describe('presentConnectionInspection', () => {
       description: 'A conexão ainda não disponibilizou contas para esta verificação.',
       connectorLabel: 'Conector de teste',
       lastUpdatedLabel: 'Atualização não informada',
+      consentLabel: 'Sem vencimento definido',
       coverageLabel: 'Cobertura de contas não disponível.',
     });
   });

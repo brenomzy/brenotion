@@ -24,6 +24,7 @@ export const inspectConnection = action({
     executionStatus: v.string(),
     lastUpdatedAt: v.union(v.string(), v.null()),
     nextAutoSyncAt: v.union(v.string(), v.null()),
+    consentExpiresAt: v.union(v.string(), v.null()),
     accountWarningCount: v.number(),
     accounts: v.union(accountCoverageValidator, v.null()),
   }),

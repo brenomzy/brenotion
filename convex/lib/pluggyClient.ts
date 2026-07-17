@@ -11,6 +11,7 @@ export type PluggyConnectionInspection = Readonly<{
   executionStatus: string;
   lastUpdatedAt: string | null;
   nextAutoSyncAt: string | null;
+  consentExpiresAt: string | null;
   accountWarningCount: number;
   accounts: Readonly<{
     total: number;
@@ -48,6 +49,7 @@ type Fetch = typeof fetch;
 type JsonObject = Record<string, unknown>;
 
 const PLUGGY_API_URL = 'https://api.pluggy.ai';
+const MAX_READY_AGE_MS = 48 * 60 * 60 * 1000;
 
 export function readPluggyConfig(environment: Environment): PluggyConfig {
   return {
@@ -60,6 +62,7 @@ export function readPluggyConfig(environment: Environment): PluggyConfig {
 export async function inspectPluggyConnection(
   config: PluggyConfig,
   fetchImplementation: Fetch = fetch,
+  now = Date.now(),
 ): Promise<PluggyConnectionInspection> {
   const apiKey = await authenticate(config, fetchImplementation);
   const item = await requestJson(
@@ -67,7 +70,7 @@ export async function inspectPluggyConnection(
     apiKey,
     fetchImplementation,
   );
-  const parsedItem = parseItem(item);
+  const parsedItem = parseItem(item, now);
 
   if (!parsedItem.canFetchAccounts) {
     return {
@@ -83,9 +86,11 @@ export async function inspectPluggyConnection(
     fetchImplementation,
   );
   const accounts = parseAccountCoverage(accountsResponse);
+  const hasRequiredCoverage = accounts.bank > 0 && accounts.credit > 0;
 
   return {
-    availability: parsedItem.availability,
+    availability:
+      parsedItem.availability === 'ready' && hasRequiredCoverage ? 'ready' : 'partial',
     ...parsedItem.summary,
     accounts,
   };
@@ -157,7 +162,7 @@ async function readJsonObject(response: Response): Promise<JsonObject> {
   return value;
 }
 
-function parseItem(value: JsonObject): Readonly<{
+function parseItem(value: JsonObject, now: number): Readonly<{
   availability: PluggyConnectionInspection['availability'];
   canFetchAccounts: boolean;
   summary: Omit<PluggyConnectionInspection, 'availability' | 'accounts'>;
@@ -173,13 +178,24 @@ function parseItem(value: JsonObject): Readonly<{
     throw new PluggyIntegrationError('PLUGGY_INVALID_RESPONSE');
   }
 
+  const lastUpdatedAt = readNullableDateString(value.lastUpdatedAt);
+  const consentExpiresAt = readNullableDateString(value.consentExpiresAt);
   const baseSummary = {
     connectorName: connector.name,
     itemStatus: value.status,
     executionStatus: value.executionStatus,
-    lastUpdatedAt: readNullableString(value.lastUpdatedAt),
-    nextAutoSyncAt: readNullableString(value.nextAutoSyncAt),
+    lastUpdatedAt,
+    nextAutoSyncAt: readNullableDateString(value.nextAutoSyncAt),
+    consentExpiresAt,
   };
+
+  if (consentExpiresAt !== null && Date.parse(consentExpiresAt) <= now) {
+    return {
+      availability: 'unavailable',
+      canFetchAccounts: false,
+      summary: { ...baseSummary, accountWarningCount: 0 },
+    };
+  }
 
   if (value.status !== 'UPDATED') {
     return {
@@ -191,7 +207,7 @@ function parseItem(value: JsonObject): Readonly<{
 
   if (value.executionStatus === 'SUCCESS') {
     return {
-      availability: 'ready',
+      availability: isRecent(lastUpdatedAt, now) ? 'ready' : 'partial',
       canFetchAccounts: true,
       summary: { ...baseSummary, accountWarningCount: 0 },
     };
@@ -229,7 +245,8 @@ function parseItem(value: JsonObject): Readonly<{
     canFetchAccounts: accountsStatus.isUpdated,
     summary: {
       ...baseSummary,
-      lastUpdatedAt: readNullableString(accountsStatus.lastUpdatedAt) ?? baseSummary.lastUpdatedAt,
+      lastUpdatedAt:
+        readNullableDateString(accountsStatus.lastUpdatedAt) ?? baseSummary.lastUpdatedAt,
       accountWarningCount: accountsStatus.warnings.length,
     },
   };
@@ -272,8 +289,21 @@ function requireEnvironmentValue(environment: Environment, name: string): string
   return value;
 }
 
-function readNullableString(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
+function readNullableDateString(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) {
+    throw new PluggyIntegrationError('PLUGGY_INVALID_RESPONSE');
+  }
+
+  return value;
+}
+
+function isRecent(value: string | null, now: number): boolean {
+  if (value === null) return false;
+
+  const age = now - Date.parse(value);
+  return age >= 0 && age <= MAX_READY_AGE_MS;
 }
 
 function readErrorId(value: JsonObject): string | null {

@@ -100,6 +100,7 @@ function InspectionResult({
       <View className="gap-3">
         <ResultRow label="Conector" value={presentation.connectorLabel} />
         <ResultRow label="Última atualização" value={presentation.lastUpdatedLabel} />
+        <ResultRow label="Consentimento" value={presentation.consentLabel} />
       </View>
 
       <Text variant="caption" className="leading-5 text-ink">
