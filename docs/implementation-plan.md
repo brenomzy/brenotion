@@ -111,8 +111,8 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 2. [x] Criar Application no Clerk.
 3. [x] Implementar Google login em Android e web. A web usa o componente oficial `SignIn`; o Android usa o `AuthView` nativo beta. Login Google, cache seguro, gate da tela Início, persistência após reinício e saída de sessão foram validados no aparelho pelo Titular.
 4. [x] Aplicar allowlist de um Clerk User ID no Convex.
-5. [ ] Negar leitura e escrita server-side para qualquer outra identidade. A consulta mínima já nega leitura; o mesmo helper deve proteger cada mutation quando escritas forem introduzidas.
-6. [ ] Adicionar `ownerId` aos registros persistidos.
+5. [x] Negar leitura e escrita server-side para qualquer outra identidade.
+6. [x] Adicionar `ownerId` aos registros persistidos.
 7. [x] Criar sessão fake somente para testes automatizados.
 8. [ ] Provar upload temporário, hash e exclusão verificável.
 9. [ ] Adicionar biometria Android para desbloqueio cotidiano.
@@ -128,6 +128,8 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 Checkpoint inicial de 15 de julho de 2026: `@clerk/expo` `3.7.6`, `@clerk/localizations` `4.13.4` e `expo-secure-store` `57.0.1` foram integrados pela cadeia compatível com Expo SDK 57. O callback browser-based anterior apontava para uma rota inexistente e produzia `Unmatched Route`; a adoção de `AuthView` no Android e `SignIn` na web removeu esse callback e também dispensou `expo-auth-session` no código atual. Login Google, gate da tela Início e saída foram validados de ponta a ponta na web e no Android; no aparelho, o Titular também confirmou a persistência da sessão após fechar e reabrir a Development Build versionCode 2. Nesse checkpoint inicial, o Convex ainda não havia sido iniciado. `npm audit --omit=dev` reportou 23 avisos moderados, nenhum alto ou crítico e nenhum reparo compatível direto; os avisos vêm principalmente do grafo transitivo de wallets/Solana incluído por `@clerk/clerk-js` e devem ser reavaliados nas atualizações do Clerk.
 
 Checkpoint de backend de 15 de julho de 2026: o projeto Convex de desenvolvimento foi criado e `convex` `1.42.2` implantou `auth.config.ts` com a integração Clerk ativada. `ConvexProviderWithClerk` compõe o cliente; `requireAuthorizedOwner` aplica no backend a allowlist de um único Clerk User ID configurado no deployment; e `access.verifyOwner` é consumida antes de montar a aplicação interna. `convex-test` cobre identidade ausente, allowlist ausente, identidade sintética diferente e Titular sintético autorizado. A chamada real sem identidade também foi negada com `AUTHENTICATION_REQUIRED`, enquanto o Titular confirmou no Android que sua sessão real autorizada atravessou o gate e abriu a tela Início. TypeScript, lint, testes, estilos Android, bundle Android, export web e os 20 checks do Expo Doctor passaram; valores backend-only locais não apareceram no bundle web. Nenhum registro financeiro foi criado, o retrato da tela Início permanece sintético em memória e mutations com `ownerId`, upload e OFX continuam posteriores.
+
+Checkpoint de persistência de 16 de julho de 2026: perfil e preferências do Titular e a fundação de um retrato financeiro futuro passaram a usar registros isolados por `ownerId`, sempre derivado de `requireAuthorizedOwner` e nunca aceito do cliente. Queries e mutations públicas validam argumentos e retornos, aplicam autorização no backend e usam índices com unicidade. Valores BRL são persistidos como `int64` na menor unidade, com moeda e unidade explícitas; writes usam upsert idempotente e auditoria sanitizada sem valores financeiros ou identificadores externos. Testes sintéticos cobrem identidade ausente, outra identidade, isolamento, idempotência e dinheiro exato. Nenhum seed foi criado e a interface continua desacoplada dessas tabelas nesta etapa.
 
 ## 6. Fase 3 — Importação histórica e calibração
 

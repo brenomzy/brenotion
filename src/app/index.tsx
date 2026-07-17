@@ -3,7 +3,15 @@ import { useLocalSearchParams } from 'expo-router';
 import { HomeScreen } from '@/modules/home/home-screen';
 import { type HomeScenario } from '@/modules/home/home-snapshot-source';
 
-const HOME_SCENARIOS = new Set<HomeScenario>(['recent', 'partial', 'stale', 'empty', 'error']);
+const HOME_SCENARIOS = new Set<HomeScenario>([
+  'loading',
+  'empty',
+  'recent',
+  'partial',
+  'stale',
+  'offline',
+  'error',
+]);
 
 export default function HomeRoute() {
   const { scenario } = useLocalSearchParams<{ scenario?: string | string[] }>();

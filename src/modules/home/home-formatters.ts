@@ -1,18 +1,3 @@
-import { type Money } from '@/modules/home/home-snapshot-source';
-
-const wholeNumberFormatter = new Intl.NumberFormat('pt-BR');
-
-export function formatMoney({ amountMinor, currency }: Money) {
-  const absoluteAmount = Math.abs(amountMinor);
-  const whole = Math.floor(absoluteAmount / 100);
-  const cents = absoluteAmount % 100;
-  const sign = amountMinor < 0 ? '−' : '';
-  const currencyLabel = currency === 'BRL' ? 'R$' : currency;
-  const centsLabel = cents === 0 ? '' : `,${String(cents).padStart(2, '0')}`;
-
-  return `${sign}${currencyLabel}\u00a0${wholeNumberFormatter.format(whole)}${centsLabel}`;
-}
-
 export function formatAsOf(isoDate: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
