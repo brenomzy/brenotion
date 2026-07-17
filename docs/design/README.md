@@ -17,6 +17,7 @@ Direção refinada pelo Titular em 15 de julho de 2026: permanecer próximo aos 
 - [Guia de feedback visual](./feedback-guide.md): formato recomendado para criticar estrutura, polish, cor e motion.
 - [Direções de laranja](./color-directions.md): famílias candidatas, tons e regras de contraste.
 - [Catálogo de candidatos por tela](./screen-candidate-catalog.md): cobertura visual, links Mobbin e acesso ao protótipo comparativo.
+- [Matriz de estados das telas iniciais](./initial-screen-state-matrix.md): conteúdo, ações e estrutura preservada de Início, Plano, Revisar e Mais.
 - [Protótipo comparativo](./prototypes/prototype-screen-catalog.html): três candidatos estruturais por superfície, alternáveis por URL e lado a lado.
 - Board Android — jornadas principais: [imagem estática](./boards/core-journeys.png) e [fonte vetorial editável](./boards/core-journeys.svg).
 - Board web — importação e Cofre Fiscal: [imagem estática](./boards/companion-web.png) e [fonte vetorial editável](./boards/companion-web.svg).
