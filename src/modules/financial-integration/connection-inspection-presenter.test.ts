@@ -50,7 +50,7 @@ describe('presentConnectionInspection', () => {
     expect(presentation).toEqual({
       tone: 'warning',
       title: 'Dados parciais',
-      description: 'A conexão respondeu, mas a cobertura de contas está incompleta.',
+      description: 'A conexão respondeu, mas recência ou cobertura ainda estão incompletas.',
       connectorLabel: 'Conector de teste',
       lastUpdatedLabel: 'Atualização não informada',
       consentLabel: 'Válido até 16/08/2026 às 07:00',

@@ -30,7 +30,7 @@ export function presentConnectionInspection(
     partial: {
       tone: 'warning' as const,
       title: 'Dados parciais',
-      description: 'A conexão respondeu, mas a cobertura de contas está incompleta.',
+      description: 'A conexão respondeu, mas recência ou cobertura ainda estão incompletas.',
     },
     unavailable: {
       tone: 'neutral' as const,
