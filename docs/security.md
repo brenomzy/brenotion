@@ -33,8 +33,11 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 ## 4. Identidade e autorização
 
 - Clerk fornece a identidade; Google é o login principal.
+- A primeira prova usa a interface pronta do Clerk: `AuthView` nativo beta no Android e `SignIn` na web. O Android não depende de callback browser-based; a web mantém o fluxo dentro do componente oficial.
 - A conta Google deve manter segundo fator ou passkey.
 - O backend aceita somente o Clerk User ID configurado na allowlist.
+- O emissor Clerk e o Clerk User ID autorizado são variáveis exclusivas do deployment Convex; nenhum deles é aceito como argumento vindo do cliente.
+- A consulta de prova usa um helper central que falha fechada para identidade ausente, allowlist ausente ou identidade diferente e devolve somente o estado autorizado, nunca o identificador real.
 - Toda função pública valida sessão e `ownerId`; confiar apenas no cliente é proibido.
 - Registros já nascem associados ao Titular.
 - Expansão para mais usuários exige revisão de autorização, não apenas remoção da allowlist.
@@ -43,6 +46,7 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 ## 5. Segurança no Android
 
 - Tokens em `SecureStore` ou mecanismo equivalente suportado pela plataforma.
+- O cliente usa o `tokenCache` oficial do Clerk apoiado por `expo-secure-store` no Android e não registra nem persiste tokens por conta própria.
 - Biometria como desbloqueio cotidiano depois da primeira autenticação.
 - Bloqueio após período de inatividade configurável.
 - Conteúdo oculto na visualização de aplicativos recentes quando viável.
@@ -56,7 +60,9 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - Ambientes de desenvolvimento e produção usam credenciais distintas.
 - Rotação é documentada e testada antes da produção.
 - `.env.example` contém somente nomes e descrições, nunca valores reais.
-- Secret scanning entra no CI quando o repositório GitHub privado for criado.
+- A Publishable Key do Clerk é configuração pública do cliente, não recebe valor padrão e fica apenas no `.env` local ou no ambiente de build; chaves secretas continuam exclusivas do backend.
+- O export web é verificado contra os valores backend-only presentes no ambiente local; a prova de 15 de julho de 2026 não encontrou esses valores no bundle.
+- Secret scanning e push protection nativos do GitHub devem ser habilitados quando disponíveis; o Gitleaks permanece no CI como controle independente.
 
 ## 7. Integração financeira
 
@@ -67,6 +73,10 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - Estado e expiração do consentimento são visíveis ao Titular.
 - Webhooks são autenticados, deduplicados e processados de forma idempotente.
 - Respostas brutas não aparecem em logs de produção.
+- `clientId`, `clientSecret` e `itemId` da Pluggy são variáveis exclusivas do backend Convex; nenhum deles é argumento vindo do cliente ou valor devolvido pela API pública.
+- A Action de diagnóstico autoriza o Titular antes da primeira chamada externa e devolve somente estado, recência, expiração do consentimento, contagens e subtipos de conta.
+- O diagnóstico só chama a conexão de pronta quando a atualização tem no máximo 48 horas, o consentimento não expirou e conta bancária e cartão estão cobertos.
+- Erros da Pluggy são reduzidos a código interno, status HTTP e `errorId`; mensagens e corpos brutos não atravessam a fronteira do adapter.
 
 ## 8. Ciclo de vida de arquivos
 
@@ -133,10 +143,10 @@ Eventos de auditoria são append-only e usam IDs, não payloads completos.
 
 ## 13. Desenvolvimento seguro
 
-- Repositório GitHub privado.
+- Repositório GitHub público, limitado a código, documentação e dados sintéticos ou irreversivelmente sanitizados.
 - Proteção de branch e PRs para mudanças relevantes.
 - TypeScript estrito, lint, testes e verificação de dependências.
-- Gitleaks em pull requests e pushes para `main`, enquanto o secret scanning nativo do GitHub não estiver disponível para o repositório privado.
+- Gitleaks em pull requests e pushes para `main`, independentemente das camadas nativas de secret scanning do GitHub.
 - CodeRabbit auxilia revisão, mas não substitui revisão humana, testes ou threat modeling.
 - Dependências são fixadas e atualizadas deliberadamente.
 - Adapters externos recebem testes de contrato.

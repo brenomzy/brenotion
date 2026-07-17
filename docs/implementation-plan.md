@@ -18,7 +18,7 @@ Continuam sendo gates obrigatórios:
 - ausência de segredos e dados financeiros reais no repositório;
 - cálculos financeiros determinísticos, versionados e testados;
 - ingestão idempotente e arquivos bancários brutos efêmeros;
-- recência e confiança honestas antes de chamar a experiência de MVP diário.
+- recência e confiança honestas antes de chamar a experiência de MVP de revisão.
 
 ## 2. Estados de entrega
 
@@ -34,10 +34,10 @@ Importa arquivos, classifica o histórico, calcula bases e permite revisar o
 modelo financeiro. Não apresenta o Disponível para Gastar como atualizado
 durante o mês.
 
-### MVP diário
+### MVP de revisão
 
 Sincroniza conta e cartão com recência conhecida, reconcilia obrigações e
-sustenta o acompanhamento cotidiano com confiança explícita.
+sustenta revisões semanais ou mensais e decisões relevantes com confiança explícita.
 
 ### Produção pessoal
 
@@ -48,7 +48,7 @@ rotina de atualização.
 
 ### Estado
 
-1. [x] Criar repositório GitHub privado.
+1. [x] Criar repositório GitHub público, sem dados reais, credenciais ou documentos sensíveis.
 2. [x] Inicializar Git e registrar a documentação inicial.
 3. [x] Adicionar `.gitignore`, `.editorconfig`, licença privada e política de segredos.
 4. [x] Ativar Gitleaks em `main` pelo PR #1.
@@ -71,7 +71,7 @@ sem esperar a conclusão das integrações financeiras.
 7. [ ] Consultar a matriz de adoção do React Native Reusables em cada nova tela e incorporar Dialog, Select, Tabs ou outro primitivo somente quando o primeiro fluxo real exigir.
 8. [ ] Evoluir tema escuro, teclado web, leitor de tela e alvos de toque junto das telas; a primeira fatia permanece explicitamente clara até a validação do dark mode.
 9. [x] Validar os tokens NativeWind no Android com fallbacks sRGB e uma verificação automatizada de compilação nativa.
-10. [ ] Configurar CI com lint, tipos, export web e verificação de segredos.
+10. [x] Configurar CI com lint, tipos, estilos Android, export web, Expo Doctor e verificação de segredos.
 
 ### Primeira tela funcional
 
@@ -107,16 +107,16 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 
 ### Ações
 
-1. Criar projeto Convex para desenvolvimento.
-2. Criar Application no Clerk.
-3. Implementar Google login em Android e web.
-4. Aplicar allowlist de um Clerk User ID no Convex.
-5. Negar leitura e escrita server-side para qualquer outra identidade.
-6. Adicionar `ownerId` aos registros persistidos.
-7. Criar sessão fake somente para testes automatizados.
-8. Provar upload temporário, hash e exclusão verificável.
-9. Adicionar biometria Android para desbloqueio cotidiano.
-10. Verificar que segredos não aparecem no bundle.
+1. [x] Criar projeto Convex para desenvolvimento.
+2. [x] Criar Application no Clerk.
+3. [x] Implementar Google login em Android e web. A web usa o componente oficial `SignIn`; o Android usa o `AuthView` nativo beta. Login Google, cache seguro, gate da tela Início, persistência após reinício e saída de sessão foram validados no aparelho pelo Titular.
+4. [x] Aplicar allowlist de um Clerk User ID no Convex.
+5. [ ] Negar leitura e escrita server-side para qualquer outra identidade. A consulta mínima já nega leitura; o mesmo helper deve proteger cada mutation quando escritas forem introduzidas.
+6. [ ] Adicionar `ownerId` aos registros persistidos.
+7. [x] Criar sessão fake somente para testes automatizados.
+8. [ ] Provar upload temporário, hash e exclusão verificável.
+9. [ ] Adicionar biometria Android para desbloqueio cotidiano.
+10. [x] Verificar que segredos não aparecem no bundle da fatia atual.
 
 ### Critérios de aceite
 
@@ -124,6 +124,10 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 - falhas negativas de autorização possuem testes;
 - arquivo bancário bruto é apagado e a exclusão é auditável;
 - nenhuma credencial entra no Git, bundle, log ou fixture.
+
+Checkpoint inicial de 15 de julho de 2026: `@clerk/expo` `3.7.6`, `@clerk/localizations` `4.13.4` e `expo-secure-store` `57.0.1` foram integrados pela cadeia compatível com Expo SDK 57. O callback browser-based anterior apontava para uma rota inexistente e produzia `Unmatched Route`; a adoção de `AuthView` no Android e `SignIn` na web removeu esse callback e também dispensou `expo-auth-session` no código atual. Login Google, gate da tela Início e saída foram validados de ponta a ponta na web e no Android; no aparelho, o Titular também confirmou a persistência da sessão após fechar e reabrir a Development Build versionCode 2. Nesse checkpoint inicial, o Convex ainda não havia sido iniciado. `npm audit --omit=dev` reportou 23 avisos moderados, nenhum alto ou crítico e nenhum reparo compatível direto; os avisos vêm principalmente do grafo transitivo de wallets/Solana incluído por `@clerk/clerk-js` e devem ser reavaliados nas atualizações do Clerk.
+
+Checkpoint de backend de 15 de julho de 2026: o projeto Convex de desenvolvimento foi criado e `convex` `1.42.2` implantou `auth.config.ts` com a integração Clerk ativada. `ConvexProviderWithClerk` compõe o cliente; `requireAuthorizedOwner` aplica no backend a allowlist de um único Clerk User ID configurado no deployment; e `access.verifyOwner` é consumida antes de montar a aplicação interna. `convex-test` cobre identidade ausente, allowlist ausente, identidade sintética diferente e Titular sintético autorizado. A chamada real sem identidade também foi negada com `AUTHENTICATION_REQUIRED`, enquanto o Titular confirmou no Android que sua sessão real autorizada atravessou o gate e abriu a tela Início. TypeScript, lint, testes, estilos Android, bundle Android, export web e os 20 checks do Expo Doctor passaram; valores backend-only locais não apareceram no bundle web. Nenhum registro financeiro foi criado, o retrato da tela Início permanece sintético em memória e mutations com `ownerId`, upload e OFX continuam posteriores.
 
 ## 6. Fase 3 — Importação histórica e calibração
 
@@ -206,7 +210,7 @@ Conectar o núcleo às telas já existentes:
 O Titular deve conseguir explicar os 12 meses por categorias e ciclos, com
 lacunas e incertezas visíveis.
 
-## 9. Fase 6 — Sincronização e MVP diário
+## 9. Fase 6 — Sincronização e MVP de revisão
 
 ### Fatia vertical
 
@@ -230,36 +234,44 @@ lacunas e incertezas visíveis.
 ## 10. Trilha contínua — Integração financeira
 
 Pluggy permanece o primeiro candidato, não uma decisão definitiva. A validação
-acontece em paralelo ao aplicativo e só bloqueia o MVP diário.
+acontece em paralelo ao aplicativo e só bloqueia o MVP de revisão.
+
+Decisão de perímetro registrada em 16 de julho de 2026: a integração automática
+inicial fica limitada ao Itaú PF e ao cartão associado. Itaú PJ, Wise Business e
+Wise Pessoal permanecem fontes futuras; enquanto seus fluxos forem previsíveis e
+de baixo volume, entradas manuais explícitas são aceitáveis.
 
 ### Estado e cenários
 
 - [x] criar conta, Team e Application `Brenotion Spike` no Pluggy Dashboard;
 - [x] validar sandbox com conta, cartão e movimentações sintéticas;
 - [x] conectar Itaú PF pelo Meu Pluggy com consentimento delegado e somente leitura;
+- [x] validar a API real da Development Application: `GET /items` devolve `401` porque listagem foi desabilitada por segurança; `GET /items/{itemId}` e `GET /accounts?itemId=...` devolveram `200` em 16 de julho de 2026, com Item `UPDATED`/`SUCCESS`, uma conta bancária e um cartão, sem leitura de transações;
+- [x] implementar uma Action Convex autorizada que reduz Item e contas a metadados sanitizados de cobertura e recência, com testes sintéticos e sem persistência;
+- [x] validar a Action de ponta a ponta no Android autenticado em 16 de julho de 2026, após alinhar o Item ativo à mesma Pluggy Application das credenciais; o card exibiu `Conexão pronta` apenas com conector, recência e contagens sanitizadas, sem saldos, transações ou identificadores; após a revisão do PR, o diagnóstico passou a incluir a expiração do consentimento e a exigir atualização em até 48 horas e cobertura de conta bancária e cartão para o estado pronto;
 - [ ] observar compras do cartão e Pix do Itaú PF durante um ciclo;
 - [ ] obter cartão, fatura, fechamento e vencimento;
-- [ ] tentar conectar Itaú PJ e validar lote OFX/CSV como fallback;
-- [ ] verificar Wise Business e Wise Pessoal;
 - [ ] medir histórico realmente retornado;
 - [ ] confirmar IDs estáveis e deduplicação após ressincronização;
 - [ ] identificar parcelas futuras;
-- [ ] testar atualização, webhook, expiração e reconexão;
+- [ ] testar leitura sob demanda, expiração e reconexão no Conector 200;
 - [ ] registrar limites do plano gratuito e custo mensal total.
 
-### Gate para MVP diário
+Próxima ação: observar a recência de compras do cartão e Pix do Itaú PF durante
+um ciclo e então adicionar uma leitura paginada e idempotente de movimentações,
+sem persistir respostas brutas nem registrar conteúdo financeiro em logs.
+
+### Gate para MVP de revisão
 
 | Critério | Exigência |
 |---|---|
 | Itaú PF | contas, Pix e movimentações confiáveis |
-| Itaú PJ | automação confiável ou lote periódico de baixo esforço |
 | Cartão | compras, fatura e pagamento reconhecíveis |
-| Wise | recebimentos e transferências necessários |
-| Recência | suficiente para o indicador diário |
+| Recência | conhecida e suficiente no momento da revisão ou decisão |
 | Idempotência | ressincronização não cria duplicatas |
 | Segurança | consentimento delegado e modo somente leitura |
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
-| Esforço manual | nenhuma digitação recorrente de compras ou Pix |
+| Esforço manual | nenhuma digitação recorrente de compras ou Pix do Itaú PF; demais fontes podem ser explícitas e manuais |
 
 Se o adapter falhar, a aplicação continua pela importação histórica ou modo
 degradado e nunca finge recência que não possui.
@@ -299,7 +311,7 @@ degradado e nunca finge recência que não possui.
 1. [x] Concluir e instalar a Development Build Android.
 2. [x] Abrir a aplicação pelo Metro no celular e validar o Fast Refresh.
 3. [x] Construir a tela Início com retrato sintético, tokens, NativeWind, Button e Card.
-4. [ ] Configurar os checks de código no CI.
+4. [x] Configurar os checks de código no CI.
 5. [ ] Implementar a fatia de autenticação e backend.
 6. [ ] Implementar o primeiro Lote de Importação OFX.
 7. [ ] Construir o núcleo determinístico por regressões.

@@ -27,7 +27,7 @@ flowchart LR
 - Expo Router fornece rotas Android e web no mesmo projeto.
 - Rotas e elementos específicos usam extensões de plataforma somente quando o comportamento realmente divergir.
 - A web inicial contém autenticação, upload e consulta do Cofre Fiscal.
-- O Android contém a experiência diária, biometria, notificações e revisões.
+- O Android contém consultas, revisões periódicas, biometria e notificações acionáveis.
 - Um frontend web separado só será considerado se a experiência desktop exigir uma arquitetura própria.
 
 Referências: [Expo Router](https://docs.expo.dev/router/introduction/), [publicação web com Expo](https://docs.expo.dev/guides/publishing-websites/) e [Clerk com Expo Web](https://clerk.com/docs/guides/development/web-support/overview).
@@ -40,11 +40,27 @@ Referências: [Expo Router](https://docs.expo.dev/router/introduction/), [public
 
 Esconde sessões Clerk, allowlist, tokens, biometria e diferenças entre web e Android. Nenhum outro módulo decide autorização por conta própria.
 
+A primeira prova usa uma seam de interface por plataforma: `AuthView` de `@clerk/expo/native` no Android e `SignIn` de `@clerk/expo/web` na web. O componente nativo beta executa o fluxo Google sem callback do Expo Router; o componente web administra o OAuth em popup. No Android, o cache oficial do Clerk persiste o token com `expo-secure-store`; a aplicação não persiste tokens manualmente.
+
+Dentro do `ClerkProvider`, `ConvexProviderWithClerk` entrega o token ao Convex. O backend valida emissor e audiência antes de disponibilizar a identidade, e `requireAuthorizedOwner` compara o `subject` autenticado com a allowlist exclusiva do deployment. Depois da autorização, o helper entrega o `tokenIdentifier` qualificado pelo emissor como futuro `ownerId`; o Clerk User ID real não é persistido por esta prova. A consulta mínima `access.verifyOwner` não recebe identificador do cliente e não devolve identificadores; a aplicação só monta as telas internas depois dessa consulta. Ausência de identidade, allowlist ausente e identidade diferente falham fechadas. O retrato financeiro continua no adapter em memória e nenhum registro financeiro foi persistido nesta prova.
+
 ### 4.2 Integração Financeira
 
 **Interface**: sincroniza contas configuradas e entrega Movimentações de Origem normalizadas, com cursor, origem e estado de atualização.
 
 Esconde consentimento, paginação, webhooks, reconexão, mapeamento de instituições, limitações de histórico e diferenças entre agregadores. Não contém regras de orçamento.
+
+A primeira fatia do adapter Pluggy é uma Action Convex autorizada que consulta um
+`itemId` configurado exclusivamente no backend. Ela autentica com credenciais da
+Application, lê o Item por ID e reduz `/accounts` a estado, recência, contagens e
+subtipos. Identificadores de conta, saldos, limites e respostas brutas são
+descartados na fronteira. A fatia ainda não persiste dados nem substitui o adapter
+sintético da tela Início.
+
+Na inspeção inicial, `Conexão pronta` exige atualização nas últimas 48 horas,
+consentimento não expirado e cobertura simultânea de conta bancária e cartão. A
+ausência de qualquer evidência rebaixa o resultado para parcial ou indisponível,
+sem impedir que o último retrato conhecido continue visível em telas futuras.
 
 ### 4.3 Pipeline de Importação
 
@@ -267,4 +283,4 @@ Os testes atravessam a mesma interface usada pelos callers. Refatorações inter
 - Android por EAS Internal Distribution.
 - Web por hosting com HTTPS e cabeçalhos de segurança.
 - Ambientes separados para desenvolvimento e produção.
-- GitHub privado será necessário antes de CodeRabbit, CI e revisão por PR, mas não é pré-requisito para a especificação local.
+- O repositório GitHub é público e contém somente código, documentação e dados sintéticos; CI e revisão por PR permanecem obrigatórios para mudanças relevantes.
