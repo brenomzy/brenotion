@@ -1,6 +1,8 @@
 import type { GenericQueryCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
 
+import { env } from '../_generated/server';
+
 type AuthorizationErrorCode =
   | 'AUTHENTICATION_REQUIRED'
   | 'AUTHORIZATION_NOT_CONFIGURED'
@@ -15,7 +17,7 @@ export async function requireAuthorizedOwner(ctx: AuthContext): Promise<{ ownerI
     throwAuthorizationError('AUTHENTICATION_REQUIRED');
   }
 
-  const authorizedOwnerId = process.env.AUTHORIZED_CLERK_USER_ID?.trim();
+  const authorizedOwnerId = env.AUTHORIZED_CLERK_USER_ID?.trim();
 
   if (!authorizedOwnerId) {
     throwAuthorizationError('AUTHORIZATION_NOT_CONFIGURED');

@@ -73,6 +73,9 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - Estado e expiração do consentimento são visíveis ao Titular.
 - Webhooks são autenticados, deduplicados e processados de forma idempotente.
 - Respostas brutas não aparecem em logs de produção.
+- `clientId`, `clientSecret` e `itemId` da Pluggy são variáveis exclusivas do backend Convex; nenhum deles é argumento vindo do cliente ou valor devolvido pela API pública.
+- A Action de diagnóstico autoriza o Titular antes da primeira chamada externa e devolve somente estado, recência, contagens e subtipos de conta.
+- Erros da Pluggy são reduzidos a código interno, status HTTP e `errorId`; mensagens e corpos brutos não atravessam a fronteira do adapter.
 
 ## 8. Ciclo de vida de arquivos
 

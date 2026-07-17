@@ -9,7 +9,9 @@
  */
 
 import type * as access from "../access.js";
+import type * as financialIntegration from "../financialIntegration.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_pluggyClient from "../lib/pluggyClient.js";
 
 import type {
   ApiFromModules,
@@ -19,7 +21,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  financialIntegration: typeof financialIntegration;
   "lib/authorization": typeof lib_authorization;
+  "lib/pluggyClient": typeof lib_pluggyClient;
 }>;
 
 /**

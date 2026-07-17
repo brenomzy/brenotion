@@ -27,7 +27,7 @@ flowchart LR
 - Expo Router fornece rotas Android e web no mesmo projeto.
 - Rotas e elementos específicos usam extensões de plataforma somente quando o comportamento realmente divergir.
 - A web inicial contém autenticação, upload e consulta do Cofre Fiscal.
-- O Android contém a experiência diária, biometria, notificações e revisões.
+- O Android contém consultas, revisões periódicas, biometria e notificações acionáveis.
 - Um frontend web separado só será considerado se a experiência desktop exigir uma arquitetura própria.
 
 Referências: [Expo Router](https://docs.expo.dev/router/introduction/), [publicação web com Expo](https://docs.expo.dev/guides/publishing-websites/) e [Clerk com Expo Web](https://clerk.com/docs/guides/development/web-support/overview).
@@ -49,6 +49,13 @@ Dentro do `ClerkProvider`, `ConvexProviderWithClerk` entrega o token ao Convex. 
 **Interface**: sincroniza contas configuradas e entrega Movimentações de Origem normalizadas, com cursor, origem e estado de atualização.
 
 Esconde consentimento, paginação, webhooks, reconexão, mapeamento de instituições, limitações de histórico e diferenças entre agregadores. Não contém regras de orçamento.
+
+A primeira fatia do adapter Pluggy é uma Action Convex autorizada que consulta um
+`itemId` configurado exclusivamente no backend. Ela autentica com credenciais da
+Application, lê o Item por ID e reduz `/accounts` a estado, recência, contagens e
+subtipos. Identificadores de conta, saldos, limites e respostas brutas são
+descartados na fronteira. A fatia ainda não persiste dados nem substitui o adapter
+sintético da tela Início.
 
 ### 4.3 Pipeline de Importação
 
