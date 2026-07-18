@@ -76,7 +76,7 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - A extração de imagem deve ocorrer no aparelho quando a qualidade for suficiente; processamento no backend exige minimização e exclusão verificável.
 - Gastos Informados permanecem provisórios até conciliação com uma Movimentação de Origem importada.
 - O Resumo Empresarial persiste somente os agregados necessários ao planejamento e preserva a separação entre Empresa e Pessoal.
-- A Action de diagnóstico Pluggy e suas credenciais pertencem a um spike descontinuado; enquanto existirem, continuam exclusivas do backend e sem acesso ao Livro Financeiro. A limpeza deve remover a Action, revogar o consentimento e apagar as credenciais em uma mudança operacional explícita.
+- A Action de diagnóstico Pluggy, o cliente e a configuração versionada do spike descontinuado foram removidos sem acesso ao Livro Financeiro. Após confirmação do Titular, as variáveis residuais foram apagadas do deployment Convex; a Application já estava desabilitada e o Meu Pluggy não mostrava conexão nem app parceiro com acesso ativo.
 - Uma integração financeira futura deve usar consentimento delegado, modo somente leitura e tokens exclusivos do backend.
 
 ## 8. Ciclo de vida de arquivos
@@ -84,13 +84,18 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 ### 8.1 Extratos e faturas bancárias
 
 1. Upload para área temporária.
-2. Verificação de tipo, tamanho e hash.
-3. Extração para prévia.
-4. Confirmação ou rejeição do Lote de Importação.
+2. Associação a uma intenção de upload autorizada e expiração curta.
+3. Verificação de tipo, tamanho e hash.
+4. Extração estruturada e validação do conteúdo.
 5. Exclusão do original.
-6. Registro do resultado da exclusão na auditoria.
+6. Persistência ou devolução da prévia somente após a exclusão.
+7. Confirmação ou descarte do Lote de Importação sobre dados estruturados.
+8. Registro do resultado da exclusão e do lote na auditoria.
 
 Somente dados estruturados, hash e metadados de importação permanecem.
+Falhas conhecidas pelo cliente chamam uma limpeza idempotente; uploads já associados
+também são apagados quando a intenção expira. Nenhum caminho de confirmação depende
+da permanência do arquivo bruto.
 
 Prints usados para criar Gastos Informados seguem o mesmo ciclo, mas preservam
 somente o registro estruturado confirmado e os metadados mínimos de auditoria.

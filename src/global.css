@@ -29,4 +29,7 @@
     --status-danger-soft: 0.871 0.006 286.286;
   }
 
+  html {
+    font-synthesis: none;
+  }
 }

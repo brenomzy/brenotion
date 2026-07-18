@@ -48,7 +48,7 @@ const buttonVariants = cva(
   }
 );
 
-const buttonTextVariants = cva('text-label font-bold', {
+const buttonTextVariants = cva('text-label font-sans-bold', {
   variants: {
     variant: {
       primary: 'text-ink-on-action',

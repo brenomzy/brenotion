@@ -1,4 +1,6 @@
-import { SymbolView } from 'expo-symbols';
+/* eslint-disable import/no-unresolved -- HugeIcons publishes per-icon JS subpaths without per-icon declarations. */
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -18,11 +20,11 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
         style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]}
         onPress={() => setIsOpen((value) => !value)}>
         <ThemedView type="backgroundElement" style={styles.button}>
-          <SymbolView
-            name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+          <HugeiconsIcon
+            icon={ArrowRight01Icon}
             size={14}
-            weight="bold"
-            tintColor={theme.text}
+            strokeWidth={2}
+            color={theme.text}
             style={{ transform: [{ rotate: isOpen ? '-90deg' : '90deg' }] }}
           />
         </ThemedView>

@@ -54,10 +54,9 @@ extração temporária de uma imagem escolhida pelo Titular e correspondência c
 importação posterior. Não acessa notificações de outros aplicativos e não
 transforma um registro provisório em fato financeiro definitivo.
 
-Uma Action Convex de diagnóstico Pluggy existe como resultado do spike anterior,
-mas permanece isolada, não persiste dados e não alimenta o Livro Financeiro. Ela
-não faz parte da arquitetura alvo do MVP e deve ser removida junto às credenciais
-e à interface de diagnóstico em uma mudança de limpeza própria.
+O diagnóstico Pluggy do spike anterior foi removido do aplicativo e do backend.
+Ele não faz parte da arquitetura alvo do MVP, não deixou dados persistidos e não
+alimentou o Livro Financeiro.
 
 ### 4.3 Pipeline de Importação
 
@@ -156,6 +155,7 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 |---|---|
 | Perfil do Titular | preferências, moeda, timezone e configuração de acesso |
 | Conta financeira | identidade estável de conta, cartão ou reserva |
+| Intenção de upload | proprietário, expiração e estado operacional do arquivo bancário temporário |
 | Lote de importação | origem, hash, prévia, erros e confirmação |
 | Movimentação de origem | registro imutável recebido ou importado |
 | Gasto informado | registro provisório, impacto estimado e conciliação posterior |
@@ -182,6 +182,8 @@ Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevan
 
 - Cada Lote de Importação mantém competência, período coberto e instante de confirmação.
 - Operações de ingestão são idempotentes.
+- O hash do arquivo identifica reimportações: lotes confirmados são devolvidos sem novas Movimentações de Origem, enquanto lotes descartados ou rejeitados podem voltar ao estado de prévia.
+- Uma prévia só é persistida depois que o objeto bruto correspondente foi apagado do Convex Storage.
 - Movimentações de Origem são imutáveis; correções criam interpretações ou vínculos novos.
 - Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação de Origem correspondente.
 - O Disponível para Gastar contém `asOf` e nível de confiança.
@@ -205,17 +207,18 @@ O Android mantém cache criptografado do último retrato necessário à tela ini
 ```mermaid
 flowchart LR
     U["Upload web ou Android"] --> T["Área temporária"]
-    T --> V["Validação de tipo, tamanho e hash"]
-    V --> E["Extração"]
-    E --> R{"Documento fiscal?"}
+    T --> V["Validação de tipo, tamanho, hash e conteúdo"]
+    V --> R{"Documento fiscal?"}
     R -- "Sim" --> C["Cofre Fiscal"]
-    R -- "Não: fonte bancária" --> P["Prévia de importação"]
+    R -- "Não: fonte bancária" --> E["Extração estruturada"]
+    E --> Z["Apagar arquivo bruto"]
+    Z --> P["Persistir e devolver prévia"]
     P --> K{"Confirmado?"}
-    K -- "Sim" --> Z["Apagar arquivo bruto"]
-    K -- "Não" --> Z
+    K -- "Sim" --> M["Movimentações de Origem"]
+    K -- "Não" --> D["Descartar entradas da prévia"]
 ```
 
-Upload não concede confiança ao conteúdo. Tipo real, tamanho, hash e parser compatível são verificados no backend.
+Upload não concede confiança ao conteúdo. Tamanho, hash, moeda, período, transações e parser compatível são verificados no backend. Intenções de upload bancário expiram em 15 minutos; uploads associados a uma intenção são limpos pelo processamento, pelo fallback explícito do cliente ou pela rotina server-side de expiração.
 
 ## 11. IA
 

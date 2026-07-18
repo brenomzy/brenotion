@@ -116,7 +116,7 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 5. [x] Negar leitura e escrita server-side para qualquer outra identidade.
 6. [x] Adicionar `ownerId` aos registros persistidos.
 7. [x] Criar sessão fake somente para testes automatizados.
-8. [ ] Provar upload temporário, hash e exclusão verificável.
+8. [x] Provar upload temporário, hash e exclusão verificável.
 9. [ ] Adicionar biometria Android para desbloqueio cotidiano.
 10. [x] Verificar que segredos não aparecem no bundle da fatia atual.
 
@@ -132,6 +132,10 @@ Checkpoint inicial de 15 de julho de 2026: `@clerk/expo` `3.7.6`, `@clerk/locali
 Checkpoint de backend de 15 de julho de 2026: o projeto Convex de desenvolvimento foi criado e `convex` `1.42.2` implantou `auth.config.ts` com a integração Clerk ativada. `ConvexProviderWithClerk` compõe o cliente; `requireAuthorizedOwner` aplica no backend a allowlist de um único Clerk User ID configurado no deployment; e `access.verifyOwner` é consumida antes de montar a aplicação interna. `convex-test` cobre identidade ausente, allowlist ausente, identidade sintética diferente e Titular sintético autorizado. A chamada real sem identidade também foi negada com `AUTHENTICATION_REQUIRED`, enquanto o Titular confirmou no Android que sua sessão real autorizada atravessou o gate e abriu a tela Início. TypeScript, lint, testes, estilos Android, bundle Android, export web e os 20 checks do Expo Doctor passaram; valores backend-only locais não apareceram no bundle web. Nenhum registro financeiro foi criado, o retrato da tela Início permanece sintético em memória e mutations com `ownerId`, upload e OFX continuam posteriores.
 
 Checkpoint de persistência de 16 de julho de 2026: perfil e preferências do Titular e a fundação de um retrato financeiro futuro passaram a usar registros isolados por `ownerId`, sempre derivado de `requireAuthorizedOwner` e nunca aceito do cliente. Queries e mutations públicas validam argumentos e retornos, aplicam autorização no backend e usam índices com unicidade. Valores BRL são persistidos como `int64` na menor unidade, com moeda e unidade explícitas; writes usam upsert idempotente e auditoria sanitizada sem valores financeiros ou identificadores externos. Testes sintéticos cobrem identidade ausente, outra identidade, isolamento, idempotência e dinheiro exato. Nenhum seed foi criado e a interface continua desacoplada dessas tabelas nesta etapa.
+
+Checkpoint de importação OFX de 17 de julho de 2026: a aplicação universal ganhou a rota protegida `/import`, com interface web específica baseada em componentes shadcn-style sobre Base UI e fallback informativo no Android. O backend cria intenções de upload do Titular com expiração de 15 minutos, valida tamanho, tipo, moeda, período, transações e centavos exatos, apaga o bruto antes de persistir ou devolver a prévia e mantém somente hash, metadados, entradas estruturadas e auditoria sanitizada. Confirmação cria Movimentações de Origem idempotentes; descarte remove as entradas da prévia; reimportações confirmadas não duplicam origem, e lotes descartados ou rejeitados podem ser reabertos. Fixtures inteiramente sintéticas cobrem autorização, parser, exclusão do Storage, rejeição, confirmação, descarte, limpeza de erro e reimportação. Os 24 testes, TypeScript, lint, NativeWind e export web passaram. O Expo Doctor ficou em 19/20 apenas pelo drift de patches do SDK 57 (`57.0.6` instalado versus `57.0.7` recomendado), sem regressão atribuída à fatia. A validação pós-login com o OFX real do Titular permanece como próximo passo local e o arquivo não deve entrar no repositório.
+
+Checkpoint de validação real de 18 de julho de 2026: o Titular abriu o companion web autenticado, selecionou o OFX somente pelo input local, recebeu a prévia depois da exclusão do bruto e confirmou que período, quantidade de movimentações, créditos e débitos conferiam antes de confirmar o Lote de Importação. O formato real não exigiu ajuste adicional do parser e nenhum arquivo OFX entrou no repositório. A validação revelou e corrigiu três falhas de integração: `/import` precisava ficar fora do navegador de tabs, a configuração web de Geist precisava emitir `font-family` CSS em vez de `platformSelect(...)`, e `npx convex codegen` não substituía a publicação das funções no deployment dev, concluída com `npx convex dev --once`. Os 24 testes, TypeScript, lint, NativeWind, bundles Android e web e a chamada negativa real protegida por `AUTHENTICATION_REQUIRED` passaram depois dos ajustes.
 
 ## 6. Fase 3 — Importação histórica e calibração
 
@@ -277,9 +281,13 @@ adicionar extração de imagem.
 - [x] confirmar que o valor principal pode tolerar até um mês de atraso quando o Fechamento Mensal é confiável e o ciclo atual aceita registros seletivos;
 - [x] retirar Pluggy do caminho crítico antes de implementar leitura e persistência de transações reais.
 
-O spike permanece como evidência técnica, não como adapter aprovado. Uma mudança
-de limpeza deve remover card, Action e configuração Pluggy, revogar o
-consentimento e apagar as credenciais por procedimento operacional explícito.
+O spike permanece como evidência técnica, não como adapter aprovado. Em 17 de
+julho de 2026, a limpeza removeu do aplicativo e do backend o card, a Action, o
+cliente, os testes e a configuração versionada Pluggy, sem alterar autenticação
+ou persistência. Após confirmação do Titular, as variáveis residuais foram
+apagadas do deployment Convex. A API retornou `CLIENT_DISABLED`, e o portal Meu
+Pluggy confirmou que não havia conexão nem app parceiro com acesso ativo para
+revogar.
 
 ### Evidência sobre notificações Android
 
@@ -303,10 +311,7 @@ superfície de acesso.
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
 | Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Próxima ação: remover o card, a Action, os testes e a configuração do spike
-Pluggy sem afetar autenticação ou persistência; a revogação do consentimento e a
-exclusão das credenciais ficam como confirmação operacional explícita do Titular.
-Em seguida, implementar o primeiro Lote de Importação OFX do Itaú PF.
+Próxima ação: integrar a fatia de importação validada e iniciar classificação assistida e Limites por Categoria sobre Movimentações de Origem estruturadas, mantendo qualquer novo arquivo bancário real fora do repositório.
 
 ## 11. Fases posteriores
 
@@ -345,8 +350,8 @@ Em seguida, implementar o primeiro Lote de Importação OFX do Itaú PF.
 3. [x] Construir a tela Início com retrato sintético, tokens, NativeWind, Button e Card.
 4. [x] Configurar os checks de código no CI.
 5. [x] Implementar a fatia inicial de autenticação e backend.
-6. [ ] Remover o spike Pluggy do aplicativo e do backend.
-7. [ ] Implementar o primeiro Lote de Importação OFX.
+6. [x] Remover o spike Pluggy do aplicativo e do backend.
+7. [x] Implementar o primeiro Lote de Importação OFX com fixture sintética.
 8. [ ] Adicionar classificação assistida e Limites por Categoria.
 9. [ ] Construir o núcleo determinístico por regressões.
 10. [ ] Criar o primeiro Gasto Informado textual e sua conciliação.

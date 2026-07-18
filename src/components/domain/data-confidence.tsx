@@ -73,7 +73,7 @@ function DataConfidence({
         aria-hidden
         importantForAccessibility="no-hide-descendants"
         className="h-6 w-6 shrink-0 items-center justify-center rounded-control border border-divider bg-surface">
-        <Text className="text-label font-bold text-ink">{presentation.symbol}</Text>
+        <Text className="text-label font-sans-bold text-ink">{presentation.symbol}</Text>
       </View>
       <View className="min-w-0 flex-1 gap-0.5">
         <Text variant="label">{title ?? presentation.title}</Text>

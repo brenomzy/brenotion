@@ -9,12 +9,13 @@
  */
 
 import type * as access from "../access.js";
-import type * as financialIntegration from "../financialIntegration.js";
 import type * as financialSnapshot from "../financialSnapshot.js";
+import type * as imports from "../imports.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_ofxParser from "../lib/ofxParser.js";
 import type * as lib_persistence from "../lib/persistence.js";
-import type * as lib_pluggyClient from "../lib/pluggyClient.js";
 import type * as ownerProfile from "../ownerProfile.js";
+import type * as testFixtures_syntheticOfx from "../testFixtures/syntheticOfx.js";
 
 import type {
   ApiFromModules,
@@ -24,12 +25,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
-  financialIntegration: typeof financialIntegration;
   financialSnapshot: typeof financialSnapshot;
+  imports: typeof imports;
   "lib/authorization": typeof lib_authorization;
+  "lib/ofxParser": typeof lib_ofxParser;
   "lib/persistence": typeof lib_persistence;
-  "lib/pluggyClient": typeof lib_pluggyClient;
   ownerProfile: typeof ownerProfile;
+  "testFixtures/syntheticOfx": typeof testFixtures_syntheticOfx;
 }>;
 
 /**

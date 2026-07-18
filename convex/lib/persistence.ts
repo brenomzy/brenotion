@@ -11,6 +11,21 @@ type AuditEvent =
       action: 'financial_snapshot.replaced';
       targetType: 'financial_snapshot';
       targetId: Id<'financialSnapshots'>;
+    }
+  | {
+      action: 'import_upload.expired' | 'import_upload.cleaned';
+      targetType: 'import_upload';
+      targetId: Id<'importUploads'>;
+    }
+  | {
+      action:
+        | 'import_batch.preview_created'
+        | 'import_batch.confirmed'
+        | 'import_batch.discarded'
+        | 'import_batch.rejected'
+        | 'bank_file.deleted';
+      targetType: 'import_batch';
+      targetId: Id<'importBatches'>;
     };
 
 export async function appendAuditEvent(

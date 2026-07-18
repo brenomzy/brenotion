@@ -3,9 +3,14 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@clerk/expo": "^3.7.6",
     "@clerk/localizations": "^4.13.4",
+    "@expo-google-fonts/geist": "^0.4.2",
     "@expo/ui": "~57.0.6",
+    "@hugeicons/core-free-icons": "^4.2.2",
+    "@hugeicons/react": "^1.1.9",
+    "@hugeicons/react-native": "^1.0.15",
     "@rn-primitives/slot": "^1.5.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +38,7 @@
     "react-native-reanimated": "4.5.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.0",
     "tailwind-merge": "^3.6.0"

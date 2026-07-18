@@ -28,8 +28,10 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
+    sans: 'Geist_400Regular',
+    sansMedium: 'Geist_500Medium',
+    sansSemiBold: 'Geist_600SemiBold',
+    sansBold: 'Geist_700Bold',
     /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
     /** iOS `UIFontDescriptorSystemDesignRounded` */
@@ -38,13 +40,19 @@ export const Fonts = Platform.select({
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'Geist_400Regular',
+    sansMedium: 'Geist_500Medium',
+    sansSemiBold: 'Geist_600SemiBold',
+    sansBold: 'Geist_700Bold',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
-    sans: 'ui-sans-serif, system-ui, sans-serif',
+    sans: 'Geist_400Regular, ui-sans-serif, system-ui, sans-serif',
+    sansMedium: 'Geist_500Medium, ui-sans-serif, system-ui, sans-serif',
+    sansSemiBold: 'Geist_600SemiBold, ui-sans-serif, system-ui, sans-serif',
+    sansBold: 'Geist_700Bold, ui-sans-serif, system-ui, sans-serif',
     serif: 'Georgia, serif',
     rounded: 'ui-rounded, system-ui, sans-serif',
     mono: 'ui-monospace, monospace',

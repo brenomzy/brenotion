@@ -48,11 +48,30 @@ module.exports = {
         'status-danger-soft': semanticColor('status-danger-soft', colors.zinc[300]),
       },
       fontFamily: {
-        sans: platformSelect({
-          android: 'sans-serif',
-          ios: 'system-ui',
-          web: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        }),
+        sans: isWebBuild
+          ? '"Geist_400Regular", ui-sans-serif, system-ui, sans-serif'
+          : platformSelect({
+              android: 'Geist_400Regular',
+              ios: 'Geist_400Regular',
+            }),
+        'sans-medium': isWebBuild
+          ? '"Geist_500Medium", ui-sans-serif, system-ui, sans-serif'
+          : platformSelect({
+              android: 'Geist_500Medium',
+              ios: 'Geist_500Medium',
+            }),
+        'sans-semibold': isWebBuild
+          ? '"Geist_600SemiBold", ui-sans-serif, system-ui, sans-serif'
+          : platformSelect({
+              android: 'Geist_600SemiBold',
+              ios: 'Geist_600SemiBold',
+            }),
+        'sans-bold': isWebBuild
+          ? '"Geist_700Bold", ui-sans-serif, system-ui, sans-serif'
+          : platformSelect({
+              android: 'Geist_700Bold',
+              ios: 'Geist_700Bold',
+            }),
       },
       fontSize: {
         'display-money': ['44px', { lineHeight: '48px', letterSpacing: '-1px' }],
