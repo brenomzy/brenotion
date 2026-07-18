@@ -153,13 +153,15 @@ Atualizar um primitivo copiado é uma mudança deliberada: comparar o código lo
 Esses componentes podem justificar implementação própria porque concentram linguagem e invariantes do Brenotion:
 
 - `AvailableToSpendCard`: valor, horizonte, `asOf`, confiança e acesso à decomposição.
+- `CategoryLimitCard`: limite confirmado, Gastos Informados, consumo conciliado e estimativa restante.
+- `QuickExpenseEntry`: valor, descrição, categoria sugerida, origem e estado provisório.
 - `DataConfidence`: recência, cobertura, fontes afetadas e ação de recuperação.
 - `MoneyScopeBadge`: Empresa ou Pessoal com rótulo e ícone.
 - `ProtectedMoneySummary`: natureza, valor e motivo de proteção.
 - `ObligationRow`: vencimento, estado, valor esperado, evidência e risco.
 - `PlanAllocation`: ordem determinística e composição do Plano Financeiro.
 - `PlanChangeComparison`: antes, proposta, impacto, evidência e decisão.
-- `ManualMoneyAction`: valor, origem, destino e confirmação posterior por sincronização.
+- `ManualMoneyAction`: valor, origem, destino e confirmação posterior por Resumo Empresarial ou importação.
 - `ImportBatchSummary`: arquivo, período, totais, erros, duplicidade e exclusão do bruto.
 - `ProvisionalRuleNotice`: regra, fonte, vigência e validação pendente.
 

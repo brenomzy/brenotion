@@ -19,6 +19,7 @@ export function ClerkSignInScreen() {
             colorMutedForeground: colors.textSecondary,
             colorPrimary: colors.actionPrimary,
             borderRadius: '12px',
+            fontFamily: 'Geist_400Regular, ui-sans-serif, system-ui, sans-serif',
           },
         }}
         fallbackRedirectUrl="/"

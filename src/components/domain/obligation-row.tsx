@@ -63,7 +63,7 @@ function ObligationRow({
           aria-hidden
           importantForAccessibility="no-hide-descendants"
           className="mt-0.5 h-6 w-6 shrink-0 items-center justify-center rounded-control border border-divider bg-surface-muted">
-          <Text className="text-label font-bold text-ink">
+          <Text className="text-label font-sans-bold text-ink">
             {status === 'identified' ? '✓' : status === 'at-risk' ? '!' : '•'}
           </Text>
         </View>

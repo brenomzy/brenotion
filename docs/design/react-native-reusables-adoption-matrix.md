@@ -15,7 +15,7 @@ O catálogo e o branch `main` são mutáveis. Revalidar links, dependências e A
 3. **Componente de domínio compõe primitivos.** `AvailableToSpendCard`, `DataConfidence`, `ManualMoneyAction`, `ObligationRow`, `PlanChangeComparison`, `ImportBatchSummary` e equivalentes encapsulam linguagem, regras e estados financeiros do Brenotion. Não devem ser reduzidos a um `Card` ou `Badge`, embora possam compor `Text`, `Button`, `Separator`, `Progress` e outros primitivos.
 4. **Cor nunca é o único estado.** `Badge`, `Alert` e variantes visuais complementam rótulos, valores, datas, evidências e ações; não substituem a explicação exigida para recência, divergência, incerteza ou regra provisória.
 5. **Modal só para decisão focal.** `Dialog` e `Alert Dialog` não devem esconder fluxos de comparação, revisão ou auditoria que precisam de espaço, contexto ou navegação própria.
-6. **Semântica financeira prevalece sobre conveniência.** `Checkbox` não é evidência de pagamento; `Progress` não pode sugerir precisão que os dados não possuem; `Switch` não confirma uma alteração de plano; `Skeleton` não apaga dados conhecidos durante sincronização.
+6. **Semântica financeira prevalece sobre conveniência.** `Checkbox` não é evidência de pagamento; `Progress` não pode sugerir precisão que os dados não possuem; `Switch` não confirma uma alteração de plano; `Skeleton` não apaga dados conhecidos durante uma importação.
 7. **Universalidade é verificada, não presumida.** Portais, teclado, foco, leitor de tela, botão voltar do Android, áreas seguras, scroll e responsividade web fazem parte do critério de aceite.
 
 ## Inventário oficial atual
@@ -55,8 +55,8 @@ Prioridade R não substitui a prioridade P do inventário de telas: P ordena val
 | A02 Início | `Text`, `Button`, `Card`, `Separator`, `Badge`, `Alert`, `Skeleton` | R0 | Usar primitivos na composição; manter Disponível para Gastar, confiança, patrimônio e próxima ação como componentes de domínio. |
 | A03 Detalhe do Disponível para Gastar | `Accordion` ou `Collapsible`, `Separator`, `Badge`, `Tooltip` | R1 | Disclosure serve para premissas e memória de cálculo secundária; data de referência e incerteza permanecem visíveis. |
 | A04 Organização do recebimento | `Card`, `Separator`, `Badge`, `Progress`, `Alert` | R1 | Compor as etapas do Plano Financeiro; `Progress` comunica execução do plano, não suficiência financeira. |
-| A05 Ações do plano | `Button`, `Badge`, `Alert Dialog`, `Collapsible` | R1 | `Alert Dialog` apenas para confirmação focal; origem, destino, valor e estado de sincronização pertencem a `ManualMoneyAction`. |
-| A06 Cartão e ciclos futuros | `Tabs`, `Progress`, `Badge`, `Separator`, `Accordion` | R1 | Tabs podem separar fatura atual e ciclos futuros se a comparação continuar clara; barras exigem escala e valor textual. |
+| A05 Ações do plano | `Button`, `Badge`, `Alert Dialog`, `Collapsible` | R1 | `Alert Dialog` apenas para confirmação focal; origem, destino, valor e estado de conciliação pertencem a `ManualMoneyAction`. |
+| A06 Cartão e ciclos futuros | `Tabs`, `Progress`, `Badge`, `Separator`, `Accordion` | R1 | Tabs podem separar a última fatura fechada e ciclos futuros se a comparação continuar clara; barras exigem escala e valor textual. |
 | A07 Central de Obrigações | `Tabs`, `Badge`, `Separator`, `Dropdown Menu`, `Skeleton` | R1 | Status e filtros usam primitivos; a linha de ocorrência continua um componente de domínio. Evitar `Checkbox` como status de pagamento. |
 | A08 Detalhe da obrigação | `Badge`, `Alert`, `Accordion`, `Button`, `Alert Dialog` | R1 | Compor evidência e correspondência; correção manual pode confirmar em modal, divergência completa fica na tela. |
 | A09 Reservas | `Progress`, `Tabs`, `Card`, `Tooltip` | R1 | Adaptar `Progress` para marcos e exibir sempre valor e meses de autonomia; separar Empresa e Pessoal explicitamente. |
@@ -64,7 +64,7 @@ Prioridade R não substitui a prioridade P do inventário de telas: P ordena val
 | A11 Detalhe de anomalia | `Radio Group`, `Select`, `Input`, `Label`, `Textarea`, `Alert Dialog` | R1 | Usar seleção única para natureza/classificação e confirmação explícita para criar regra futura. |
 | A12 Fechamento Mensal | `Progress`, `Accordion`, `Badge`, `Alert`, `Alert Dialog` | R1 | Etapas e pendências podem compor primitivos; o fechamento versionado exige componente de domínio e confirmação inequívoca. |
 | A13 Alteração de Plano | `Tabs`, `Card`, `Separator`, `Alert`, `Alert Dialog` | R2 | Antes/proposta/impacto precisa de comparação própria; não esconder diferenças críticas em tabs no mobile se isso impedir comparação. |
-| A14 Estado das conexões | `Badge`, `Alert`, `Progress`, `Button`, `Skeleton` | R0 | Estado, recência e cobertura são composição própria; `Progress` somente quando houver etapa mensurável de reconexão. |
+| A14 Registro rápido | `Input`, `Button`, `Badge`, `Select`, `Alert Dialog` | R0 | Valor e descrição formam a entrada mínima; categoria sugerida, origem e impacto provisório exigem confirmação clara. |
 | A15 Advisor | `Textarea`, `Button`, `Tabs`, `Card`, `Alert`, `Skeleton` | R2 | Tabs podem alternar cenários; mensagens, proveniência e distinção entre IA e cálculo oficial exigem componentes próprios. |
 
 ### Onboarding histórico
@@ -96,8 +96,8 @@ Prioridade R não substitui a prioridade P do inventário de telas: P ordena val
 
 | Estado | Primitivos úteis | Regra de composição |
 |---|---|---|
-| Recente e completo/parcial | `Badge`, `Alert`, `Tooltip` | Sempre mostrar instante, cobertura e fonte ausente; tooltip só complementa. |
-| Desatualizado/offline | `Alert`, `Badge`, `Button` | Preservar o último retrato conhecido e indicar sua data; não trocar tudo por skeleton. |
+| Fechamento confirmado/ciclo provisório | `Badge`, `Alert`, `Tooltip` | Sempre mostrar competência, data de referência e quais Gastos Informados afetam a estimativa; tooltip só complementa. |
+| Sem registros atuais/offline | `Alert`, `Badge`, `Button` | Preservar o último fechamento conhecido e indicar o alcance do plano; não trocar tudo por skeleton. |
 | Em processamento | `Progress`, `Skeleton`, `Alert` | Progress para avanço conhecido; skeleton apenas no primeiro carregamento de estrutura ainda desconhecida. |
 | Divergente/incerto | `Alert`, `Badge`, `Accordion`, `Radio Group` | Esperado, encontrado, diferença, causa e correção são composição de domínio. |
 | Vazio/erro recuperável | `Alert`, `Card`, `Button` | Explicar por que está vazio ou o que foi preservado e oferecer a próxima ação. |
@@ -188,12 +188,14 @@ Rejeitar ou adiar quando:
 O catálogo não oferece, e não deveria definir, as seguintes responsabilidades do Brenotion:
 
 - visualização do **Disponível para Gastar** com data de referência, descontos, recência e confiança;
+- acompanhamento do **Limite de Gasto do Ciclo** e dos **Limites por Categoria** sem sugerir saldo atual;
+- criação e estado provisório de um **Gasto Informado**;
 - separação explícita entre patrimônios **Empresa** e **Pessoal**;
 - comparação de **Alteração de Plano** entre estado atual, proposta, impacto e confirmação;
-- ação de **Plano Financeiro** com valor, origem, destino e confirmação por sincronização;
+- ação de **Plano Financeiro** com valor, origem, destino e confirmação por Resumo Empresarial ou importação;
 - **Ocorrência de Obrigação** com esperado, encontrado, correspondência, evidência e divergência;
 - confiança de dados, cobertura parcial, recência e regra provisória com fonte e versão;
-- ciclos de cartão, fatura, parcelas futuras e efeito imediato sobre disponibilidade;
+- ciclos de cartão, última fatura fechada, parcelas futuras e efeito conhecido sobre os limites;
 - marcos de reserva e meses de autonomia por patrimônio;
 - tabela/grade de mapeamento e prévia de importação, deduplicação e resumo auditável do lote;
 - upload seguro com distinção entre arquivo bancário efêmero e Documento Fiscal persistente;

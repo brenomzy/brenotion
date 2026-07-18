@@ -11,13 +11,13 @@ const textVariants = cva(
     variants: {
       variant: {
         default: '',
-        screenTitle: 'text-title-screen font-bold',
-        sectionTitle: 'text-title-section font-bold',
+        screenTitle: 'text-title-screen font-sans-bold',
+        sectionTitle: 'text-title-section font-sans-bold',
         body: 'text-body',
-        label: 'text-label font-semibold',
-        caption: 'text-caption font-medium text-ink-muted',
-        overline: 'text-overline font-bold text-ink-muted uppercase',
-        money: 'text-display-money font-bold tabular-nums',
+        label: 'text-label font-sans-semibold',
+        caption: 'text-caption font-sans-medium text-ink-muted',
+        overline: 'text-overline font-sans-bold text-ink-muted uppercase',
+        money: 'text-display-money font-sans-bold tabular-nums',
       },
     },
     defaultVariants: {

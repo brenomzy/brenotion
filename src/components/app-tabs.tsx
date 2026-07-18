@@ -1,6 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 export default function AppTabs() {
   const colors = Colors.light;
@@ -11,8 +11,8 @@ export default function AppTabs() {
       iconColor={{ default: colors.textSecondary, selected: colors.actionPrimary }}
       indicatorColor={colors.backgroundSelected}
       labelStyle={{
-        default: { color: colors.textSecondary },
-        selected: { color: colors.actionPrimary, fontWeight: '600' },
+        default: { color: colors.textSecondary, fontFamily: Fonts.sans },
+        selected: { color: colors.actionPrimary, fontFamily: Fonts.sansSemiBold },
       }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Início</NativeTabs.Trigger.Label>

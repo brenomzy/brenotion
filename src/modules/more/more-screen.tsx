@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
 import { useAccessSession } from '@/modules/access/clerk-access-session';
-import { ConnectionInspectionCard } from '@/modules/financial-integration/connection-inspection-card';
 import { type MoreScreenModel } from './more-screen-model';
 
 function MoreLoading() {
@@ -21,6 +21,7 @@ function MoreLoading() {
 }
 
 export function MoreScreen({ model }: { model: MoreScreenModel }) {
+  const router = useRouter();
   const access = useAccessSession();
   const insets = useSafeAreaInsets();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -73,13 +74,20 @@ export function MoreScreen({ model }: { model: MoreScreenModel }) {
           />
         )}
 
-        <View className="gap-2">
-          <Text variant="sectionTitle">Conexão funcional</Text>
-          <Text variant="caption">
-            Verificação real, somente leitura e separada do cenário sintético acima.
-          </Text>
-        </View>
-        <ConnectionInspectionCard />
+        <Card>
+          <CardHeader>
+            <CardTitle>Importação financeira</CardTitle>
+            <CardDescription className="text-body leading-6">
+              Envie extratos OFX pelo companion web, confira a prévia e confirme somente os dados
+              estruturados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="secondary" onPress={() => router.push('/import')}>
+              <Text>Importar extrato OFX</Text>
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

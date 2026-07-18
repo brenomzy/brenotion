@@ -1,4 +1,9 @@
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+/* eslint-disable import/no-unresolved -- HugeIcons publishes per-icon JS subpaths without per-icon declarations. */
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
+import MoreHorizontalCircle01Icon from '@hugeicons/core-free-icons/MoreHorizontalCircle01Icon';
+import PieChartIcon from '@hugeicons/core-free-icons/PieChartIcon';
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import {
   TabList,
   type TabListProps,
@@ -18,25 +23,25 @@ const TAB_ITEMS = [
     name: 'home',
     href: '/',
     label: 'Início',
-    icon: { ios: 'house.fill', android: 'home', web: 'home' },
+    icon: Home01Icon,
   },
   {
     name: 'plan',
     href: '/plan',
     label: 'Plano',
-    icon: { ios: 'chart.pie.fill', android: 'pie_chart', web: 'pie_chart' },
+    icon: PieChartIcon,
   },
   {
     name: 'review',
     href: '/review',
     label: 'Revisar',
-    icon: { ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' },
+    icon: CheckmarkCircle02Icon,
   },
   {
     name: 'more',
     href: '/more',
     label: 'Mais',
-    icon: { ios: 'ellipsis.circle.fill', android: 'more_horiz', web: 'more_horiz' },
+    icon: MoreHorizontalCircle01Icon,
   },
 ] as const;
 
@@ -62,7 +67,7 @@ function TabButton({
   icon,
   isFocused,
   ...props
-}: TabTriggerSlotProps & { icon: SymbolViewProps['name'] }) {
+}: TabTriggerSlotProps & { icon: IconSvgElement }) {
   const tintColor = isFocused ? Colors.light.actionPrimary : Colors.light.textSecondary;
   const accessibilityLabel = typeof children === 'string' ? children : undefined;
 
@@ -74,12 +79,18 @@ function TabButton({
       className="min-h-11 flex-1 items-center justify-center rounded-control px-2 active:scale-[0.96] web:transition-transform web:duration-150">
       <View className="items-center gap-1">
         <View aria-hidden importantForAccessibility="no-hide-descendants">
-          <SymbolView aria-hidden name={icon} size={19} tintColor={tintColor} />
+          <HugeiconsIcon
+            aria-hidden
+            icon={icon}
+            size={19}
+            color={tintColor}
+            strokeWidth={1.8}
+          />
         </View>
         <Text
           variant="caption"
           className={cn(
-            'font-semibold',
+            'font-sans-semibold',
             isFocused ? 'text-action-primary' : 'text-ink-muted'
           )}>
           {children}

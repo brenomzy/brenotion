@@ -5,9 +5,6 @@ const app = defineApp({
   env: {
     AUTHORIZED_CLERK_USER_ID: v.optional(v.string()),
     CLERK_JWT_ISSUER_DOMAIN: v.string(),
-    PLUGGY_CLIENT_ID: v.optional(v.string()),
-    PLUGGY_CLIENT_SECRET: v.optional(v.string()),
-    PLUGGY_ITEM_ID: v.optional(v.string()),
   },
 });
 

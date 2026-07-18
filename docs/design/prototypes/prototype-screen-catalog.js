@@ -125,7 +125,7 @@ const screens = {
           <div class="ui-card">
             ${row("Disponível para Gastar", "Pessoal · após compromissos", "R$ 4.860")}
             ${row("Dinheiro protegido", "Empresa + Pessoal", "R$ 18.420")}
-            ${row("Fatura atual", "Fecha em 8 dias", "R$ 2.430")}
+            ${row("Última fatura fechada", "Vence em 8 dias", "R$ 2.430")}
             ${row("Obrigações", "3 próximas · 1 em atenção", "R$ 1.190")}
           </div>
           <div class="section-title">Próxima decisão</div>
@@ -188,10 +188,10 @@ const screens = {
         key: "C",
         name: "Lista de execução",
         note: "Começa pelo que o Titular precisa fazer. A composição aparece como contexto secundário de cada ação manual.",
-        components: ["ManualMoneyAction", "SyncConfirmation", "PlanSummary"],
+        components: ["ManualMoneyAction", "CloseConfirmation", "PlanSummary"],
         render: () => mobileShell(`
           <div class="screen-topline"><div><span class="screen-kicker">4 ações manuais</span><h2>Executar o plano</h2></div><span class="badge accent">0 de 4</span></div>
-          <div class="ui-card soft-accent"><div class="row-title">Plano total · R$ 24.800</div><div class="row-meta">Aguardará confirmação pelas próximas sincronizações.</div></div>
+          <div class="ui-card soft-accent"><div class="row-title">Plano total · R$ 24.800</div><div class="row-meta">Aguardará confirmação pelo próximo Resumo Empresarial ou fechamento.</div></div>
           <div class="section-title">No aplicativo do banco</div>
           <div class="ui-card">
             ${checkRow(false, "Separar impostos", "Itaú PJ → provisão", "R$ 3.968")}
@@ -199,7 +199,7 @@ const screens = {
             ${checkRow(false, "Reforçar reserva", "Itaú PJ → Reserva Operacional", "R$ 2.200")}
             ${checkRow(false, "Fazer retirada", "Itaú PJ → Itaú PF", "R$ 16.948")}
           </div>
-          <div class="ui-card" style="margin-top:10px;background:var(--surface-subtle)"><div class="row-title">Não marque como pago manualmente</div><div class="row-meta">As movimentações sincronizadas confirmarão cada ação.</div></div>
+          <div class="ui-card" style="margin-top:10px;background:var(--surface-subtle)"><div class="row-title">Confirme somente o que você souber</div><div class="row-meta">O próximo fechamento conciliará os registros informados com o extrato.</div></div>
           <button class="action-button" style="margin-top:12px">Entendi, abrir meu banco</button>`, "Plano"),
       },
     ],

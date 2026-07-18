@@ -38,6 +38,14 @@ _Evitar_: Transferência, faturamento
 O valor pessoal que pode ser consumido até o próximo recebimento depois de descontados compromissos, provisões e margens de segurança.
 _Evitar_: Saldo, limite do cartão, patrimônio
 
+**Limite de Gasto do Ciclo**:
+O teto de consumo pessoal definido pelo Plano Financeiro para um Ciclo Financeiro; expressa intenção e não afirma quanto dinheiro existe no momento.
+_Evitar_: Saldo atual, Disponível para Gastar atualizado
+
+**Limite por Categoria**:
+A parcela do Limite de Gasto do Ciclo destinada a uma finalidade de consumo variável ou flexível.
+_Evitar_: Conta, gasto fixo, previsão de compra
+
 **Margem de Imprevistos**:
 O valor protegido durante o ciclo financeiro para absorver variações não planejadas sem consumir reservas.
 _Evitar_: Reserva de emergência, sobra
@@ -106,6 +114,10 @@ _Evitar_: Calculadora, contador, gestor de investimentos
 Um registro imutável recebido de uma instituição financeira ou arquivo importado antes de classificação e conciliação.
 _Evitar_: Lançamento manual, categoria
 
+**Gasto Informado**:
+Um registro provisório fornecido explicitamente pelo Titular durante o ciclo atual, que reduz o limite aplicável até ser conciliado com uma Movimentação de Origem.
+_Evitar_: Movimentação de Origem, lançamento definitivo
+
 **Regra de Classificação**:
 Uma decisão reutilizável que associa movimentações semelhantes a uma finalidade financeira.
 _Evitar_: Categoria isolada, palpite da IA
@@ -113,6 +125,10 @@ _Evitar_: Categoria isolada, palpite da IA
 **Lote de Importação**:
 O conjunto auditável de arquivos, movimentações e resultados produzidos por uma carga de dados.
 _Evitar_: Extrato, sincronização
+
+**Resumo Empresarial**:
+O retrato mensal dos recebimentos, obrigações, retiradas, despesas pessoais pagas pela Empresa e recursos empresariais retidos.
+_Evitar_: Extrato da Empresa, patrimônio unificado
 
 **Documento Fiscal**:
 Um arquivo preservado como evidência de uma obrigação empresarial ou pessoal, como NFS-e, DAS ou informe de rendimentos.

@@ -27,9 +27,6 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly AUTHORIZED_CLERK_USER_ID: string | undefined;
   readonly CLERK_JWT_ISSUER_DOMAIN: string;
-  readonly PLUGGY_CLIENT_ID: string | undefined;
-  readonly PLUGGY_CLIENT_SECRET: string | undefined;
-  readonly PLUGGY_ITEM_ID: string | undefined;
 };
 
 /**

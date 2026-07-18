@@ -18,7 +18,8 @@ Continuam sendo gates obrigatórios:
 - ausência de segredos e dados financeiros reais no repositório;
 - cálculos financeiros determinísticos, versionados e testados;
 - ingestão idempotente e arquivos bancários brutos efêmeros;
-- recência e confiança honestas antes de chamar a experiência de MVP de revisão.
+- distinção explícita entre fechamento confirmado, registro provisório e estimativa;
+- conciliação sem dupla contagem entre entrada manual e importação posterior.
 
 ## 2. Estados de entrega
 
@@ -36,8 +37,9 @@ durante o mês.
 
 ### MVP de revisão
 
-Sincroniza conta e cartão com recência conhecida, reconcilia obrigações e
-sustenta revisões semanais ou mensais e decisões relevantes com confiança explícita.
+Fecha uma competência do Itaú PF por arquivos importados, acompanha o ciclo atual
+com Gastos Informados e Limites por Categoria, reconcilia obrigações e sustenta
+decisões relevantes com confiança explícita.
 
 ### Produção pessoal
 
@@ -114,7 +116,7 @@ Implementar como segunda fatia vertical, usando uma tela real protegida.
 5. [x] Negar leitura e escrita server-side para qualquer outra identidade.
 6. [x] Adicionar `ownerId` aos registros persistidos.
 7. [x] Criar sessão fake somente para testes automatizados.
-8. [ ] Provar upload temporário, hash e exclusão verificável.
+8. [x] Provar upload temporário, hash e exclusão verificável.
 9. [ ] Adicionar biometria Android para desbloqueio cotidiano.
 10. [x] Verificar que segredos não aparecem no bundle da fatia atual.
 
@@ -131,6 +133,10 @@ Checkpoint de backend de 15 de julho de 2026: o projeto Convex de desenvolviment
 
 Checkpoint de persistência de 16 de julho de 2026: perfil e preferências do Titular e a fundação de um retrato financeiro futuro passaram a usar registros isolados por `ownerId`, sempre derivado de `requireAuthorizedOwner` e nunca aceito do cliente. Queries e mutations públicas validam argumentos e retornos, aplicam autorização no backend e usam índices com unicidade. Valores BRL são persistidos como `int64` na menor unidade, com moeda e unidade explícitas; writes usam upsert idempotente e auditoria sanitizada sem valores financeiros ou identificadores externos. Testes sintéticos cobrem identidade ausente, outra identidade, isolamento, idempotência e dinheiro exato. Nenhum seed foi criado e a interface continua desacoplada dessas tabelas nesta etapa.
 
+Checkpoint de importação OFX de 17 de julho de 2026: a aplicação universal ganhou a rota protegida `/import`, com interface web específica baseada em componentes shadcn-style sobre Base UI e fallback informativo no Android. O backend cria intenções de upload do Titular com expiração de 15 minutos, valida tamanho, tipo, moeda, período, transações e centavos exatos, apaga o bruto antes de persistir ou devolver a prévia e mantém somente hash, metadados, entradas estruturadas e auditoria sanitizada. Confirmação cria Movimentações de Origem idempotentes; descarte remove as entradas da prévia; reimportações confirmadas não duplicam origem, e lotes descartados ou rejeitados podem ser reabertos. Fixtures inteiramente sintéticas cobrem autorização, parser, exclusão do Storage, rejeição, confirmação, descarte, limpeza de erro e reimportação. Os 24 testes, TypeScript, lint, NativeWind e export web passaram. O Expo Doctor ficou em 19/20 apenas pelo drift de patches do SDK 57 (`57.0.6` instalado versus `57.0.7` recomendado), sem regressão atribuída à fatia. A validação pós-login com o OFX real do Titular permanece como próximo passo local e o arquivo não deve entrar no repositório.
+
+Checkpoint de validação real de 18 de julho de 2026: o Titular abriu o companion web autenticado, selecionou o OFX somente pelo input local, recebeu a prévia depois da exclusão do bruto e confirmou que período, quantidade de movimentações, créditos e débitos conferiam antes de confirmar o Lote de Importação. O formato real não exigiu ajuste adicional do parser e nenhum arquivo OFX entrou no repositório. A validação revelou e corrigiu três falhas de integração: `/import` precisava ficar fora do navegador de tabs, a configuração web de Geist precisava emitir `font-family` CSS em vez de `platformSelect(...)`, e `npx convex codegen` não substituía a publicação das funções no deployment dev, concluída com `npx convex dev --once`. Os 24 testes, TypeScript, lint, NativeWind, bundles Android e web e a chamada negativa real protegida por `AUTHENTICATION_REQUIRED` passaram depois dos ajustes.
+
 ## 6. Fase 3 — Importação histórica e calibração
 
 ### Ordem de formatos
@@ -139,6 +145,9 @@ Checkpoint de persistência de 16 de julho de 2026: perfil e preferências do Ti
 2. CSV;
 3. PDF de fatura;
 4. PDF de extrato como fallback.
+
+O perímetro detalhado é exclusivamente Itaú PF e cartão associado. Wise e Itaú
+PJ não entram por arquivo nesta fase.
 
 ### Primeira fatia
 
@@ -156,6 +165,7 @@ Checkpoint de persistência de 16 de julho de 2026: perfil e preferências do Ti
 - agrupar descrições semelhantes;
 - confirmar classificações em lote;
 - reaplicar Regras de Classificação ao histórico;
+- propor Limites por Categoria a partir do histórico confirmado;
 - separar transferências internas de receitas e despesas;
 - marcar despesas empresariais, mistas e pessoais.
 
@@ -182,15 +192,20 @@ Desenvolver guiado por testes de comportamento, sem acoplar fórmulas às telas.
 - Reserva Operacional, Familiar e em Dólar;
 - ordem de financiamento 1 mês PJ → 1 mês pessoal → 20/80;
 - Disponível para Gastar com `asOf` e confiança;
+- Limite de Gasto do Ciclo e Limites por Categoria;
+- impacto provisório de Gastos Informados;
+- Resumo Empresarial integrado ao planejamento sem unificar patrimônios;
 - Fechamento Mensal e preservação histórica.
 
 ### Regressões obrigatórias
 
 - horas extras não aumentam consumo automaticamente;
-- compra no cartão reduz disponibilidade na data da compra;
+- compra informada reduz o limite aplicável sem afirmar saldo atual;
+- importação posterior concilia o Gasto Informado sem dupla contagem;
 - parcelamento compromete ciclos futuros;
 - pagamento da fatura não duplica despesa;
 - Itaú PJ → Itaú PF vira retirada, não despesa;
+- despesa pessoal paga pela Empresa conclui a obrigação pessoal sem virar automaticamente despesa empresarial;
 - Wise Business → Wise Pessoal compõe retirada;
 - US$ 200 não reduzem a receita fiscal bruta;
 - sobra da margem migra para reserva no fechamento;
@@ -204,46 +219,57 @@ Conectar o núcleo às telas já existentes:
 - onboarding e importação;
 - revisão de categorias;
 - histórico de receitas e despesas;
+- proposta e confirmação de Limites por Categoria;
 - proposta de base essencial;
 - progresso simulado das reservas;
 - central de obrigações;
-- Início com rótulo explícito de dados não sincronizados.
+- Início com rótulo explícito de último fechamento confirmado.
 
 O Titular deve conseguir explicar os 12 meses por categorias e ciclos, com
 lacunas e incertezas visíveis.
 
-## 9. Fase 6 — Sincronização e MVP de revisão
+## 9. Fase 6 — Ciclo atual e MVP de revisão
 
 ### Fatia vertical
 
-1. Sincronizar conta ou cartão.
-2. Ingerir Movimentação de Origem de forma idempotente.
-3. Classificar.
-4. Reconciliar Obrigação.
-5. Recalcular Plano Financeiro.
-6. Atualizar a tela Início.
-7. Gerar alerta somente se necessário.
+1. Criar um Gasto Informado por texto curto.
+2. Sugerir categoria e impacto sem confirmação silenciosa.
+3. Reduzir a estimativa do Limite por Categoria aplicável.
+4. Importar o próximo arquivo do Itaú PF.
+5. Conciliar o registro provisório com a Movimentação de Origem sem duplicar.
+6. Reconciliar Obrigações e recalcular o Plano Financeiro.
+7. Atualizar a tela Início com origem, `asOf` e confiança.
+8. Gerar alerta somente se necessário.
 
 ### Critérios de aceite
 
-- última sincronização sempre visível;
-- atraso conhecido nunca aparece como certeza;
+- último fechamento sempre visível;
+- estimativa do ciclo nunca aparece como saldo ou Disponível para Gastar atualizado;
+- Gasto Informado reduz a categoria correta e mantém estado provisório;
+- importação posterior não cria dupla contagem;
 - pagamentos identificados concluem obrigações;
-- compras atualizam disponibilidade sem dupla contagem;
 - ações financeiras continuam manuais;
-- revisão semanal cabe em aproximadamente cinco minutos.
+- registro textual cabe em poucos segundos;
+- checkpoint opcional cabe em aproximadamente cinco minutos.
 
-## 10. Trilha contínua — Integração financeira
+## 10. Direção confirmada — Acesso a dados financeiros
 
-Pluggy permanece o primeiro candidato, não uma decisão definitiva. A validação
-acontece em paralelo ao aplicativo e só bloqueia o MVP de revisão.
+Decisão confirmada pelo Titular em 17 de julho de 2026: o MVP não depende de
+agregador financeiro. A ingestão detalhada usa arquivos periódicos do Itaú PF e
+do cartão associado; Gastos Informados atualizam seletivamente o ciclo em
+andamento; Wise Business, Wise Pessoal e Itaú PJ entram apenas pelo Resumo
+Empresarial e por despesas pessoais pagas pela Empresa.
 
-Decisão de perímetro registrada em 16 de julho de 2026: a integração automática
-inicial fica limitada ao Itaú PF e ao cartão associado. Itaú PJ, Wise Business e
-Wise Pessoal permanecem fontes futuras; enquanto seus fluxos forem previsíveis e
-de baixo volume, entradas manuais explícitas são aceitáveis.
+Empresa e Pessoal permanecem patrimônios distintos no Livro Financeiro. A
+interface oferece uma visão única de planejamento ao Titular, preservando origem
+do pagamento, natureza econômica e tratamento contábil ainda não confirmado.
 
-### Estado e cenários
+O Brenotion não lê notificações de outros aplicativos. Um print ou texto
+escolhido e compartilhado explicitamente pelo Titular pode futuramente facilitar
+um Gasto Informado, mas a primeira fatia usa texto e deve provar valor antes de
+adicionar extração de imagem.
+
+### Evidências que encerraram o spike Pluggy
 
 - [x] criar conta, Team e Application `Brenotion Spike` no Pluggy Dashboard;
 - [x] validar sandbox com conta, cartão e movimentações sintéticas;
@@ -251,32 +277,41 @@ de baixo volume, entradas manuais explícitas são aceitáveis.
 - [x] validar a API real da Development Application: `GET /items` devolve `401` porque listagem foi desabilitada por segurança; `GET /items/{itemId}` e `GET /accounts?itemId=...` devolveram `200` em 16 de julho de 2026, com Item `UPDATED`/`SUCCESS`, uma conta bancária e um cartão, sem leitura de transações;
 - [x] implementar uma Action Convex autorizada que reduz Item e contas a metadados sanitizados de cobertura e recência, com testes sintéticos e sem persistência;
 - [x] validar a Action de ponta a ponta no Android autenticado em 16 de julho de 2026, após alinhar o Item ativo à mesma Pluggy Application das credenciais; o card exibiu `Conexão pronta` apenas com conector, recência e contagens sanitizadas, sem saldos, transações ou identificadores; após a revisão do PR, o diagnóstico passou a incluir a expiração do consentimento e a exigir atualização em até 48 horas e cobertura de conta bancária e cartão para o estado pronto;
-- [ ] observar compras do cartão e Pix do Itaú PF durante um ciclo;
-- [ ] obter cartão, fatura, fechamento e vencimento;
-- [ ] medir histórico realmente retornado;
-- [ ] confirmar IDs estáveis e deduplicação após ressincronização;
-- [ ] identificar parcelas futuras;
-- [ ] testar leitura sob demanda, expiração e reconexão no Conector 200;
-- [ ] registrar limites do plano gratuito e custo mensal total.
+- [x] observar em 17 de julho de 2026 que os lançamentos mais recentes no Meu Pluggy ainda eram de 13 de julho, uma defasagem aproximada de quatro dias;
+- [x] confirmar que o valor principal pode tolerar até um mês de atraso quando o Fechamento Mensal é confiável e o ciclo atual aceita registros seletivos;
+- [x] retirar Pluggy do caminho crítico antes de implementar leitura e persistência de transações reais.
 
-Próxima ação: observar a recência de compras do cartão e Pix do Itaú PF durante
-um ciclo e então adicionar uma leitura paginada e idempotente de movimentações,
-sem persistir respostas brutas nem registrar conteúdo financeiro em logs.
+O spike permanece como evidência técnica, não como adapter aprovado. Em 17 de
+julho de 2026, a limpeza removeu do aplicativo e do backend o card, a Action, o
+cliente, os testes e a configuração versionada Pluggy, sem alterar autenticação
+ou persistência. Após confirmação do Titular, as variáveis residuais foram
+apagadas do deployment Convex. A API retornou `CLIENT_DISABLED`, e o portal Meu
+Pluggy confirmou que não havia conexão nem app parceiro com acesso ativo para
+revogar.
+
+### Evidência sobre notificações Android
+
+A captura por notificações Android foi descartada antes da concessão do acesso no
+aparelho. Embora uma prova local com fixtures sintéticas tenha compilado e
+executado, a permissão seria mais ampla que o perímetro do Itaú e dependeria de
+controles aplicados pelo próprio aplicativo. O ganho potencial não justifica essa
+superfície de acesso.
 
 ### Gate para MVP de revisão
 
 | Critério | Exigência |
 |---|---|
-| Itaú PF | contas, Pix e movimentações confiáveis |
-| Cartão | compras, fatura e pagamento reconhecíveis |
-| Recência | conhecida e suficiente no momento da revisão ou decisão |
-| Idempotência | ressincronização não cria duplicatas |
-| Segurança | consentimento delegado e modo somente leitura |
+| Itaú PF | extrato e cartão importáveis com período e totais conferíveis |
+| Classificação | regras confirmadas explicam o histórico material |
+| Plano | Limite de Gasto do Ciclo e Limites por Categoria são determinísticos |
+| Ciclo atual | Gasto Informado curto atualiza a estimativa correta |
+| Conciliação | importação posterior não cria duplicatas |
+| Empresa | Resumo Empresarial preserva a separação patrimonial |
+| Segurança | arquivos efêmeros, nenhuma credencial bancária e nenhuma leitura de notificações |
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
-| Esforço manual | nenhuma digitação recorrente de compras ou Pix do Itaú PF; demais fontes podem ser explícitas e manuais |
+| Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Se o adapter falhar, a aplicação continua pela importação histórica ou modo
-degradado e nunca finge recência que não possui.
+Próxima ação: integrar a fatia de importação validada e iniciar classificação assistida e Limites por Categoria sobre Movimentações de Origem estruturadas, mantendo qualquer novo arquivo bancário real fora do repositório.
 
 ## 11. Fases posteriores
 
@@ -314,9 +349,13 @@ degradado e nunca finge recência que não possui.
 2. [x] Abrir a aplicação pelo Metro no celular e validar o Fast Refresh.
 3. [x] Construir a tela Início com retrato sintético, tokens, NativeWind, Button e Card.
 4. [x] Configurar os checks de código no CI.
-5. [ ] Implementar a fatia de autenticação e backend.
-6. [ ] Implementar o primeiro Lote de Importação OFX.
-7. [ ] Construir o núcleo determinístico por regressões.
+5. [x] Implementar a fatia inicial de autenticação e backend.
+6. [x] Remover o spike Pluggy do aplicativo e do backend.
+7. [x] Implementar o primeiro Lote de Importação OFX com fixture sintética.
+8. [ ] Adicionar classificação assistida e Limites por Categoria.
+9. [ ] Construir o núcleo determinístico por regressões.
+10. [ ] Criar o primeiro Gasto Informado textual e sua conciliação.
+11. [ ] Adicionar o Resumo Empresarial mensal.
 
 Advisor amplo, Cofre Fiscal e NFS-e assistida continuam posteriores ao valor
 financeiro principal; não bloqueiam um aplicativo útil e evolutivo.

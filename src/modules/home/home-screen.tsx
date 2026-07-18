@@ -57,7 +57,7 @@ function SnapshotContent({
             size="display"
             showCents="when-needed"
           />
-          <Text variant="body" className="font-medium">
+          <Text variant="body" className="font-sans-medium">
             Até {formatDueDate(snapshot.availableToSpend.horizonDate)}
           </Text>
           <Text variant="caption">

@@ -17,9 +17,9 @@ type MoneyValueProps = {
 };
 
 const sizeClassName: Record<MoneyValueSize, string> = {
-  display: 'text-display-money font-bold',
-  body: 'text-body font-semibold',
-  label: 'text-label font-bold',
+  display: 'text-display-money font-sans-bold',
+  body: 'text-body font-sans-semibold',
+  label: 'text-label font-sans-bold',
 };
 
 function MoneyValue({

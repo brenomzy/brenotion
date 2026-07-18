@@ -13,19 +13,19 @@ Este inventário deriva da especificação e do plano atuais. Ele orienta a cons
 | ID | Superfície | Decisão principal | Prioridade | Fase prevista |
 |---|---|---|---|---|
 | A01 | Entrada e desbloqueio | Entrar com a identidade autorizada ou usar biometria | P1 | Base executável |
-| A02 | Início | Entender o Disponível para Gastar, confiança e próxima ação | P0 | Alpha histórica / MVP diário |
+| A02 | Início | Distinguir o último Disponível para Gastar, o Limite de Gasto do Ciclo e a próxima ação | P0 | Alpha histórica / MVP de revisão |
 | A03 | Detalhe do Disponível para Gastar | Entender entradas, descontos, data de referência e incerteza | P0 | Núcleo financeiro / MVP diário |
-| A04 | Organização do recebimento | Revisar o Plano Financeiro e executar ações manualmente | P0 | MVP diário |
-| A05 | Ações do plano | Ver valor, origem, destino e confirmação por sincronização | P0 | MVP diário |
-| A06 | Cartão e ciclos futuros | Entender fatura, fechamento, vencimento e parcelas futuras | P0 | Alpha histórica / MVP diário |
+| A04 | Organização do recebimento | Revisar o Plano Financeiro e executar ações manualmente | P0 | MVP de revisão |
+| A05 | Ações do plano | Ver valor, origem, destino e confirmação posterior | P0 | MVP de revisão |
+| A06 | Cartão e ciclos futuros | Entender a última fatura fechada, vencimento e parcelas futuras | P0 | Alpha histórica / MVP de revisão |
 | A07 | Central de Obrigações | Priorizar Ocorrências de Obrigação por risco e vencimento | P0 | Alpha histórica / MVP diário |
 | A08 | Detalhe da obrigação | Ver valor esperado, evidência, correspondência e divergência | P1 | MVP diário |
 | A09 | Reservas | Entender marcos e meses de autonomia por patrimônio | P1 | Alpha histórica / MVP diário |
-| A10 | Revisão semanal | Resolver anomalias e até três ações em aproximadamente cinco minutos | P0 | MVP diário |
+| A10 | Checkpoint opcional | Registrar exceções e resolver até três ações em aproximadamente cinco minutos | P1 | MVP de revisão |
 | A11 | Detalhe de anomalia | Confirmar ou corrigir classificação e criar Regra de Classificação | P1 | Alpha histórica / MVP diário |
-| A12 | Fechamento Mensal | Conciliar pagamentos, retiradas, sobras e documentos | P1 | MVP diário |
+| A12 | Fechamento Mensal | Conciliar pagamentos, Gastos Informados, retiradas, sobras e documentos | P0 | MVP de revisão |
 | A13 | Alteração de Plano | Comparar antes, proposta, impacto e confirmar ou rejeitar | P1 | Advisor |
-| A14 | Estado das conexões | Entender recência, falha, cobertura parcial e reconexão | P0 | Integração / MVP diário |
+| A14 | Registro rápido | Criar um Gasto Informado e entender o impacto provisório na categoria | P0 | Ciclo atual / MVP de revisão |
 | A15 | Advisor | Pedir explicação ou comparar cenários sem confundir IA com cálculo oficial | P2 | Advisor |
 
 ## Onboarding histórico
@@ -41,6 +41,7 @@ Este inventário deriva da especificação e do plano atuais. Ele orienta a cons
 | O07 | Proposta de base essencial | Revisar composição, estabilidade trimestral e lacunas | Android | P0 |
 | O08 | Proposta de obrigações | Confirmar recorrência, vencimento e conta responsável | Android | P1 |
 | O09 | Retrato histórico | Entender receitas, despesas, ciclos e confiança histórica | Android | P0 |
+| O10 | Limites por Categoria | Confirmar tetos iniciais a partir do histórico classificado | Android | P0 |
 
 ## Companion web e Fiscal
 
@@ -59,9 +60,9 @@ Cada superfície relevante deve ser explorada nos estados abaixo. O texto e as a
 
 | Estado | Informação obrigatória | Ação esperada |
 |---|---|---|
-| Recente e completo | instante da última atualização e confiança | seguir normalmente |
-| Recente e parcial | fonte ausente ou cobertura incompleta | entender a lacuna |
-| Desatualizado | data real de referência e impacto no cálculo | atualizar ou reconectar |
+| Fechamento confirmado | competência, arquivos cobertos e confiança | revisar o plano seguinte |
+| Ciclo provisório | data do fechamento e Gastos Informados considerados | registrar exceção ou seguir o plano |
+| Sem registros atuais | data real de referência e alcance da estimativa | informar um gasto quando necessário |
 | Offline | retrato em cache e operações indisponíveis | aguardar conexão |
 | Em processamento | etapa atual sem prometer conclusão imediata | acompanhar ou sair com segurança |
 | Divergente | valor esperado, encontrado e diferença | revisar correspondência |
@@ -72,4 +73,4 @@ Cada superfície relevante deve ser explorada nos estados abaixo. O texto e as a
 
 ## Navegação candidata para exploração
 
-A navegação Android inicial pode começar com quatro destinos: **Início**, **Plano**, **Revisar** e **Mais**. Cartão, Obrigações, Reservas e Conexões entram por contexto e por Mais. A hipótese reduz destinos equivalentes e mantém as decisões mais frequentes próximas; deve ser validada nos mockups antes de virar arquitetura de rotas.
+A navegação Android inicial pode começar com quatro destinos: **Início**, **Plano**, **Revisar** e **Mais**. O Registro rápido fica disponível como ação focal; Cartão, Obrigações e Reservas entram por contexto e por Mais. A hipótese reduz destinos equivalentes e mantém as decisões mais frequentes próximas; deve ser validada nos mockups antes de virar arquitetura de rotas.
