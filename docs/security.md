@@ -26,7 +26,9 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 | Documento bancário persiste além do necessário | política de área temporária e exclusão verificável |
 | Dados sensíveis enviados à IA | minimização, redação, `store: false` e auditoria |
 | Segredo commitido ou empacotado no cliente | variáveis exclusivas do backend e secret scanning |
-| Integração comprometida altera histórico | origem imutável, idempotência e trilha de auditoria |
+| Entrada maliciosa altera histórico | validação, origem imutável, idempotência e trilha de auditoria |
+| Gasto Informado duplica uma compra importada | estado provisório, correspondência explícita e conciliação idempotente |
+| Print financeiro persiste além da extração | seleção deliberada, área temporária e exclusão verificável |
 | Celular desbloqueado expõe dados | bloqueio biométrico após inatividade e ocultação no app switcher |
 | Pacote fiscal compartilhado vaza | geração explícita, expiração local e orientação de canal seguro |
 
@@ -64,19 +66,18 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 - O export web é verificado contra os valores backend-only presentes no ambiente local; a prova de 15 de julho de 2026 não encontrou esses valores no bundle.
 - Secret scanning e push protection nativos do GitHub devem ser habilitados quando disponíveis; o Gitleaks permanece no CI como controle independente.
 
-## 7. Integração financeira
+## 7. Entrada de dados financeiros
 
-- Preferir consentimento delegado; o produto não armazena senha bancária.
-- Tokens do agregador ficam exclusivamente no backend.
-- Escopo de acesso começa somente leitura.
-- Iniciação de pagamento não pertence ao MVP.
-- Estado e expiração do consentimento são visíveis ao Titular.
-- Webhooks são autenticados, deduplicados e processados de forma idempotente.
-- Respostas brutas não aparecem em logs de produção.
-- `clientId`, `clientSecret` e `itemId` da Pluggy são variáveis exclusivas do backend Convex; nenhum deles é argumento vindo do cliente ou valor devolvido pela API pública.
-- A Action de diagnóstico autoriza o Titular antes da primeira chamada externa e devolve somente estado, recência, expiração do consentimento, contagens e subtipos de conta.
-- O diagnóstico só chama a conexão de pronta quando a atualização tem no máximo 48 horas, o consentimento não expirou e conta bancária e cartão estão cobertos.
-- Erros da Pluggy são reduzidos a código interno, status HTTP e `errorId`; mensagens e corpos brutos não atravessam a fronteira do adapter.
+- O MVP recebe dados detalhados apenas por arquivos do Itaú PF escolhidos explicitamente pelo Titular e por Gastos Informados.
+- O produto não armazena senha bancária, automatiza login ou inicia qualquer ação financeira.
+- O Android não solicita acesso para ler notificações de outros aplicativos.
+- Um texto ou print só entra quando o Titular o compartilha deliberadamente com o Brenotion.
+- Prints são tratados como arquivos bancários temporários: validar, extrair, apresentar prévia, confirmar e apagar.
+- A extração de imagem deve ocorrer no aparelho quando a qualidade for suficiente; processamento no backend exige minimização e exclusão verificável.
+- Gastos Informados permanecem provisórios até conciliação com uma Movimentação de Origem importada.
+- O Resumo Empresarial persiste somente os agregados necessários ao planejamento e preserva a separação entre Empresa e Pessoal.
+- A Action de diagnóstico Pluggy e suas credenciais pertencem a um spike descontinuado; enquanto existirem, continuam exclusivas do backend e sem acesso ao Livro Financeiro. A limpeza deve remover a Action, revogar o consentimento e apagar as credenciais em uma mudança operacional explícita.
+- Uma integração financeira futura deve usar consentimento delegado, modo somente leitura e tokens exclusivos do backend.
 
 ## 8. Ciclo de vida de arquivos
 
@@ -90,6 +91,9 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 6. Registro do resultado da exclusão na auditoria.
 
 Somente dados estruturados, hash e metadados de importação permanecem.
+
+Prints usados para criar Gastos Informados seguem o mesmo ciclo, mas preservam
+somente o registro estruturado confirmado e os metadados mínimos de auditoria.
 
 ### 8.2 Documentos fiscais
 
@@ -123,9 +127,10 @@ Arquivos inválidos ou não processáveis são apagados rapidamente e não entra
 Registrar, sem duplicar conteúdo sensível:
 
 - autenticação e revogação;
-- criação e remoção de conexão;
 - upload, validação e exclusão de arquivo;
 - confirmação de Lote de Importação;
+- criação, correção e conciliação de Gasto Informado;
+- confirmação de Resumo Empresarial;
 - criação e confirmação de Alteração de Plano;
 - mudança de Regra Fiscal ou de Classificação;
 - exportação de pacote fiscal;
@@ -160,8 +165,10 @@ O produto não entra em uso diário confiável antes de:
 - autorização negativa estar testada;
 - backup e recuperação serem exercitados;
 - exclusão de arquivos bancários ser verificável;
-- integração financeira atender ao modo somente leitura;
-- tela exibir recência e confiança dos dados;
+- toda entrada financeira permanecer somente leitura e sem credenciais bancárias;
+- acesso a notificações de outros aplicativos permanecer ausente;
+- tela distinguir fechamento confirmado, Gasto Informado e estimativa do ciclo;
+- conciliação impedir dupla contagem entre registro provisório e importação;
 - segredos estarem ausentes do bundle e do repositório;
 - cálculos financeiros críticos terem regressões automatizadas;
 - logs de produção passarem por revisão de dados sensíveis.

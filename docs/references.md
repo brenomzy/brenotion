@@ -7,6 +7,7 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 - [Receita Federal — Operações internacionais: conversão de exportações de serviços](https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/ecf/perguntas-e-respostas-pessoa-juridica-2015/capitulo-xix-irpj-e-csll-operacoes-internacionais.pdf)
 - [Receita Federal — Resolução CGSN nº 140/2018](https://normas.receita.fazenda.gov.br/sijut2consulta/link.action?idAto=92278)
 - [Receita Federal — pagamentos de lucros e dividendos na EFD-Reinf](https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/perguntas-frequentes/sped/efd-reinf/efdr/2-eventos-da-efd-reinf/2-13-1-quais-empresas-devem)
+- [Receita Federal — rendimentos de sócio ou titular do Simples Nacional e rendimentos do trabalho](https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/preenchimento/manual-mir/rendimentos/rendimentos-do-trabalho) — distingue distribuição, pró-labore e rendimentos do trabalho; validado em 17 de julho de 2026.
 - [Receita Federal — tributação de lucros e dividendos a partir de 2026](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/perguntas-e-respostas/dirf/manual_padrao_rfb_per_tributacao_cotin_v-19-12-2025.pdf/%40%40download/file)
 - [Receita Federal — Solução de Consulta nº 23 sobre nota fiscal de exportação](https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=51213)
 - [Banco Central — dados abertos de cotações do dólar](https://dadosabertos.bcb.gov.br/dataset/dolar-americano-usd-todos-os-boletins-diarios)
@@ -20,10 +21,10 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 
 ## Plataforma
 
-- [Meu Pluggy — Data Passport](https://meu.pluggy.ai/) — portal pessoal usado para conectar o Itaú PF e compartilhar a conexão com a Application `Brenotion Spike`; validado em 14 de julho de 2026.
+- [Meu Pluggy — Data Passport](https://meu.pluggy.ai/) — portal pessoal usado para conectar o Itaú PF e compartilhar a conexão com a Application `Brenotion Spike`; em 17 de julho de 2026, os lançamentos mais recentes observados pelo Titular ainda eram de 13 de julho.
 - [Pluggy — fluxo oficial do Meu Pluggy para desenvolvedores](https://github.com/pluggyai/meu-pluggy) — descreve a autorização do conector MeuPluggy como proxy da conexão original e a atualização diária; validado em 14 de julho de 2026.
 - [Pluggy — criação de Item por Open Finance](https://docs.pluggy.ai/docs/creating-an-item) — referência do consentimento delegado no ambiente da instituição; validado em 14 de julho de 2026.
-- [Pluggy — cobertura dos conectores](https://docs.pluggy.ai/docs/connectors-coverage) — fonte dinâmica para produtos e atualização automática por conector; revisitar antes da decisão final do adapter.
+- [Pluggy — cobertura dos conectores](https://docs.pluggy.ai/docs/connectors-coverage) — fonte dinâmica para produtos e atualização automática por conector; o agregador saiu do caminho crítico do MVP em 17 de julho de 2026 e só precisa ser revalidado se uma integração futura for reconsiderada.
 - [Expo Router](https://docs.expo.dev/router/introduction/)
 - [Expo — publicação web](https://docs.expo.dev/guides/publishing-websites/)
 - [Clerk — Expo SDK](https://clerk.com/docs/reference/expo/overview)
@@ -51,5 +52,5 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 - Fontes fiscais devem ser revistas na competência em que a regra for usada.
 - Regras confirmadas pelo contador registram autor, data e vigência.
 - Versões usadas pela aplicação são fixadas no lockfile quando entram em uma fatia executável. Clerk, Convex, NativeWind e adapters externos só se tornam escolhas definitivas depois de funcionar de ponta a ponta no produto.
-- O resultado da prova de conceito prevalece sobre uma suposição de cobertura do agregador financeiro.
+- O resultado da prova de conceito prevalece sobre uma suposição de cobertura do agregador financeiro; a evidência de recência e o esforço real do Titular prevalecem sobre a disponibilidade nominal do conector.
 - Referências visuais são reavaliadas quando a jornada ou um invariante do produto muda; nenhuma referência externa define sozinha a identidade do Brenotion.

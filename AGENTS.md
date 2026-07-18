@@ -30,7 +30,7 @@ Em caso de divergência, sinalize-a antes de implementar. Uma decisão mais rece
 - O projeto está em desenvolvimento incremental sobre uma aplicação universal Expo executável. Valide hipóteses dentro de fatias verticais pequenas; não transforme uma integração candidata em decisão definitiva antes de demonstrá-la de ponta a ponta e registrar limitações e fallback.
 - A experiência principal é Android. A web começa como companion para upload e Cofre Fiscal, dentro de uma aplicação universal Expo Router.
 - Convex é a fonte de verdade planejada para dados em nuvem. Clerk deve autenticar um único Titular com autorização também aplicada no backend.
-- Pluggy é o primeiro candidato para integração financeira, ainda sujeito à prova de conceito de cobertura, recência, estabilidade, segurança e custo.
+- A ingestão financeira detalhada do MVP usa importação periódica de extrato e fatura do Itaú PF, complementada por Gastos Informados; o spike Pluggy foi retirado do caminho crítico depois da prova de recência.
 - O custo operacional recorrente desejado é de aproximadamente R$ 100 por mês; decisões de infraestrutura devem considerar esse limite.
 
 ## Invariantes do produto

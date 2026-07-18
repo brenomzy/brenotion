@@ -10,9 +10,10 @@ O sistema começa como uma única aplicação universal Expo Router, com Convex 
 
 ```mermaid
 flowchart LR
+    E["Arquivos e Gastos Informados escolhidos pelo Titular"] --> A
+    E --> W
     A["Android — Expo Router"] --> C["Convex"]
     W["Web companion — Expo Router"] --> C
-    C --> F["Integrações financeiras"]
     C --> B["Banco Central — PTAX"]
     C --> O["OpenAI"]
     C --> N["Notificações Expo"]
@@ -44,29 +45,28 @@ A primeira prova usa uma seam de interface por plataforma: `AuthView` de `@clerk
 
 Dentro do `ClerkProvider`, `ConvexProviderWithClerk` entrega o token ao Convex. O backend valida emissor e audiência antes de disponibilizar a identidade, e `requireAuthorizedOwner` compara o `subject` autenticado com a allowlist exclusiva do deployment. Depois da autorização, o helper entrega o `tokenIdentifier` qualificado pelo emissor como futuro `ownerId`; o Clerk User ID real não é persistido por esta prova. A consulta mínima `access.verifyOwner` não recebe identificador do cliente e não devolve identificadores; a aplicação só monta as telas internas depois dessa consulta. Ausência de identidade, allowlist ausente e identidade diferente falham fechadas. O retrato financeiro continua no adapter em memória e nenhum registro financeiro foi persistido nesta prova.
 
-### 4.2 Integração Financeira
+### 4.2 Registro do Ciclo Atual
 
-**Interface**: sincroniza contas configuradas e entrega Movimentações de Origem normalizadas, com cursor, origem e estado de atualização.
+**Interface**: recebe um Gasto Informado, calcula seu impacto provisório no plano e posteriormente o concilia com uma Movimentação de Origem.
 
-Esconde consentimento, paginação, webhooks, reconexão, mapeamento de instituições, limitações de histórico e diferenças entre agregadores. Não contém regras de orçamento.
+Esconde entrada textual rápida, sugestões de data, categoria e meio de pagamento,
+extração temporária de uma imagem escolhida pelo Titular e correspondência com a
+importação posterior. Não acessa notificações de outros aplicativos e não
+transforma um registro provisório em fato financeiro definitivo.
 
-A primeira fatia do adapter Pluggy é uma Action Convex autorizada que consulta um
-`itemId` configurado exclusivamente no backend. Ela autentica com credenciais da
-Application, lê o Item por ID e reduz `/accounts` a estado, recência, contagens e
-subtipos. Identificadores de conta, saldos, limites e respostas brutas são
-descartados na fronteira. A fatia ainda não persiste dados nem substitui o adapter
-sintético da tela Início.
-
-Na inspeção inicial, `Conexão pronta` exige atualização nas últimas 48 horas,
-consentimento não expirado e cobertura simultânea de conta bancária e cartão. A
-ausência de qualquer evidência rebaixa o resultado para parcial ou indisponível,
-sem impedir que o último retrato conhecido continue visível em telas futuras.
+Uma Action Convex de diagnóstico Pluggy existe como resultado do spike anterior,
+mas permanece isolada, não persiste dados e não alimenta o Livro Financeiro. Ela
+não faz parte da arquitetura alvo do MVP e deve ser removida junto às credenciais
+e à interface de diagnóstico em uma mudança de limpeza própria.
 
 ### 4.3 Pipeline de Importação
 
 **Interface**: recebe um arquivo, produz uma prévia auditável e confirma ou descarta um Lote de Importação.
 
-Esconde parsing, normalização, deduplicação, agrupamento, validação e descarte do arquivo bruto. OFX/CSV e PDF são adaptações internas da mesma interface.
+Esconde parsing, normalização, deduplicação, agrupamento, validação e descarte do
+arquivo bruto. OFX/CSV e PDF do Itaú PF são adaptações internas da mesma
+interface. A confirmação também procura correspondências com Gastos Informados
+para impedir dupla contagem.
 
 ### 4.4 Livro Financeiro
 
@@ -120,7 +120,8 @@ Esconde tokens, canais Android, entrega e deep links. O restante do sistema não
 
 | Seam | Adapter de produção inicial | Adapter de teste ou alternativa | Critério de substituição |
 |---|---|---|---|
-| Fonte financeira | Pluggy, se aprovado | arquivos importados e fake em memória | cobertura, estabilidade, custo e histórico |
+| Importação financeira | arquivos do Itaú PF | fixtures sanitizadas e fake em memória | novo formato real ou nova fonte aprovada |
+| Registro do ciclo atual | entrada textual explícita | entrada por imagem escolhida e fake em memória | atrito, qualidade de extração e segurança |
 | Fonte de câmbio | API oficial do Banco Central | fixture histórica | indisponibilidade ou mudança de contrato |
 | Modelo de IA | OpenAI Responses API | fake estruturado | custo, qualidade ou política de dados |
 | Identidade | Clerk | sessão fake | mudança de custo ou expansão de usuários |
@@ -133,8 +134,10 @@ A seam existe porque há um adapter de produção e um adapter de teste ou fallb
 
 ```mermaid
 flowchart TD
-    R["Fonte financeira ou arquivo"] --> I["Movimentações de Origem"]
-    I --> D["Deduplicação e normalização"]
+    R["Arquivo Itaú PF"] --> B["Lote de Importação"]
+    B --> I["Movimentações de Origem"]
+    G["Gasto Informado"] --> D["Conciliação e deduplicação"]
+    I --> D
     D --> L["Livro Financeiro"]
     L --> C["Classificação"]
     C --> O["Conciliação de Obrigações"]
@@ -153,9 +156,9 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 |---|---|
 | Perfil do Titular | preferências, moeda, timezone e configuração de acesso |
 | Conta financeira | identidade estável de conta, cartão ou reserva |
-| Conexão financeira | consentimento, provedor e estado de sincronização |
 | Lote de importação | origem, hash, prévia, erros e confirmação |
 | Movimentação de origem | registro imutável recebido ou importado |
+| Gasto informado | registro provisório, impacto estimado e conciliação posterior |
 | Lançamento financeiro | interpretação canônica, conciliação e transferências internas |
 | Regra de classificação | padrão confirmado e vigência |
 | Ciclo financeiro | datas, recebimento e estado de fechamento |
@@ -163,6 +166,8 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 | Ocorrência de obrigação | compromisso de uma competência |
 | Plano financeiro | entradas, regra, resultado e confiança |
 | Alocação | valor destinado a provisão, consumo, margem ou reserva |
+| Limite por categoria | teto confirmado, consumo conhecido e estimativa restante |
+| Resumo empresarial | agregados mensais da Empresa necessários ao planejamento integrado |
 | Reserva | meta, saldo reconhecido e marcos |
 | Objetivo | meta principal ou secundária e prioridade |
 | Regra fiscal | versão, vigência, fonte e estado de validação |
@@ -173,14 +178,15 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 
 Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevante e origem. Valores monetários usam inteiros na menor unidade ou representação decimal exata; `number` de ponto flutuante não é aceito para cálculos financeiros.
 
-## 8. Sincronização e consistência
+## 8. Ingestão e consistência
 
-- Webhooks atualizam quando disponíveis; jobs reconciliam falhas e dados atrasados.
-- Cada fonte mantém cursor e instante da última sincronização bem-sucedida.
+- Cada Lote de Importação mantém competência, período coberto e instante de confirmação.
 - Operações de ingestão são idempotentes.
 - Movimentações de Origem são imutáveis; correções criam interpretações ou vínculos novos.
+- Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação de Origem correspondente.
 - O Disponível para Gastar contém `asOf` e nível de confiança.
-- Dados desatualizados bloqueiam linguagem de certeza, mas não impedem consulta ao último retrato.
+- O Limite de Gasto do Ciclo e seus Limites por Categoria preservam o plano mesmo sem dados atuais completos.
+- Dados desatualizados bloqueiam linguagem de certeza; valores do ciclo atual permanecem identificados como estimativas.
 - Fechamentos preservam o resultado usado na época, mesmo quando regras futuras mudarem.
 
 ## 9. Offline
@@ -188,8 +194,9 @@ Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevan
 O Android mantém cache criptografado do último retrato necessário à tela inicial. Em modo offline:
 
 - consulta é permitida;
+- Gastos Informados podem aguardar envio em armazenamento local protegido;
 - ações financeiras não são confirmadas;
-- o horário da última atualização fica evidente;
+- a data do último fechamento e o estado provisório ficam evidentes;
 - o valor não é apresentado como atualizado ou seguro;
 - documentos aguardam conexão antes de upload.
 

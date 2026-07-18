@@ -4,7 +4,7 @@
 
 Brenotion deve impedir que o saldo bancário seja confundido com dinheiro livre. Sempre que um recebimento chegar, o produto deve explicar quanto pertence a impostos e obrigações, quanto pode sair da Empresa, quanto deve ser protegido e quanto permanece disponível para a vida familiar.
 
-O produto substitui a lista mensal de contas mantida no Notion e acrescenta conciliação automática, planejamento, reservas, documentos fiscais e aconselhamento baseado em dados.
+O produto substitui a lista mensal de contas mantida no Notion e acrescenta importação e conciliação assistidas, planejamento, reservas, documentos fiscais e aconselhamento baseado em dados.
 
 ## 2. Resultado esperado
 
@@ -12,22 +12,22 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 
 - entender para onde foi o dinheiro;
 - não perder vencimentos financeiros ou burocráticos;
-- antecipar a fatura do cartão sem surpresa;
-- conhecer o valor disponível até o próximo recebimento;
+- compreender a fatura do cartão e seu impacto no ciclo seguinte;
+- distinguir o último Disponível para Gastar conhecido do Limite de Gasto do Ciclo;
 - executar um plano de separação no dia posterior ao pagamento;
 - observar crescimento das reservas;
-- revisar a semana em cerca de cinco minutos;
+- registrar em poucos segundos um gasto atual que altere o plano;
 - fechar o mês com retiradas e documentos conciliados.
 
 ## 3. Princípios
 
-1. **Automação antes de digitação.** Entrada manual recorrente é uma exceção.
+1. **Automação com controle.** Arquivos e regras eliminam redigitação do histórico; entrada manual curta é aceitável quando atualiza deliberadamente o ciclo em andamento.
 2. **Saldo não é disponibilidade.** O produto destaca o valor disponível, não o saldo agregado.
 3. **Empresa e pessoa são patrimônios distintos.** Pagamento e natureza econômica são classificados separadamente.
 4. **Cálculos são determinísticos.** A IA interpreta e aconselha, mas não inventa valores oficiais.
 5. **Recomendações são firmes e explicáveis.** O Titular pode discordar, mas vê o impacto.
 6. **Uma meta principal por vez.** Reservas mínimas antecedem objetivos de consumo.
-7. **Dados recentes condicionam confiança.** Um indicador desatualizado nunca é chamado de seguro.
+7. **Recência condiciona linguagem.** Um fechamento antigo pode sustentar planejamento, mas nunca é apresentado como retrato atual.
 8. **Menos notificações, mais ação.** Alertas existem apenas quando há uma decisão relevante.
 9. **Configuração é revisável.** Regras fiscais e contábeis preservam histórico e podem mudar por competência.
 10. **Custo operacional baixo.** O total recorrente desejado é de aproximadamente R$ 100 por mês.
@@ -37,10 +37,13 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - Um único Titular e um único dispositivo Android principal.
 - Renda da esposa fora do cálculo inicial.
 - Despesas familiares pagas pelo Titular dentro do planejamento.
-- Itaú PF e um cartão de crédito Itaú formam a única integração financeira automática do perímetro inicial.
-- Compras do cartão e Pix do Itaú PF exigem ingestão automática; digitação recorrente dessas movimentações não é um fallback aceitável.
-- Itaú PJ, Wise Business e Wise Pessoal permanecem fora da integração automática inicial. Enquanto os fluxos forem previsíveis e de baixo volume, valores necessários ao planejamento podem ser informados manualmente de forma explícita e auditável.
-- Novas fontes financeiras só entram depois que a revisão periódica com Itaú PF demonstrar valor e exigir menor esforço manual.
+- Extrato e cartão do Itaú PF formam a única fonte de ingestão financeira detalhada do perímetro inicial, por importação periódica de arquivos.
+- Gastos relevantes do ciclo atual podem ser fornecidos como Gastos Informados curtos e provisórios; a importação posterior os concilia sem dupla contagem.
+- Cada categoria variável ou flexível pode receber um Limite por Categoria dentro do Limite de Gasto do Ciclo.
+- Itaú PJ, Wise Business e Wise Pessoal não recebem ingestão detalhada no MVP. Seus fluxos entram por um Resumo Empresarial mensal, incluindo despesas pessoais pagas pela Empresa.
+- Empresa e Pessoal permanecem patrimônios distintos nos registros, mas aparecem juntos na visão de planejamento do Titular.
+- Pluggy e outros agregadores não são dependências do MVP. Uma integração futura só entra se reduzir esforço sem comprometer segurança, custo ou confiabilidade.
+- O aplicativo não lê notificações. Texto ou imagem escolhidos e enviados explicitamente pelo Titular podem se tornar meios assistidos de criar um Gasto Informado.
 - Empresa optante pelo Simples Nacional, com regras confirmadas posteriormente pelo contador quando necessário.
 - Município de prestação configurado como Paranavaí, Paraná.
 
@@ -50,13 +53,13 @@ Identificadores fiscais e bancários não pertencem ao código-fonte e devem ser
 
 ### 5.1 Onboarding histórico
 
-1. Importar até 12 meses completos e o mês atual parcial.
+1. Importar até 12 meses completos do Itaú PF; o mês atual parcial é opcional.
 2. Preferir OFX ou CSV; aceitar PDF como fallback.
 3. Normalizar e deduplicar movimentações.
 4. Agrupar descrições semelhantes.
 5. Realizar uma revisão guiada de 30 a 60 minutos.
 6. Aplicar as regras confirmadas ao histórico e às movimentações futuras.
-7. Propor despesas essenciais, obrigações recorrentes e uma base trimestral.
+7. Propor despesas essenciais, obrigações recorrentes, limites iniciais por categoria e uma base trimestral.
 8. Apagar arquivos bancários brutos após validação da extração.
 
 Lacunas diminuem o nível de confiança, mas não impedem a análise histórica.
@@ -72,31 +75,40 @@ No dia do recebimento, o produto cria um Plano Financeiro com esta ordem:
 5. financiar as reservas conforme a política vigente;
 6. apresentar ações com valor, origem e destino;
 7. aguardar execução manual nos aplicativos financeiros;
-8. confirmar as ações pelas movimentações sincronizadas.
+8. confirmar as ações pelo Resumo Empresarial, pelos Gastos Informados e pelas importações posteriores aplicáveis.
 
 O MVP não inicia Pix, transferências, pagamentos ou investimentos.
 
 ### 5.3 Acompanhamento periódico
 
-O Titular consulta o produto principalmente em revisões semanais ou mensais e
-antes de decisões financeiras relevantes. Ao abrir a aplicação, o último retrato
-persistido aparece imediatamente com sua recência explícita; uma atualização pode
-rodar em segundo plano quando os dados estiverem antigos.
+O Titular consulta o produto principalmente no Fechamento Mensal, em checkpoints
+curtos e antes de decisões financeiras relevantes. Ao abrir a aplicação, o último
+retrato fechado aparece imediatamente com sua data de referência e confiança. O
+plano do ciclo atual é atualizado somente por informações importadas, calculadas
+ou fornecidas explicitamente pelo Titular.
 
 A tela inicial prioriza:
 
-- Disponível para gastar até o próximo recebimento;
-- fatura atual e compromissos futuros do cartão;
+- último Disponível para Gastar conhecido e sua data de referência;
+- Limite de Gasto do Ciclo e estimativas restantes por categoria;
+- fatura fechada, Gastos Informados e compromissos futuros do cartão;
 - obrigações pendentes;
 - dinheiro protegido;
 - próxima ação necessária;
-- data da última sincronização e nível de confiança.
+- data do último fechamento, dados provisórios e nível de confiança.
 
-Compras são reconhecidas na data da compra. Parcelas futuras reduzem a liberdade dos ciclos correspondentes.
+Um Gasto Informado reduz imediatamente o limite aplicável, mas permanece
+provisório até ser conciliado com a Movimentação de Origem importada. A entrada
+rápida prioriza valor e descrição; data, categoria e meio de pagamento usam
+sugestões confirmáveis. Imagens escolhidas pelo Titular podem ser processadas
+temporariamente como conveniência futura, sem acesso ao fluxo de notificações.
+
+Compras importadas são reconhecidas na data da compra. Parcelas futuras reduzem
+a liberdade dos ciclos correspondentes.
 
 ### 5.4 Revisão semanal
 
-A revisão semanal deve durar aproximadamente cinco minutos e apresentar somente:
+A revisão semanal é um checkpoint opcional de aproximadamente cinco minutos e apresenta somente:
 
 - anomalias de categorização;
 - gastos acima do ritmo planejado;
@@ -110,6 +122,7 @@ A revisão semanal deve durar aproximadamente cinco minutos e apresentar somente
 O fechamento mensal:
 
 - concilia obrigações e pagamentos;
+- concilia Gastos Informados com Movimentações de Origem sem dupla contagem;
 - confirma ou sinaliza distribuições projetadas;
 - transfere a sobra da Margem de Imprevistos para a reserva aplicável;
 - registra documentos faltantes;
@@ -127,9 +140,26 @@ Disponível para gastar =
   - compras e parcelas já comprometidas
   - provisões essenciais não mensais
   - margem de imprevistos protegida
+  - alocações confirmadas para reservas e objetivos
 ```
 
 Recursos da Empresa, impostos, reservas e valores com dados desatualizados não entram como disponibilidade pessoal.
+
+O Plano Financeiro transforma o valor calculado em um Limite de Gasto do Ciclo e
+pode dividi-lo em Limites por Categoria. O restante estimado de cada categoria é:
+
+```text
+Restante estimado da categoria =
+  Limite por Categoria
+  - Gastos Informados ainda provisórios
+  - movimentações do ciclo já importadas e conciliadas
+```
+
+Sem dados completos do ciclo atual, esse resultado é uma estimativa de aderência
+ao plano, não um saldo ou um Disponível para Gastar atualizado. Gastos flexíveis
+reduzem sua categoria; gastos essenciais variáveis reduzem a provisão aplicável;
+imprevistos essenciais usam primeiro a Margem de Imprevistos; uma nova obrigação
+recorrente pode exigir uma Alteração de Plano.
 
 ## 7. Base essencial
 
@@ -190,7 +220,12 @@ Cada despesa recorrente pode ser:
 - mista, com percentual empresarial configurável;
 - pessoal.
 
-O pagamento pela conta PJ não determina sua natureza. A parcela pessoal de uma despesa paga pela Empresa é tratada como retirada. A lista e os percentuais serão configurados durante o onboarding e poderão ser revisados no futuro.
+O pagamento pela conta PJ não determina sua natureza. Uma despesa pessoal paga
+pela Empresa conclui a obrigação pessoal, reduz os recursos empresariais
+disponíveis e permanece com tratamento contábil explícito até confirmação pelo
+contador. Ela nunca é transformada automaticamente em despesa empresarial nem
+contada novamente como saída da conta pessoal. A lista e os percentuais serão
+configurados durante o onboarding e poderão ser revisados no futuro.
 
 ## 11. Central de obrigações
 
@@ -212,10 +247,10 @@ Exemplos iniciais incluem internet, carro, casa, saúde, energia, água, contabi
 ## 12. Cartão de crédito
 
 - Um cartão no perímetro inicial.
-- Compras reduzem imediatamente o Disponível para Gastar.
-- A fatura apresenta valor atual, fechamento, vencimento e pagamento.
+- Compras reduzem o limite aplicável quando são informadas ou importadas.
+- A fatura apresenta o último fechamento importado, vencimento, pagamento e total atual somente quando informado explicitamente.
 - Parcelamentos são projetados nos ciclos futuros.
-- Alertas imediatos ocorrem apenas para compra atípica, comprometimento relevante ou marcos de 75%, 90% e 100% da verba variável.
+- Alertas imediatos ocorrem apenas para compra atípica, comprometimento relevante ou marcos de 75%, 90% e 100% de um Limite por Categoria.
 - Demais informações aparecem na revisão semanal.
 
 ## 13. Advisor
@@ -279,10 +314,12 @@ Notificar somente quando houver:
 
 - risco de vencimento;
 - divergência relevante;
-- sincronização quebrada ou consentimento expirando;
 - compra atípica;
 - limite financeiro importante;
 - Plano Financeiro aguardando confirmação.
+
+Essas são notificações emitidas pelo Brenotion. O produto não solicita acesso para
+ler notificações de outros aplicativos.
 
 ## 17. Fora do MVP
 
@@ -295,13 +332,17 @@ Notificar somente quando houver:
 - múltiplos objetivos principais simultâneos;
 - análise sofisticada de renda variável;
 - recomendação autônoma de produtos financeiros;
-- suporte a múltiplas instituições além das necessárias ao Titular.
+- suporte a múltiplas instituições além das necessárias ao Titular;
+- captura automática de notificações;
+- integração bancária automática como requisito do MVP;
+- leitura assistida de prints antes de o registro textual provar valor.
 
 ## 18. Dependências de validação
 
-- Cobertura, histórico, parcelamentos, estabilidade e preço da integração financeira.
-- Formatos reais de exportação do Itaú e da Wise.
+- Formatos reais de exportação do extrato e cartão Itaú PF.
 - Qualidade dos PDFs de fatura e extrato.
+- Qualidade da conciliação entre Gastos Informados e arquivos importados.
+- Campos mínimos e cadência confortável para o Resumo Empresarial.
 - Percentuais de despesas mistas.
 - Regra fiscal definitiva de conversão cambial.
 - Documentos disponibilizados pelo contador e cadência de confirmação.
