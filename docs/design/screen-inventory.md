@@ -37,9 +37,9 @@ Este inventário deriva da especificação e do plano atuais. Ele orienta a cons
 | O03 | Mapeamento e prévia | Conferir colunas, período, totais, erros e duplicidades | Web | P0 |
 | O04 | Resultado do Lote de Importação | Confirmar ingestão e exclusão do arquivo bruto | Web / Android | P0 |
 | O05 | Revisão agrupada | Classificar descrições semelhantes em lote | Android | P0 |
-| O06 | Natureza econômica | Separar despesa empresarial, mista ou pessoal | Android | P0 |
+| O06 | Natureza econômica | Separar despesa empresarial ou pessoal | Android | P0 |
 | O07 | Proposta de base essencial | Revisar composição, estabilidade trimestral e lacunas | Android | P0 |
-| O08 | Proposta de obrigações | Confirmar recorrência, vencimento e conta responsável | Android | P1 |
+| O08 | Configuração de obrigações | Criar e revisar recorrência, vencimento, Natureza Econômica e origem pagadora | Android + web | P0 |
 | O09 | Retrato histórico | Entender receitas, despesas, ciclos e confiança histórica | Android | P0 |
 | O10 | Limites por Categoria | Confirmar tetos iniciais a partir do histórico classificado | Android | P0 |
 

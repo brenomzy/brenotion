@@ -68,13 +68,23 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 
 ## 7. Entrada de dados financeiros
 
-- O MVP recebe dados detalhados apenas por arquivos do Itaú PF escolhidos explicitamente pelo Titular e por Gastos Informados.
+- O ciclo mensal normal recebe dados detalhados apenas pelo OFX do Itaú Pessoal,
+  pelo arquivo da fatura do cartão, pelo OFX do Itaú Empresa — todos com
+  Patrimônio de Origem escolhido explicitamente — e por Gastos Informados.
 - O produto não armazena senha bancária, automatiza login ou inicia qualquer ação financeira.
 - O Android não solicita acesso para ler notificações de outros aplicativos.
 - Um texto ou print só entra quando o Titular o compartilha deliberadamente com o Brenotion.
 - Prints são tratados como arquivos bancários temporários: validar, extrair, apresentar prévia, confirmar e apagar.
 - A extração de imagem deve ocorrer no aparelho quando a qualidade for suficiente; processamento no backend exige minimização e exclusão verificável.
 - Gastos Informados permanecem provisórios até conciliação com uma Movimentação de Origem importada.
+- Um Ciclo Financeiro só é aberto por mutation explícita e com datas fornecidas
+  pelo Titular; competência mensal não é usada como ciclo implícito.
+- A conciliação inicial de Gasto Informado é um vínculo um-para-um, revalidado no
+  backend e confirmado explicitamente. Liquidações do Cartão e Movimentações de
+  Origem já utilizadas não são candidatas.
+- Fechamentos Mensais parciais registram somente metadados, lacunas, versões e
+  referências. Eles não persistem quantias no evento de auditoria nem publicam
+  Disponível para Gastar sem cálculo determinístico.
 - O Resumo Empresarial persiste somente os agregados necessários ao planejamento e preserva a separação entre Empresa e Pessoal.
 - A Action de diagnóstico Pluggy, o cliente e a configuração versionada do spike descontinuado foram removidos sem acesso ao Livro Financeiro. Após confirmação do Titular, as variáveis residuais foram apagadas do deployment Convex; a Application já estava desabilitada e o Meu Pluggy não mostrava conexão nem app parceiro com acesso ativo.
 - Uma integração financeira futura deve usar consentimento delegado, modo somente leitura e tokens exclusivos do backend.
@@ -83,14 +93,15 @@ Proteger dados bancários, fiscais e pessoais de um único Titular sem tornar o 
 
 ### 8.1 Extratos e faturas bancárias
 
-1. Upload para área temporária.
-2. Associação a uma intenção de upload autorizada e expiração curta.
-3. Verificação de tipo, tamanho e hash.
-4. Extração estruturada e validação do conteúdo.
-5. Exclusão do original.
-6. Persistência ou devolução da prévia somente após a exclusão.
-7. Confirmação ou descarte do Lote de Importação sobre dados estruturados.
-8. Registro do resultado da exclusão e do lote na auditoria.
+1. Escolha explícita do Patrimônio de Origem, sem inferência pelo nome do arquivo.
+2. Upload para área temporária.
+3. Associação a uma intenção de upload autorizada e expiração curta.
+4. Verificação de tipo, tamanho e hash.
+5. Extração estruturada e validação do conteúdo.
+6. Exclusão do original.
+7. Persistência ou devolução da prévia somente após a exclusão.
+8. Confirmação ou descarte do Lote de Importação sobre dados estruturados.
+9. Registro do resultado da exclusão e do lote na auditoria.
 
 Somente dados estruturados, hash e metadados de importação permanecem.
 Falhas conhecidas pelo cliente chamam uma limpeza idempotente; uploads já associados
@@ -142,7 +153,14 @@ Registrar, sem duplicar conteúdo sensível:
 - confirmação de Lote de Importação;
 - criação ou alteração material de configuração de Obrigação;
 - confirmação ou alteração material de Decisão de Classificação;
+- confirmação de conciliação da Liquidação do Cartão, somente com IDs dos dois
+  registros, regra e distância de datas, sem descrição ou valor no evento;
 - criação, correção e conciliação de Gasto Informado;
+- abertura de Ciclo Financeiro;
+- materialização e mudança manual de estado de Ocorrência de Obrigação,
+  distinguindo conclusão manual de Pagamento Identificado;
+- confirmação de Fechamento Mensal, somente com referência, revisão e versões,
+  sem valores ou descrições no evento;
 - confirmação de Resumo Empresarial;
 - criação e confirmação de Alteração de Plano;
 - mudança de Regra Fiscal ou de Classificação;
@@ -150,9 +168,9 @@ Registrar, sem duplicar conteúdo sensível:
 - ação administrativa ou falha de autorização.
 
 Eventos de auditoria são append-only e usam IDs, não payloads completos. Quando
-uma Obrigação ou Decisão de Classificação muda, o evento referencia uma revisão
-imutável autorizada que preserva o estado estruturado necessário para reconstruir
-a alteração; reprocessamentos sem mudança não criam revisão ou evento.
+uma Obrigação, Ocorrência, Decisão de Classificação ou Gasto Informado muda, o
+evento referencia a revisão ou o vínculo imutável autorizado necessário para
+reconstruir a alteração; reprocessamentos sem mudança não criam revisão ou evento.
 
 ## 12. Backup, exportação e recuperação
 
@@ -185,6 +203,8 @@ O produto não entra em uso diário confiável antes de:
 - acesso a notificações de outros aplicativos permanecer ausente;
 - tela distinguir fechamento confirmado, Gasto Informado e estimativa do ciclo;
 - conciliação impedir dupla contagem entre registro provisório e importação;
+- conciliação de fatura exigir confirmação e impedir que o débito bancário
+  vinculado seja classificado como nova despesa;
 - segredos estarem ausentes do bundle e do repositório;
 - cálculos financeiros críticos terem regressões automatizadas;
 - logs de produção passarem por revisão de dados sensíveis.

@@ -39,8 +39,12 @@ O valor pessoal que pode ser consumido até o próximo recebimento depois de des
 _Evitar_: Saldo, limite do cartão, patrimônio
 
 **Natureza Econômica**:
-A vinculação de uma Obrigação ou movimentação à vida Pessoal, à Empresa ou a ambas, independentemente da conta que realizou o pagamento.
-_Evitar_: Conta pagadora, origem do pagamento, categoria
+A vinculação exclusiva de uma Obrigação ou movimentação à vida Pessoal ou à Empresa, independentemente da conta que realizou o pagamento.
+_Evitar_: Mista, conta pagadora, origem do pagamento, categoria
+
+**Patrimônio de Origem**:
+A proveniência Pessoal ou Empresa da conta ou cartão que produziu uma Movimentação de Origem, independentemente de sua Natureza Econômica.
+_Evitar_: Natureza Econômica, categoria, patrimônio unificado
 
 **Limite de Gasto do Ciclo**:
 O teto de consumo pessoal definido pelo Plano Financeiro para um Ciclo Financeiro; expressa intenção e não afirma quanto dinheiro existe no momento.

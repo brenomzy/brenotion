@@ -54,6 +54,14 @@ extração temporária de uma imagem escolhida pelo Titular e correspondência c
 importação posterior. Não acessa notificações de outros aplicativos e não
 transforma um registro provisório em fato financeiro definitivo.
 
+A fundação implementada abre um Ciclo Financeiro somente por ação explícita, com
+datas e fuso próprios, e persiste Gastos Informados versionados em centavos
+exatos. Candidatos de conciliação exigem valor oposto exato, distância máxima de
+sete dias e Patrimônio de Origem compatível quando confirmado. Liquidações do
+Cartão e movimentações já conciliadas ficam fora dos candidatos. A confirmação
+cria um vínculo um-para-um auditável; sem Plano Financeiro, o impacto sobre
+Limites permanece explicitamente indisponível.
+
 O diagnóstico Pluggy do spike anterior foi removido do aplicativo e do backend.
 Ele não faz parte da arquitetura alvo do MVP, não deixou dados persistidos e não
 alimentou o Livro Financeiro.
@@ -63,11 +71,18 @@ alimentou o Livro Financeiro.
 **Interface**: recebe um arquivo, produz uma prévia auditável e confirma ou descarta um Lote de Importação.
 
 Esconde parsing, normalização, deduplicação, agrupamento, validação e descarte do
-arquivo bruto. O extrato OFX e a fatura XLSX do Itaú PF são adapters validados
-da mesma interface; CSV e PDF permanecem fallbacks candidatos. O adapter XLSX
+arquivo bruto. Extratos OFX do Itaú Pessoal ou Empresa e a fatura XLSX são
+adapters validados da mesma interface; CSV e PDF permanecem fallbacks candidatos.
+Todo novo upload exige Patrimônio de Origem explícito, propagado à intenção, ao
+lote e às Movimentações de Origem. O adapter XLSX
 roda em Action Node isolada, enquanto persistência e autorização permanecem em
 mutations do runtime padrão. A confirmação também procura correspondências com
 Gastos Informados para impedir dupla contagem.
+
+O plano de importação de cada competência trata o OFX do Itaú Pessoal, a fatura
+XLSX e o OFX do Itaú Empresa como três entradas do ciclo mensal normal. A
+cobertura é acompanhada por fonte; reunir as entradas no mesmo fluxo não combina
+seus Patrimônios de Origem nem infere Natureza Econômica pela conta pagadora.
 
 ### 4.4 Livro Financeiro
 
@@ -85,8 +100,8 @@ As Decisões de Classificação confirmadas são persistidas pelo identificador
 versionado do agrupamento determinístico (`description-v1`). Nesta fundação, a
 decisão registra somente a Natureza Econômica; categorias e limites permanecem
 fora da interface até a modelagem própria. Revisar consulta e confirma essas
-decisões diretamente, mas exclui a Liquidação do Cartão do conjunto
-classificável.
+decisões diretamente, mas exclui do conjunto classificável os dois lados de uma
+Liquidação do Cartão conciliada.
 
 Cada alteração material cria uma revisão imutável numerada e o evento de
 auditoria referencia essa revisão. O documento corrente serve à leitura reativa;
@@ -99,36 +114,59 @@ as revisões preservam os estados anteriores sem recalculá-los.
 Esconde recorrência, tolerância de valor e data, correspondência de movimentações, estados e lembretes.
 
 A configuração persistida é genérica e autorizada por proprietário, sem seed de
-dados pessoais. Ela separa Natureza Econômica da origem pagadora e representa a
-parcela empresarial de uma Obrigação Mista como `precisa confirmar` ou como
-percentual explícito em basis points. Criações e alterações materiais também
-produzem revisões imutáveis numeradas.
+dados pessoais. Ela separa a Natureza Econômica binária — Pessoal ou Empresa —
+da origem pagadora. Criações e alterações materiais também produzem revisões
+imutáveis numeradas.
 
-### 4.7 Planejador
+A rota universal de configuração consulta inclusive Obrigações desativadas e usa
+o `upsert` idempotente existente para criar, editar, desativar ou reativar. A
+chave lógica permanece técnica e estável durante a edição; a interface não a
+expõe nem representa a configuração recorrente como Ocorrência de Obrigação já
+materializada.
+
+A central mensal materializa Ocorrências por competência somente após ação do
+Titular. Cada ocorrência preserva o snapshot da configuração usado naquele mês,
+inclusive Natureza Econômica e origem pagadora. Conclusão manual, dispensa e
+necessidade de atenção são estados auditáveis; conclusão manual nunca é tratada
+como Pagamento Identificado.
+
+### 4.7 Fechamento Mensal
+
+**Interface**: deriva a prontidão de uma competência e registra uma revisão
+imutável após confirmação explícita do Titular.
+
+O primeiro adapter implementado é `metadata-only-partial-v1`. Ele registra
+cobertura das três fontes, resumo das Ocorrências, lacunas reconhecidas,
+fingerprint dos insumos e capacidades ainda indisponíveis. Buscas truncadas,
+perfil ausente ou fuso ausente bloqueiam o fechamento. Uma correção cria nova
+revisão e referencia a anterior. Esta etapa nunca produz `availableToSpend` nem
+promove o registro mutável legado de `financialSnapshots` a retrato fechado.
+
+### 4.8 Planejador
 
 **Interface**: recebe um retrato financeiro versionado e retorna um Plano Financeiro determinístico com valores, justificativas e nível de confiança.
 
 Esconde cálculo de disponibilidade, provisões, base essencial, reservas, prioridades e políticas trimestrais. Não faz I/O e deve ser o principal módulo testado por exemplos e propriedades.
 
-### 4.8 Fiscal
+### 4.9 Fiscal
 
 **Interface**: calcula fatos fiscais suportados a partir de regras versionadas e valida documentos contra os resultados esperados.
 
 Esconde PTAX, calendário de dias úteis, pró-labore, INSS, preparação de NFS-e e limites acompanhados. Regra provisória e regra confirmada usam versões distintas; histórico nunca é recalculado silenciosamente.
 
-### 4.9 Cofre Fiscal
+### 4.10 Cofre Fiscal
 
 **Interface**: recebe um documento, extrai metadados, relaciona-o a uma obrigação e aplica a política de retenção adequada.
 
 Esconde armazenamento, hash, duplicidade, extração, validação e geração de pacotes. Documentos bancários brutos não usam a política de retenção do Cofre Fiscal.
 
-### 4.10 Advisor
+### 4.11 Advisor
 
 **Interface**: recebe um retrato financeiro minimizado e retorna três cenários estruturados e Alterações de Plano propostas.
 
 Esconde preparação de contexto, redação de dados, escolha Luna/Terra, chamada ao modelo, validação do resultado e memória conversacional. O Advisor consome cálculos; não os cria.
 
-### 4.11 Notificações
+### 4.12 Notificações
 
 **Interface**: recebe eventos acionáveis e aplica preferência, prioridade, deduplicação e janela de silêncio.
 
@@ -138,7 +176,7 @@ Esconde tokens, canais Android, entrega e deep links. O restante do sistema não
 
 | Seam | Adapter de produção inicial | Adapter de teste ou alternativa | Critério de substituição |
 |---|---|---|---|
-| Importação financeira | arquivos do Itaú PF | fixtures sanitizadas e fake em memória | novo formato real ou nova fonte aprovada |
+| Importação financeira | arquivos do Itaú com Patrimônio de Origem explícito | fixtures sanitizadas e fake em memória | novo formato real ou nova fonte aprovada |
 | Registro do ciclo atual | entrada textual explícita | entrada por imagem escolhida e fake em memória | atrito, qualidade de extração e segurança |
 | Fonte de câmbio | API oficial do Banco Central | fixture histórica | indisponibilidade ou mudança de contrato |
 | Modelo de IA | OpenAI Responses API | fake estruturado | custo, qualidade ou política de dados |
@@ -152,7 +190,7 @@ A seam existe porque há um adapter de produção e um adapter de teste ou fallb
 
 ```mermaid
 flowchart TD
-    R["Arquivo Itaú PF"] --> B["Lote de Importação"]
+    R["Arquivo Itaú com origem explícita"] --> B["Lote de Importação"]
     B --> I["Movimentações de Origem"]
     G["Gasto Informado"] --> D["Conciliação e deduplicação"]
     I --> D
@@ -177,12 +215,15 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 | Intenção de upload | proprietário, expiração e estado operacional do arquivo bancário temporário |
 | Lote de importação | origem, hash, prévia, erros e confirmação |
 | Movimentação de origem | registro imutável recebido ou importado |
+| Conciliação da liquidação do cartão | vínculo confirmado entre o pagamento estruturado da fatura e o débito bancário correspondente |
 | Gasto informado | registro provisório, impacto estimado e conciliação posterior |
+| Conciliação de gasto informado | vínculo confirmado um-para-um com a Movimentação de Origem correspondente |
 | Lançamento financeiro | interpretação canônica, conciliação e transferências internas |
 | Regra de classificação | padrão confirmado e vigência |
 | Ciclo financeiro | datas, recebimento e estado de fechamento |
 | Obrigação | modelo recorrente |
 | Ocorrência de obrigação | compromisso de uma competência |
+| Fechamento mensal | revisão imutável dos insumos, lacunas e capacidades de uma competência |
 | Plano financeiro | entradas, regra, resultado e confiança |
 | Alocação | valor destinado a provisão, consumo, margem ou reserva |
 | Limite por categoria | teto confirmado, consumo conhecido e estimativa restante |
@@ -200,17 +241,32 @@ Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevan
 ## 8. Ingestão e consistência
 
 - Cada Lote de Importação mantém competência, período coberto e instante de confirmação.
-- O lote registra formato, tipo de conta de origem e versão do parser. Faturas
+- A cobertura mensal é apurada separadamente para Itaú Pessoal, cartão e Itaú
+  Empresa; ausência ou defasagem de uma fonte reduz a confiança da competência.
+- O lote registra formato, tipo de conta, Patrimônio de Origem e versão do parser.
+  Lotes legados podem manter a origem ausente; novos uploads não recebem default.
+  Faturas
   também preservam título, competência, vencimento, total reconciliado e
   agregados separados de compras, créditos/estornos e Liquidação do Cartão.
 - Operações de ingestão são idempotentes.
 - O hash do arquivo identifica reimportações: lotes confirmados são devolvidos sem novas Movimentações de Origem, enquanto lotes descartados ou rejeitados podem voltar ao estado de prévia.
 - Uma prévia só é persistida depois que o objeto bruto correspondente foi apagado do Convex Storage.
 - Movimentações de Origem são imutáveis; correções criam interpretações ou vínculos novos.
+- Chaves de novas Movimentações de Origem incluem o Patrimônio de Origem para
+  impedir falsa deduplicação entre contas pessoais e empresariais.
 - Na conta de cartão, compra é saída negativa; crédito ou estorno e Liquidação
   do Cartão são entradas positivas com tipos explícitos. A reconciliação do
   total da fatura exclui a liquidação para não contar o pagamento como consumo.
-- Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação de Origem correspondente.
+- Candidatos entre a Liquidação do Cartão e um débito bancário exigem valor
+  oposto exato, conta bancária com origem explícita e distância máxima de sete
+  dias. A regra apenas propõe; uma mutation revalida e cria o vínculo auditável
+  somente após confirmação explícita do Titular.
+- Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação
+  de Origem correspondente. A regra inicial propõe somente valor oposto exato em
+  até sete dias, respeita Patrimônio de Origem confirmado e exige confirmação.
+- Fechamentos parciais preservam fingerprint, versões, reconhecimentos e
+  cobertura usada na época; ausência de cálculo financeiro produz ausência de
+  valor, nunca zero.
 - O Disponível para Gastar contém `asOf` e nível de confiança.
 - O Limite de Gasto do Ciclo e seus Limites por Categoria preservam o plano mesmo sem dados atuais completos.
 - Dados desatualizados bloqueiam linguagem de certeza; valores do ciclo atual permanecem identificados como estimativas.

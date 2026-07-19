@@ -36,20 +36,34 @@ configuração local. Nunca registre valores reais no Git.
 
 - Plataforma principal: Android.
 - Companion web inicial: upload e cofre documental.
-- Fonte de verdade planejada: Convex, com importações confirmadas persistidas e
-  consultadas pela tela Revisar; o retrato financeiro da tela Início ainda
-  permanece sintético em memória.
+- Fonte de verdade operacional: Convex, com importações, revisão, Obrigações,
+  Ocorrências de Obrigação, Fechamentos Mensais parciais, Ciclos Financeiros e
+  Gastos Informados persistidos e isolados por Titular. O Início normal consulta
+  esse estado real e omite quantias enquanto o núcleo financeiro ainda não puder
+  produzir um retrato oficial.
 - Autenticação em integração: interface pronta do Clerk com `AuthView` nativo no Android, `SignIn` na web e sessão Android em armazenamento seguro; o Convex valida o JWT e aplica a allowlist server-side antes de liberar a aplicação.
 - Interface: Expo Router, NativeWind 4.2.6, tema inicial claro, tokens semânticos com fallbacks nativos e Button/Card adaptados do React Native Reusables na primeira tela Início.
-- Entrada financeira: importações OFX do extrato e XLSX da fatura do Itaú PF
-  validadas de ponta a ponta; Gastos Informados do ciclo atual são a próxima
-  adaptação, e o spike Pluggy não é dependência do MVP.
+- Entrada financeira: o ciclo mensal normal reúne o OFX do Itaú Pessoal, o XLSX
+  da fatura e o OFX do Itaú Empresa, sempre com Patrimônio de Origem explícito
+  nos novos lotes. Uma Obrigação paga pela Empresa pode manter Natureza Econômica
+  Pessoal. A Liquidação do Cartão pode ser conciliada com um débito bancário por
+  confirmação auditável. O companion web mostra a cobertura das três entradas por
+  competência. Gastos Informados podem ser registrados em um Ciclo Financeiro
+  explícito e conciliados posteriormente por confirmação, sem recalcular Plano ou
+  Limites ainda indisponíveis. O spike Pluggy não é dependência do MVP.
 - Configuração diária: Obrigações genéricas e Decisões de Classificação já
   possuem persistência autorizada, idempotente e auditável, sem seed de dados
-  pessoais. Natureza Econômica e origem pagadora permanecem distintas; as
-  parcelas empresariais de obrigações mistas continuam `precisa confirmar`. A
-  tela Revisar permite confirmar a Natureza Econômica por grupo e o backend
-  preserva revisões imutáveis de cada alteração material.
-- Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados; tela Início navegável e visualmente validada no Android com retrato sintético.
+  pessoais. Natureza Econômica é exclusivamente Pessoal ou Empresa e permanece
+  distinta da origem pagadora. A rota Obrigações permite listar, criar, editar,
+  desativar e reativar configurações recorrentes e materializar ocorrências por
+  competência; a tela Revisar permite confirmar a Natureza Econômica por grupo.
+  Fechamentos Mensais iniciais preservam revisões imutáveis e lacunas reconhecidas,
+  sem publicar valores financeiros. O backend preserva revisões de cada alteração
+  material.
+- Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados;
+  Início operacional, Fechamento Mensal, Obrigações e Gastos Informados possuem
+  rotas universais. Início, Plano e Mais não usam dados demonstrativos no caminho
+  normal; seus cenários sintéticos permanecem somente para desenvolvimento
+  explícito.
 
 Nenhuma credencial, CNPJ, CPF, número de conta ou documento financeiro bruto deve ser commitido neste repositório.

@@ -37,12 +37,15 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - Um único Titular e um único dispositivo Android principal.
 - Renda da esposa fora do cálculo inicial.
 - Despesas familiares pagas pelo Titular dentro do planejamento.
-- Extrato OFX e fatura XLSX do cartão Itaú PF formam a única fonte de ingestão
-  financeira detalhada validada do perímetro inicial, por importação periódica
-  de arquivos.
+- O ciclo mensal normal de ingestão financeira detalhada reúne o extrato OFX do
+  Itaú Pessoal, a fatura XLSX do cartão e o extrato OFX do Itaú Empresa, sempre
+  com Patrimônio de Origem escolhido explicitamente.
 - Gastos relevantes do ciclo atual podem ser fornecidos como Gastos Informados curtos e provisórios; a importação posterior os concilia sem dupla contagem.
 - Cada categoria variável ou flexível pode receber um Limite por Categoria dentro do Limite de Gasto do Ciclo.
-- Itaú PJ, Wise Business e Wise Pessoal não recebem ingestão detalhada no MVP. Seus fluxos entram por um Resumo Empresarial mensal, incluindo despesas pessoais pagas pela Empresa.
+- Wise Business e Wise Pessoal não recebem ingestão detalhada no MVP. O OFX do
+  Itaú Empresa integra a rotina mensal porque a conta da Empresa paga também
+  Obrigações de Natureza Econômica Pessoal; o Resumo Empresarial mensal continua
+  responsável pelos demais agregados empresariais necessários ao planejamento.
 - Empresa e Pessoal permanecem patrimônios distintos nos registros, mas aparecem juntos na visão de planejamento do Titular.
 - Pluggy e outros agregadores não são dependências do MVP. Uma integração futura só entra se reduzir esforço sem comprometer segurança, custo ou confiabilidade.
 - O aplicativo não lê notificações. Texto ou imagem escolhidos e enviados explicitamente pelo Titular podem se tornar meios assistidos de criar um Gasto Informado.
@@ -55,7 +58,10 @@ Identificadores fiscais e bancários não pertencem ao código-fonte e devem ser
 
 ### 5.1 Onboarding histórico
 
-1. Importar até 12 meses completos do Itaú PF; o mês atual parcial é opcional.
+1. Importar até 12 meses completos do Itaú Pessoal; o mês atual parcial é
+   opcional. O histórico anterior do Itaú Empresa pode se limitar aos períodos
+   necessários à visão integrada e às conciliações; depois da ativação, seu OFX
+   integra todo ciclo mensal normal.
 2. Preferir OFX ou CSV; aceitar PDF como fallback.
 3. Normalizar e deduplicar movimentações.
 4. Agrupar descrições semelhantes.
@@ -128,6 +134,8 @@ concilia pagamentos ou altera valores oficiais.
 
 O fechamento mensal:
 
+- verifica a cobertura do Itaú Pessoal, da fatura e do Itaú Empresa como três
+  entradas separadas do mesmo ciclo, sem fundir seus Patrimônios de Origem;
 - concilia obrigações e pagamentos;
 - concilia Gastos Informados com Movimentações de Origem sem dupla contagem;
 - confirma ou sinaliza distribuições projetadas;
@@ -219,30 +227,28 @@ A base fica estável por trimestre. Mudanças estruturais podem gerar uma Altera
 
 O produto acompanha o total mensal de distribuições e deve suportar as obrigações de informação e retenção vigentes, sem substituir a escrituração do contador.
 
-## 10. Despesas empresariais e mistas
+## 10. Despesas pessoais e empresariais
 
-Cada despesa recorrente pode ser:
+Cada despesa recorrente possui uma única Natureza Econômica:
 
 - integralmente empresarial;
-- mista, com percentual empresarial configurável;
-- pessoal.
+- integralmente pessoal.
 
 O pagamento pela conta PJ não determina sua natureza. Uma despesa pessoal paga
 pela Empresa conclui a obrigação pessoal, reduz os recursos empresariais
 disponíveis e permanece com tratamento contábil explícito até confirmação pelo
 contador. Ela nunca é transformada automaticamente em despesa empresarial nem
-contada novamente como saída da conta pessoal. A lista e os percentuais serão
-configurados durante o onboarding e poderão ser revisados no futuro.
+contada novamente como saída da conta pessoal. Quando uma despesa beneficiar os
+dois patrimônios, o Titular escolhe qual deles deve assumir integralmente sua
+Natureza Econômica; o produto não mantém rateios.
 
 ## 11. Central de obrigações
 
 A central substitui os checkboxes mensais do Notion. Cada Ocorrência de Obrigação contém nome, valor esperado, vencimento, conta responsável, status e evidência.
 
-A configuração de uma Obrigação separa Natureza Econômica — Pessoal, Empresa ou
-Mista — da origem responsável pelo pagamento. A parcela empresarial de uma
-Obrigação Mista permanece `precisa confirmar` até uma decisão explícita do
-Titular; o sistema não infere percentuais nem produz cálculos oficiais a partir
-de uma configuração incompleta.
+A configuração de uma Obrigação separa Natureza Econômica — Pessoal ou Empresa —
+da origem responsável pelo pagamento. A conta pagadora não muda essa decisão, e
+uma Obrigação Pessoal pode ter a conta da Empresa como origem pagadora recorrente.
 
 Status possíveis:
 
@@ -265,6 +271,10 @@ Exemplos iniciais incluem internet, carro, casa, saúde, energia, água, contabi
 - Compras são saídas da conta de cartão; créditos, estornos e Liquidação do
   Cartão são entradas com tipos explícitos. O pagamento da fatura não cria nova
   despesa nem participa da reconciliação do total da fatura.
+- A Liquidação do Cartão pode ser vinculada a um débito bancário de valor oposto
+  exato em período compatível. O vínculo exige confirmação explícita, preserva o
+  Patrimônio de Origem de ambos os registros e impede dupla contagem sem alterar
+  a Natureza Econômica.
 - Parcelamentos são projetados nos ciclos futuros.
 - Alertas imediatos ocorrem apenas para compra atípica, comprometimento relevante ou marcos de 75%, 90% e 100% de um Limite por Categoria.
 - Demais informações aparecem na revisão semanal.
@@ -355,10 +365,9 @@ ler notificações de outros aplicativos.
 
 ## 18. Dependências de validação
 
-- Formatos reais de exportação do extrato e cartão Itaú PF.
+- Formatos reais de exportação dos extratos Itaú Pessoal/Empresa e da fatura do cartão.
 - Qualidade dos PDFs de fatura e extrato.
 - Qualidade da conciliação entre Gastos Informados e arquivos importados.
 - Campos mínimos e cadência confortável para o Resumo Empresarial.
-- Percentuais de despesas mistas.
 - Regra fiscal definitiva de conversão cambial.
 - Documentos disponibilizados pelo contador e cadência de confirmação.

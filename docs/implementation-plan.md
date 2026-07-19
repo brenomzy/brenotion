@@ -37,7 +37,8 @@ durante o mês.
 
 ### MVP de revisão
 
-Fecha uma competência do Itaú PF por arquivos importados, acompanha o ciclo atual
+Fecha uma competência do Itaú por arquivos importados com Patrimônio de Origem,
+acompanha o ciclo atual
 com Gastos Informados e Limites por Categoria, reconcilia obrigações e sustenta
 decisões relevantes com confiança explícita.
 
@@ -161,18 +162,95 @@ somente para ruído binário anterior à conversão. Fixture inteiramente sinté
 testes de autorização/reprocessamento e uma amostra real efêmera passaram; o
 companion web e a tela Revisar distinguem extrato de fatura. O deployment Convex
 dev, 54 testes, tipos, lint, estilos, export web e Expo Doctor 20/20 passaram.
+O parser `itau-credit-card-xlsx-v3` também aceita os títulos exportados pelo Itaú
+para faturas abertas ou pagas, preservando as mesmas validações de competência,
+vencimento, total e centavos exatos.
 
 Checkpoint de configuração diária de 19 de julho de 2026: Obrigações genéricas
 e Decisões de Classificação passaram a ter persistência Convex autorizada,
 idempotente e auditável. A configuração não contém seed de dados pessoais,
-separa Natureza Econômica de origem pagadora e mantém a parcela empresarial das
-obrigações mistas como `precisa confirmar` até confirmação explícita. A decisão
-de revisão usa o agrupamento determinístico versionado e não antecipa categorias,
+separa Natureza Econômica de origem pagadora e restringe a decisão a Pessoal ou
+Empresa. A alternativa Mista e sua política de rateio foram retiradas antes de
+existirem Obrigações ou decisões com esse valor no deployment. A decisão de
+revisão usa o agrupamento determinístico versionado e não antecipa categorias,
 limites ou fórmulas oficiais. Revisar agora consulta e confirma Natureza
 Econômica por grupo, exceto Liquidação do Cartão. Alterações materiais preservam
 revisões imutáveis numeradas e auditáveis; reprocessamentos sem mudança não
 produzem histórico artificial. A navegação Android mantém Revisar como ação
 principal. Setenta e oito testes, tipos, lint e estilos passaram neste checkpoint.
+
+Checkpoint de proveniência e Liquidação do Cartão de 19 de julho de 2026: novos
+uploads OFX/XLSX passaram a exigir Patrimônio de Origem Pessoal ou Empresa antes
+do envio, sem default e sem reclassificar lotes legados. A origem é propagada da
+intenção às Movimentações de Origem e participa da chave idempotente versionada.
+Uma relação nova preserva a conciliação confirmada entre o pagamento estruturado
+da fatura e um débito bancário; candidatos exigem valor oposto exato, conta
+bancária com origem explícita e distância máxima de sete dias. Revisar explica o
+efeito e exige confirmação; após o vínculo, os dois lados ficam fora da decisão
+de Natureza Econômica. O schema ampliado e as funções foram publicados no
+Convex dev sem backfill, e a interface autenticada confirmou que nenhuma origem
+vem pré-selecionada. A validação real do OFX Itaú Empresa permanece pendente da
+seleção local do arquivo pelo Titular e deve parar na prévia antes de qualquer
+confirmação.
+
+Decisão de cadência de 19 de julho de 2026: como a conta da Empresa paga também
+muitas Obrigações de Natureza Econômica Pessoal, o OFX do Itaú Empresa deixa de
+ser uma entrada apenas seletiva e passa a integrar todo ciclo mensal normal ao
+lado do OFX do Itaú Pessoal e da fatura. O fluxo acompanha a cobertura das três
+fontes sem fundir Patrimônios de Origem nem inferir Natureza Econômica pela conta
+pagadora. Esta decisão atualiza o plano; não confirma novos lotes, classificações
+ou conciliações.
+
+Checkpoint de cobertura mensal de 19 de julho de 2026: uma query Convex
+autorizada deriva, de uma busca recente limitada e sinalizada, os estados ausente,
+prévia ou confirmado para Itaú Pessoal, fatura e Itaú Empresa em uma competência.
+O companion web exibe as três entradas, permite alternar o mês, abre Revisar e
+guia o upload sem pré-selecionar Patrimônio de Origem. A função foi publicada no
+deployment dev e validada na sessão autenticada com os lotes já existentes, sem
+novos uploads, confirmações ou decisões financeiras.
+
+Checkpoint da interface de Obrigações de 19 de julho de 2026: a rota universal
+`/obligations`, acessível por Mais, passou a listar configurações recorrentes e
+oferecer criação, edição, desativação e reativação sobre o backend auditável já
+existente. O formulário mantém `obligationKey` técnica e estável, trata valor e
+vencimento como opcionais e exige Natureza Econômica e origem pagadora em escolhas
+independentes. O estado vazio e a validação foram conferidos no companion web sem
+salvar dados pessoais. A fatia não materializa Ocorrências de Obrigação, não
+concilia pagamentos e não inicia transações financeiras.
+
+Checkpoint operacional de 19 de julho de 2026: o caminho normal do Início deixou
+de consumir o retrato sintético e passou a consultar cobertura, revisão,
+Obrigações e Fechamento no Convex. Cenários sintéticos permanecem somente por
+parâmetro explícito de desenvolvimento. A tela omite quantias enquanto não há
+cálculo oficial e orienta a próxima ação entre importar, revisar, configurar
+Obrigações e abrir o Fechamento.
+
+Checkpoint de Ocorrências e Fechamento de 19 de julho de 2026: Obrigações ativas
+podem ser materializadas de forma idempotente por competência. Cada ocorrência
+preserva o snapshot da configuração daquele mês; conclusão manual, dispensa,
+atenção e reabertura são explícitas e auditáveis. O Fechamento Mensal inicial é
+append-only, versionado e baseado em fingerprint. Ele registra cobertura,
+Ocorrências e lacunas reconhecidas sob a política `metadata-only-partial-v1`,
+mas mantém o cálculo financeiro indisponível e nunca confunde conclusão manual
+com Pagamento Identificado.
+
+Checkpoint de Ciclo atual de 19 de julho de 2026: um Ciclo Financeiro pode ser
+aberto explicitamente com datas próprias. Gastos Informados são persistidos em
+centavos exatos, revisáveis e anuláveis; candidatos de conciliação usam valor
+oposto exato, janela de sete dias e Patrimônio de Origem compatível. A confirmação
+é um vínculo auditável um-para-um e exclui Liquidações do Cartão. Sem categorias,
+Plano ou Limites, a interface declara que o impacto financeiro ainda não foi
+calculado.
+
+Checkpoint de remoção dos placeholders operacionais de 19 de julho de 2026:
+Início, Plano e Mais passaram a usar somente fontes reais no caminho normal.
+Plano mostra datas do ciclo e contagens de Gastos Informados, sem somar ou exibir
+quantias como se houvesse cálculo financeiro; Mais contém apenas navegação e
+configurações reais. Cenários sintéticos permanecem acessíveis somente por
+parâmetro explícito de desenvolvimento.
+
+Validação integrada deste estado: 33 arquivos e 141 testes passaram, junto com
+TypeScript, lint, verificação de estilos NativeWind, export web e bundle Android.
 
 ## 6. Fase 3 — Importação histórica e calibração
 
@@ -184,8 +262,9 @@ principal. Setenta e oito testes, tipos, lint e estilos passaram neste checkpoin
 4. PDF de fatura;
 5. PDF de extrato como fallback.
 
-O perímetro detalhado é exclusivamente Itaú PF e cartão associado. Wise e Itaú
-PJ não entram por arquivo nesta fase.
+O perímetro detalhado aceita OFX do Itaú Pessoal ou Empresa e a fatura do cartão
+associado, sempre com Patrimônio de Origem explícito nos novos lotes. Wise não
+entra por arquivo nesta fase.
 
 ### Primeira fatia
 
@@ -205,7 +284,7 @@ PJ não entram por arquivo nesta fase.
 - reaplicar Regras de Classificação ao histórico;
 - propor Limites por Categoria a partir do histórico confirmado;
 - separar transferências internas de receitas e despesas;
-- marcar despesas empresariais, mistas e pessoais.
+- marcar despesas empresariais e pessoais.
 
 ### Critérios de aceite
 
@@ -273,7 +352,7 @@ lacunas e incertezas visíveis.
 1. Criar um Gasto Informado por texto curto.
 2. Sugerir categoria e impacto sem confirmação silenciosa.
 3. Reduzir a estimativa do Limite por Categoria aplicável.
-4. Importar o próximo arquivo do Itaú PF.
+4. Importar o próximo arquivo relevante do Itaú com Patrimônio de Origem explícito.
 5. Conciliar o registro provisório com a Movimentação de Origem sem duplicar.
 6. Reconciliar Obrigações e recalcular o Plano Financeiro.
 7. Atualizar a tela Início com origem, `asOf` e confiança.
@@ -292,15 +371,17 @@ lacunas e incertezas visíveis.
 
 ## 10. Direção confirmada — Acesso a dados financeiros
 
-Decisão confirmada pelo Titular em 17 de julho de 2026: o MVP não depende de
-agregador financeiro. A ingestão detalhada usa arquivos periódicos do Itaú PF e
-do cartão associado; Gastos Informados atualizam seletivamente o ciclo em
-andamento; Wise Business, Wise Pessoal e Itaú PJ entram apenas pelo Resumo
-Empresarial e por despesas pessoais pagas pela Empresa.
+Decisão inicialmente confirmada em 17 de julho de 2026 e refinada pelo Titular em
+19 de julho de 2026: o MVP não depende de agregador financeiro. A ingestão
+detalhada de cada ciclo mensal normal reúne o OFX do Itaú Pessoal, a fatura do
+cartão associado e o OFX do Itaú Empresa; Gastos Informados atualizam
+seletivamente o ciclo em andamento; Wise Business e Wise Pessoal entram apenas
+pelo Resumo Empresarial.
 
 Empresa e Pessoal permanecem patrimônios distintos no Livro Financeiro. A
-interface oferece uma visão única de planejamento ao Titular, preservando origem
-do pagamento, natureza econômica e tratamento contábil ainda não confirmado.
+interface oferece uma visão diária e de planejamento integrada ao Titular,
+preservando Patrimônio de Origem, Natureza Econômica e tratamento contábil ainda
+não confirmado. A conta que pagou não determina a Natureza Econômica.
 
 O Brenotion não lê notificações de outros aplicativos. Um print ou texto
 escolhido e compartilhado explicitamente pelo Titular pode futuramente facilitar
@@ -339,7 +420,8 @@ superfície de acesso.
 
 | Critério | Exigência |
 |---|---|
-| Itaú PF | extrato e cartão importáveis com período e totais conferíveis |
+| Itaú Pessoal e cartão | entradas mensais importáveis com período e totais conferíveis |
+| Itaú Empresa | entrada mensal OFX com Patrimônio de Origem explícito e prévia antes da confirmação |
 | Classificação | regras confirmadas explicam o histórico material |
 | Plano | Limite de Gasto do Ciclo e Limites por Categoria são determinísticos |
 | Ciclo atual | Gasto Informado curto atualiza a estimativa correta |
@@ -349,11 +431,12 @@ superfície de acesso.
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
 | Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Próxima ação: expor a configuração genérica de Obrigações na interface, sem seed
-de dados pessoais, e implementar Gastos Informados para o ciclo atual. Limites
-por Categoria entram somente depois que o histórico classificado sustentar uma
-proposta determinística. Qualquer novo arquivo bancário real permanece fora do
-repositório.
+Próxima ação: usar as rotas operacionais com dados do Titular para validar a
+cadência e então implementar o Livro Financeiro e o Plano determinístico que
+podem produzir Limite de Gasto do Ciclo, Limites por Categoria e um retrato
+financeiro oficial. Pagamento Identificado de Obrigações e reversão append-only
+de conciliações permanecem posteriores. Qualquer novo arquivo bancário real
+permanece fora do repositório.
 
 ## 11. Fases posteriores
 
@@ -396,7 +479,7 @@ repositório.
 7. [x] Implementar o primeiro Lote de Importação OFX com fixture sintética.
 8. [ ] Adicionar classificação assistida e Limites por Categoria.
 9. [ ] Construir o núcleo determinístico por regressões.
-10. [ ] Criar o primeiro Gasto Informado textual e sua conciliação.
+10. [x] Criar o primeiro Gasto Informado textual e sua conciliação.
 11. [ ] Adicionar o Resumo Empresarial mensal.
 
 Advisor amplo, Cofre Fiscal e NFS-e assistida continuam posteriores ao valor
