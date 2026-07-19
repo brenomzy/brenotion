@@ -36,10 +36,14 @@ configuração local. Nunca registre valores reais no Git.
 
 - Plataforma principal: Android.
 - Companion web inicial: upload e cofre documental.
-- Fonte de verdade planejada: Convex, com projeto de desenvolvimento vinculado e primeira consulta protegida implantada; o retrato financeiro ainda permanece sintético em memória.
+- Fonte de verdade planejada: Convex, com importações confirmadas persistidas e
+  consultadas pela tela Revisar; o retrato financeiro da tela Início ainda
+  permanece sintético em memória.
 - Autenticação em integração: interface pronta do Clerk com `AuthView` nativo no Android, `SignIn` na web e sessão Android em armazenamento seguro; o Convex valida o JWT e aplica a allowlist server-side antes de liberar a aplicação.
 - Interface: Expo Router, NativeWind 4.2.6, tema inicial claro, tokens semânticos com fallbacks nativos e Button/Card adaptados do React Native Reusables na primeira tela Início.
-- Entrada financeira: importação mensal de extrato e fatura do Itaú PF, complementada por Gastos Informados no ciclo atual; o spike Pluggy não é dependência do MVP.
+- Entrada financeira: importação OFX do extrato do Itaú PF validada; fatura do
+  cartão em XLSX e Gastos Informados do ciclo atual são as próximas adaptações;
+  o spike Pluggy não é dependência do MVP.
 - Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados; tela Início navegável e visualmente validada no Android com retrato sintético.
 
 Nenhuma credencial, CNPJ, CPF, número de conta ou documento financeiro bruto deve ser commitido neste repositório.

@@ -137,6 +137,19 @@ Checkpoint de importação OFX de 17 de julho de 2026: a aplicação universal g
 
 Checkpoint de validação real de 18 de julho de 2026: o Titular abriu o companion web autenticado, selecionou o OFX somente pelo input local, recebeu a prévia depois da exclusão do bruto e confirmou que período, quantidade de movimentações, créditos e débitos conferiam antes de confirmar o Lote de Importação. O formato real não exigiu ajuste adicional do parser e nenhum arquivo OFX entrou no repositório. A validação revelou e corrigiu três falhas de integração: `/import` precisava ficar fora do navegador de tabs, a configuração web de Geist precisava emitir `font-family` CSS em vez de `platformSelect(...)`, e `npx convex codegen` não substituía a publicação das funções no deployment dev, concluída com `npx convex dev --once`. Os 24 testes, TypeScript, lint, NativeWind, bundles Android e web e a chamada negativa real protegida por `AUTHENTICATION_REQUIRED` passaram depois dos ajustes.
 
+Checkpoint de leitura real de 19 de julho de 2026: a tela Revisar deixou de usar
+uma fila inteiramente sintética e passou a consultar Lotes de Importação
+confirmados e suas Movimentações de Origem por queries Convex autorizadas,
+paginadas e isoladas por Titular. A interface mostra período, totais,
+duplicidades e movimentações persistidas, preservando o aviso de que importação
+confirmada ainda não é classificação, conciliação ou Fechamento Mensal. A
+fundação determinística de classificação também passou a normalizar e agrupar
+descrições com explicação versionada, sem IA e sem confirmar categorias
+silenciosamente. O catálogo inicial de categorias, a persistência da decisão de
+classificação e o adapter da fatura XLSX continuam posteriores a este
+checkpoint. Os patches recomendados do Expo SDK 57 foram alinhados e o Expo
+Doctor voltou a 20/20.
+
 ## 6. Fase 3 — Importação histórica e calibração
 
 ### Ordem de formatos
@@ -311,7 +324,12 @@ superfície de acesso.
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
 | Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Próxima ação: integrar a fatia de importação validada e iniciar classificação assistida e Limites por Categoria sobre Movimentações de Origem estruturadas, mantendo qualquer novo arquivo bancário real fora do repositório.
+Próxima ação: confirmar o catálogo inicial com o Titular, persistir a primeira
+classificação sobre grupos de Movimentações de Origem e adaptar a fatura XLSX do
+Itaú a partir de uma amostra estrutural sanitizada. Limites por Categoria entram
+somente depois que o histórico classificado sustentar uma proposta
+determinística. Qualquer novo arquivo bancário real permanece fora do
+repositório.
 
 ## 11. Fases posteriores
 
