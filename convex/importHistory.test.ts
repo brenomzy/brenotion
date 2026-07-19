@@ -106,8 +106,17 @@ describe('importHistory', () => {
     expect(firstPage.page[0]).toEqual({
       batchId: newestId,
       format: 'ofx',
+      sourceAccountKind: 'bankAccount',
+      parserVersion: 'legacy-itau-ofx-v1',
       periodStart: '2026-06-01',
       periodEnd: '2026-06-30',
+      statementTitle: null,
+      statementCompetence: null,
+      statementDueOn: null,
+      statementTotal: null,
+      purchaseTotal: null,
+      creditAdjustmentTotal: null,
+      settlementTotal: null,
       transactionCount: 2,
       duplicateCount: 0,
       insertedCount: 2,
@@ -174,6 +183,9 @@ describe('importHistory', () => {
       amount: money(10_000n),
       description: 'Synthetic income gamma',
       transactionType: 'CREDIT',
+      sourceAccountKind: 'bankAccount',
+      installmentCurrent: null,
+      installmentTotal: null,
     });
   });
 

@@ -11,10 +11,14 @@
 import type * as access from "../access.js";
 import type * as financialSnapshot from "../financialSnapshot.js";
 import type * as importHistory from "../importHistory.js";
+import type * as importXlsx from "../importXlsx.js";
 import type * as imports from "../imports.js";
 import type * as lib_authorization from "../lib/authorization.js";
+import type * as lib_itauCreditCardStatement from "../lib/itauCreditCardStatement.js";
+import type * as lib_itauCreditCardXlsxAdapter from "../lib/itauCreditCardXlsxAdapter.js";
 import type * as lib_ofxParser from "../lib/ofxParser.js";
 import type * as lib_persistence from "../lib/persistence.js";
+import type * as lib_sourceKey from "../lib/sourceKey.js";
 import type * as ownerProfile from "../ownerProfile.js";
 import type * as testFixtures_syntheticOfx from "../testFixtures/syntheticOfx.js";
 
@@ -28,10 +32,14 @@ declare const fullApi: ApiFromModules<{
   access: typeof access;
   financialSnapshot: typeof financialSnapshot;
   importHistory: typeof importHistory;
+  importXlsx: typeof importXlsx;
   imports: typeof imports;
   "lib/authorization": typeof lib_authorization;
+  "lib/itauCreditCardStatement": typeof lib_itauCreditCardStatement;
+  "lib/itauCreditCardXlsxAdapter": typeof lib_itauCreditCardXlsxAdapter;
   "lib/ofxParser": typeof lib_ofxParser;
   "lib/persistence": typeof lib_persistence;
+  "lib/sourceKey": typeof lib_sourceKey;
   ownerProfile: typeof ownerProfile;
   "testFixtures/syntheticOfx": typeof testFixtures_syntheticOfx;
 }>;

@@ -27,6 +27,22 @@ export const importUploadStatusValidator = v.union(
   v.literal('cleaned'),
 );
 
+export const importFormatValidator = v.union(
+  v.literal('ofx'),
+  v.literal('itauCreditCardXlsx'),
+);
+
+export const sourceAccountKindValidator = v.union(
+  v.literal('bankAccount'),
+  v.literal('creditCard'),
+);
+
+export const creditCardTransactionKindValidator = v.union(
+  v.literal('purchase'),
+  v.literal('creditAdjustment'),
+  v.literal('statementPayment'),
+);
+
 export default defineSchema({
   ownerProfiles: defineTable({
     ownerId: v.string(),
@@ -46,6 +62,7 @@ export default defineSchema({
   }).index('by_ownerId', ['ownerId']),
   importUploads: defineTable({
     ownerId: v.string(),
+    format: v.optional(importFormatValidator),
     status: importUploadStatusValidator,
     storageId: v.optional(v.id('_storage')),
     fileHash: v.optional(v.string()),
@@ -59,10 +76,19 @@ export default defineSchema({
   importBatches: defineTable({
     ownerId: v.string(),
     fileHash: v.string(),
-    format: v.literal('ofx'),
+    format: importFormatValidator,
+    sourceAccountKind: v.optional(sourceAccountKindValidator),
+    parserVersion: v.optional(v.string()),
     status: importBatchStatusValidator,
     periodStart: v.optional(v.string()),
     periodEnd: v.optional(v.string()),
+    statementTitle: v.optional(v.string()),
+    statementCompetence: v.optional(v.string()),
+    statementDueOn: v.optional(v.string()),
+    statementTotal: v.optional(brlMoneyValidator),
+    purchaseTotal: v.optional(brlMoneyValidator),
+    creditAdjustmentTotal: v.optional(brlMoneyValidator),
+    settlementTotal: v.optional(brlMoneyValidator),
     transactionCount: v.number(),
     duplicateCount: v.number(),
     creditTotal: brlMoneyValidator,
@@ -92,6 +118,9 @@ export default defineSchema({
     amount: brlMoneyValidator,
     description: v.string(),
     transactionType: v.string(),
+    sourceAccountKind: v.optional(sourceAccountKindValidator),
+    installmentCurrent: v.optional(v.number()),
+    installmentTotal: v.optional(v.number()),
     isDuplicate: v.boolean(),
   }).index('by_batchId_and_sequence', ['batchId', 'sequence']),
   sourceTransactions: defineTable({
@@ -102,6 +131,9 @@ export default defineSchema({
     amount: brlMoneyValidator,
     description: v.string(),
     transactionType: v.string(),
+    sourceAccountKind: v.optional(sourceAccountKindValidator),
+    installmentCurrent: v.optional(v.number()),
+    installmentTotal: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index('by_ownerId_and_sourceKey', ['ownerId', 'sourceKey'])

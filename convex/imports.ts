@@ -13,11 +13,18 @@ import {
   parseOfx,
 } from './lib/ofxParser';
 import { appendAuditEvent } from './lib/persistence';
-import { brlMoneyValidator, importBatchStatusValidator } from './schema';
+import { createOfxSourceKey } from './lib/sourceKey';
+import {
+  brlMoneyValidator,
+  importBatchStatusValidator,
+  importFormatValidator,
+  sourceAccountKindValidator,
+} from './schema';
 
 const PREVIEW_ROW_LIMIT = 8;
 const UPLOAD_EXPIRATION_MS = 15 * 60 * 1_000;
-const acceptedContentTypes = new Set([
+const OFX_PARSER_VERSION = 'itau-ofx-v1';
+const acceptedOfxContentTypes = new Set([
   'application/octet-stream',
   'application/ofx',
   'application/x-ofx',
@@ -34,20 +41,42 @@ const rejectionCodeValidator = v.union(
   v.literal('OFX_TOO_MANY_TRANSACTIONS'),
   v.literal('OFX_FILE_TOO_LARGE'),
   v.literal('OFX_UNSUPPORTED_CONTENT_TYPE'),
+  v.literal('XLSX_EMPTY_FILE'),
+  v.literal('XLSX_INVALID_FORMAT'),
+  v.literal('XLSX_INVALID_SUMMARY'),
+  v.literal('XLSX_INVALID_TRANSACTION'),
+  v.literal('XLSX_SUBCENT_VALUE'),
+  v.literal('XLSX_TOO_MANY_TRANSACTIONS'),
+  v.literal('XLSX_TOTAL_MISMATCH'),
+  v.literal('XLSX_FILE_TOO_LARGE'),
+  v.literal('XLSX_UNSUPPORTED_CONTENT_TYPE'),
 );
 
 const previewRowValidator = v.object({
   postedOn: v.string(),
   amount: brlMoneyValidator,
   description: v.string(),
+  transactionType: v.string(),
+  installmentCurrent: v.union(v.number(), v.null()),
+  installmentTotal: v.union(v.number(), v.null()),
   isDuplicate: v.boolean(),
 });
 
 const previewResultValidator = v.object({
   batchId: v.id('importBatches'),
+  format: importFormatValidator,
+  sourceAccountKind: sourceAccountKindValidator,
+  parserVersion: v.string(),
   status: importBatchStatusValidator,
   periodStart: v.union(v.string(), v.null()),
   periodEnd: v.union(v.string(), v.null()),
+  statementTitle: v.union(v.string(), v.null()),
+  statementCompetence: v.union(v.string(), v.null()),
+  statementDueOn: v.union(v.string(), v.null()),
+  statementTotal: v.union(brlMoneyValidator, v.null()),
+  purchaseTotal: v.union(brlMoneyValidator, v.null()),
+  creditAdjustmentTotal: v.union(brlMoneyValidator, v.null()),
+  settlementTotal: v.union(brlMoneyValidator, v.null()),
   transactionCount: v.number(),
   duplicateCount: v.number(),
   creditTotal: brlMoneyValidator,
@@ -82,9 +111,19 @@ type Money = {
 
 type PreviewResult = {
   batchId: Id<'importBatches'>;
+  format: 'ofx' | 'itauCreditCardXlsx';
+  sourceAccountKind: 'bankAccount' | 'creditCard';
+  parserVersion: string;
   status: 'preview' | 'confirmed' | 'discarded' | 'rejected';
   periodStart: string | null;
   periodEnd: string | null;
+  statementTitle: string | null;
+  statementCompetence: string | null;
+  statementDueOn: string | null;
+  statementTotal: Money | null;
+  purchaseTotal: Money | null;
+  creditAdjustmentTotal: Money | null;
+  settlementTotal: Money | null;
   transactionCount: number;
   duplicateCount: number;
   creditTotal: Money;
@@ -95,6 +134,9 @@ type PreviewResult = {
     postedOn: string;
     amount: Money;
     description: string;
+    transactionType: string;
+    installmentCurrent: number | null;
+    installmentTotal: number | null;
     isDuplicate: boolean;
   }>;
 };
@@ -106,6 +148,8 @@ type PreparedEntry = {
   amountInMinorUnits: bigint;
   description: string;
   transactionType: string;
+  installmentCurrent?: number;
+  installmentTotal?: number;
 };
 
 type UploadAttachmentResult =
@@ -126,18 +170,19 @@ type RejectionCode =
   | 'OFX_UNSUPPORTED_CONTENT_TYPE';
 
 export const generateUploadUrl = mutation({
-  args: {},
+  args: { format: v.optional(importFormatValidator) },
   returns: v.object({
     uploadId: v.id('importUploads'),
     uploadUrl: v.string(),
     expiresAt: v.number(),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const { ownerId } = await requireAuthorizedOwner(ctx);
     const now = Date.now();
     const expiresAt = now + UPLOAD_EXPIRATION_MS;
     const uploadId = await ctx.db.insert('importUploads', {
       ownerId,
+      format: args.format ?? 'ofx',
       status: 'pending',
       createdAt: now,
       updatedAt: now,
@@ -248,6 +293,7 @@ export const attachUpload = internalMutation({
   args: {
     uploadId: v.id('importUploads'),
     storageId: v.id('_storage'),
+    format: importFormatValidator,
   },
   returns: uploadAttachmentResultValidator,
   handler: async (ctx, args): Promise<UploadAttachmentResult> => {
@@ -263,6 +309,21 @@ export const attachUpload = internalMutation({
     }
 
     const metadata = await ctx.db.system.get('_storage', args.storageId);
+
+    if ((upload.format ?? 'ofx') !== args.format) {
+      if (metadata) {
+        await ctx.storage.delete(args.storageId);
+      }
+      const now = Date.now();
+      await ctx.db.patch('importUploads', upload._id, {
+        status: 'cleaned',
+        storageId: undefined,
+        fileHash: metadata?.sha256 ?? upload.fileHash,
+        cleanedAt: upload.cleanedAt ?? now,
+        updatedAt: now,
+      });
+      return { status: 'error', code: 'OFX_UPLOAD_ALREADY_USED' };
+    }
 
     if (upload.status === 'cleaned' || upload.expiresAt <= Date.now()) {
       if (metadata) {
@@ -323,7 +384,7 @@ export const createPreview = action({
     await requireAuthorizedOwner(ctx);
     const attachment: UploadAttachmentResult = await ctx.runMutation(
       internal.imports.attachUpload,
-      args,
+      { ...args, format: 'ofx' },
     );
 
     if (attachment.status === 'error') {
@@ -336,6 +397,9 @@ export const createPreview = action({
       await ctx.runMutation(internal.imports.recordRejectedUpload, {
         uploadId: args.uploadId,
         fileHash: attachment.sha256,
+        format: 'ofx',
+        sourceAccountKind: 'bankAccount',
+        parserVersion: OFX_PARSER_VERSION,
         rejectionCode: metadataError,
         rawDeletedAt: Date.now(),
       });
@@ -360,7 +424,7 @@ export const createPreview = action({
       const entries = await Promise.all(
         parsed.transactions.map(async (transaction) => ({
           sequence: transaction.sequence,
-          sourceKey: await createSourceKey({
+          sourceKey: await createOfxSourceKey({
             externalId: transaction.externalId,
             postedOn: transaction.postedOn,
             amountInMinorUnits: transaction.amountInMinorUnits,
@@ -386,6 +450,9 @@ export const createPreview = action({
       await ctx.runMutation(internal.imports.recordRejectedUpload, {
         uploadId: args.uploadId,
         fileHash: attachment.sha256,
+        format: 'ofx',
+        sourceAccountKind: 'bankAccount',
+        parserVersion: OFX_PARSER_VERSION,
         rejectionCode,
         rawDeletedAt: Date.now(),
       });
@@ -397,6 +464,9 @@ export const createPreview = action({
     return await ctx.runMutation(internal.imports.createOrReusePreview, {
       uploadId: args.uploadId,
       fileHash: attachment.sha256,
+      format: 'ofx',
+      sourceAccountKind: 'bankAccount',
+      parserVersion: OFX_PARSER_VERSION,
       periodStart: prepared.periodStart,
       periodEnd: prepared.periodEnd,
       creditTotalInMinorUnits: prepared.creditTotalInMinorUnits,
@@ -411,8 +481,18 @@ export const createOrReusePreview = internalMutation({
   args: {
     uploadId: v.id('importUploads'),
     fileHash: v.string(),
+    format: importFormatValidator,
+    sourceAccountKind: sourceAccountKindValidator,
+    parserVersion: v.string(),
     periodStart: v.string(),
     periodEnd: v.string(),
+    statementTitle: v.optional(v.string()),
+    statementCompetence: v.optional(v.string()),
+    statementDueOn: v.optional(v.string()),
+    statementTotalInMinorUnits: v.optional(v.int64()),
+    purchaseTotalInMinorUnits: v.optional(v.int64()),
+    creditAdjustmentTotalInMinorUnits: v.optional(v.int64()),
+    settlementTotalInMinorUnits: v.optional(v.int64()),
     creditTotalInMinorUnits: v.int64(),
     debitTotalInMinorUnits: v.int64(),
     entries: v.array(
@@ -423,6 +503,8 @@ export const createOrReusePreview = internalMutation({
         amountInMinorUnits: v.int64(),
         description: v.string(),
         transactionType: v.string(),
+        installmentCurrent: v.optional(v.number()),
+        installmentTotal: v.optional(v.number()),
       }),
     ),
     rawDeletedAt: v.number(),
@@ -452,9 +534,31 @@ export const createOrReusePreview = internalMutation({
     if (existing) {
       batchId = existing._id;
       await ctx.db.patch('importBatches', batchId, {
+        format: args.format,
+        sourceAccountKind: args.sourceAccountKind,
+        parserVersion: args.parserVersion,
         status: 'preview',
         periodStart: args.periodStart,
         periodEnd: args.periodEnd,
+        statementTitle: args.statementTitle,
+        statementCompetence: args.statementCompetence,
+        statementDueOn: args.statementDueOn,
+        statementTotal:
+          args.statementTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.statementTotalInMinorUnits),
+        purchaseTotal:
+          args.purchaseTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.purchaseTotalInMinorUnits),
+        creditAdjustmentTotal:
+          args.creditAdjustmentTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.creditAdjustmentTotalInMinorUnits),
+        settlementTotal:
+          args.settlementTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.settlementTotalInMinorUnits),
         transactionCount: args.entries.length,
         duplicateCount: duplicateSequences.size,
         creditTotal: money(args.creditTotalInMinorUnits),
@@ -470,10 +574,31 @@ export const createOrReusePreview = internalMutation({
       batchId = await ctx.db.insert('importBatches', {
         ownerId,
         fileHash: args.fileHash,
-        format: 'ofx',
+        format: args.format,
+        sourceAccountKind: args.sourceAccountKind,
+        parserVersion: args.parserVersion,
         status: 'preview',
         periodStart: args.periodStart,
         periodEnd: args.periodEnd,
+        statementTitle: args.statementTitle,
+        statementCompetence: args.statementCompetence,
+        statementDueOn: args.statementDueOn,
+        statementTotal:
+          args.statementTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.statementTotalInMinorUnits),
+        purchaseTotal:
+          args.purchaseTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.purchaseTotalInMinorUnits),
+        creditAdjustmentTotal:
+          args.creditAdjustmentTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.creditAdjustmentTotalInMinorUnits),
+        settlementTotal:
+          args.settlementTotalInMinorUnits === undefined
+            ? undefined
+            : money(args.settlementTotalInMinorUnits),
         transactionCount: args.entries.length,
         duplicateCount: duplicateSequences.size,
         creditTotal: money(args.creditTotalInMinorUnits),
@@ -485,7 +610,14 @@ export const createOrReusePreview = internalMutation({
       });
     }
 
-    await insertPreviewEntries(ctx, ownerId, batchId, args.entries, duplicateSequences);
+    await insertPreviewEntries(
+      ctx,
+      ownerId,
+      batchId,
+      args.sourceAccountKind,
+      args.entries,
+      duplicateSequences,
+    );
     await appendAuditEvent(
       ctx,
       ownerId,
@@ -511,6 +643,9 @@ export const recordRejectedUpload = internalMutation({
   args: {
     uploadId: v.id('importUploads'),
     fileHash: v.string(),
+    format: importFormatValidator,
+    sourceAccountKind: sourceAccountKindValidator,
+    parserVersion: v.string(),
     rejectionCode: rejectionCodeValidator,
     rawDeletedAt: v.number(),
   },
@@ -530,7 +665,9 @@ export const recordRejectedUpload = internalMutation({
       (await ctx.db.insert('importBatches', {
         ownerId,
         fileHash: args.fileHash,
-        format: 'ofx',
+        format: args.format,
+        sourceAccountKind: args.sourceAccountKind,
+        parserVersion: args.parserVersion,
         status: 'rejected',
         transactionCount: 0,
         duplicateCount: 0,
@@ -603,6 +740,9 @@ export const confirmBatch = mutation({
           amount: entry.amount,
           description: entry.description,
           transactionType: entry.transactionType,
+          sourceAccountKind: entry.sourceAccountKind ?? batch.sourceAccountKind,
+          installmentCurrent: entry.installmentCurrent,
+          installmentTotal: entry.installmentTotal,
           createdAt: now,
         });
         insertedCount += 1;
@@ -702,6 +842,18 @@ async function buildPreviewResult(
     status: batch.status,
     periodStart: batch.periodStart ?? null,
     periodEnd: batch.periodEnd ?? null,
+    format: batch.format,
+    sourceAccountKind:
+      batch.sourceAccountKind ?? (batch.format === 'ofx' ? 'bankAccount' : 'creditCard'),
+    parserVersion:
+      batch.parserVersion ?? (batch.format === 'ofx' ? 'legacy-itau-ofx-v1' : 'unknown'),
+    statementTitle: batch.statementTitle ?? null,
+    statementCompetence: batch.statementCompetence ?? null,
+    statementDueOn: batch.statementDueOn ?? null,
+    statementTotal: batch.statementTotal ?? null,
+    purchaseTotal: batch.purchaseTotal ?? null,
+    creditAdjustmentTotal: batch.creditAdjustmentTotal ?? null,
+    settlementTotal: batch.settlementTotal ?? null,
     transactionCount: batch.transactionCount,
     duplicateCount: batch.duplicateCount,
     creditTotal: batch.creditTotal,
@@ -712,6 +864,9 @@ async function buildPreviewResult(
       postedOn: entry.postedOn,
       amount: entry.amount,
       description: entry.description,
+      transactionType: entry.transactionType,
+      installmentCurrent: entry.installmentCurrent ?? null,
+      installmentTotal: entry.installmentTotal ?? null,
       isDuplicate: entry.isDuplicate,
     })),
   };
@@ -785,6 +940,7 @@ async function insertPreviewEntries(
   ctx: MutationCtx,
   ownerId: string,
   batchId: Id<'importBatches'>,
+  sourceAccountKind: 'bankAccount' | 'creditCard',
   entries: PreparedEntry[],
   duplicateSequences: Set<number>,
 ): Promise<void> {
@@ -798,6 +954,9 @@ async function insertPreviewEntries(
       amount: money(entry.amountInMinorUnits),
       description: entry.description,
       transactionType: entry.transactionType,
+      sourceAccountKind,
+      installmentCurrent: entry.installmentCurrent,
+      installmentTotal: entry.installmentTotal,
       isDuplicate: duplicateSequences.has(entry.sequence),
     });
   }
@@ -829,6 +988,21 @@ function validatePreparedEntries(entries: PreparedEntry[]): void {
   if (sequences.size !== entries.length) {
     throw new ConvexError({ code: 'OFX_INVALID_TRANSACTION' });
   }
+  for (const entry of entries) {
+    if (
+      !Number.isSafeInteger(entry.sequence) ||
+      entry.sequence < 0 ||
+      (entry.installmentCurrent === undefined) !==
+        (entry.installmentTotal === undefined) ||
+      (entry.installmentCurrent !== undefined &&
+        (!Number.isSafeInteger(entry.installmentCurrent) ||
+          !Number.isSafeInteger(entry.installmentTotal) ||
+          entry.installmentCurrent < 1 ||
+          entry.installmentTotal! < entry.installmentCurrent))
+    ) {
+      throw new ConvexError({ code: 'IMPORT_INVALID_ENTRY' });
+    }
+  }
 }
 
 function validateMetadata(metadata: {
@@ -843,7 +1017,7 @@ function validateMetadata(metadata: {
   }
   if (
     metadata.contentType &&
-    !acceptedContentTypes.has(metadata.contentType.toLowerCase().split(';')[0].trim())
+    !acceptedOfxContentTypes.has(metadata.contentType.toLowerCase().split(';')[0].trim())
   ) {
     return 'OFX_UNSUPPORTED_CONTENT_TYPE';
   }
@@ -856,21 +1030,4 @@ function money(amountInMinorUnits: bigint): Money {
     currency: 'BRL',
     minorUnit: 'cent',
   };
-}
-
-async function createSourceKey(input: {
-  externalId: string | null;
-  postedOn: string;
-  amountInMinorUnits: bigint;
-  description: string;
-}): Promise<string> {
-  const canonical = [
-    input.externalId ?? 'missing-external-id',
-    input.postedOn,
-    input.amountInMinorUnits.toString(),
-    input.description,
-  ].join('\u001F');
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
-
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

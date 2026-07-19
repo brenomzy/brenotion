@@ -26,10 +26,10 @@ describe('imports', () => {
     const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
     const otherUser = t.withIdentity({ subject: SYNTHETIC_OTHER_ID });
 
-    await expect(t.mutation(api.imports.generateUploadUrl)).rejects.toMatchObject({
+    await expect(t.mutation(api.imports.generateUploadUrl, {})).rejects.toMatchObject({
       data: { code: 'AUTHENTICATION_REQUIRED' },
     });
-    await expect(otherUser.mutation(api.imports.generateUploadUrl)).rejects.toMatchObject({
+    await expect(otherUser.mutation(api.imports.generateUploadUrl, {})).rejects.toMatchObject({
       data: { code: 'ACCESS_DENIED' },
     });
 
@@ -218,7 +218,9 @@ async function storeUpload(
   content: string,
   contentType: string,
 ): Promise<{ uploadId: Id<'importUploads'>; storageId: Id<'_storage'> }> {
-  const upload = await owner.mutation(api.imports.generateUploadUrl);
+  const upload = await owner.mutation(api.imports.generateUploadUrl, {
+    format: 'ofx',
+  });
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob([content], { type: contentType })));
   return { uploadId: upload.uploadId, storageId };
 }

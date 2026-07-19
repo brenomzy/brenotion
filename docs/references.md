@@ -36,6 +36,7 @@ Estas fontes sustentam premissas que podem mudar com legislação, produto ou ve
 - [Convex — integração com Clerk](https://docs.convex.dev/auth/clerk) — `ConvexProviderWithClerk`, configuração do emissor e identidade em funções; validado em 15 de julho de 2026 para `convex` `1.42.2`.
 - [Convex — variáveis de ambiente](https://docs.convex.dev/production/environment-variables) — configuração isolada por deployment; validado em 15 de julho de 2026.
 - [Convex — testes com `convex-test`](https://docs.convex.dev/testing/convex-test) — identidades sintéticas e runtime Edge com Vitest; validado em 15 de julho de 2026 para `convex-test` `0.0.54`.
+- [`read-excel-file` `9.3.2`](https://www.npmjs.com/package/read-excel-file/v/9.3.2) — adapter Node usado para ler a fatura XLSX do Itaú sem persistir o bruto; API de `Buffer`, múltiplas abas e tipos de célula validada em 19 de julho de 2026.
 - [NativeWind — instalação](https://www.nativewind.dev/docs/getting-started/installation) — configuração Expo da v4 estável, com Tailwind CSS 3.4; validado em 15 de julho de 2026 para NativeWind `4.2.6`.
 - [React Native Reusables — documentação](https://reactnativereusables.com/docs) — catálogo usado como fonte dos primitivos incorporados; validado em 15 de julho de 2026.
 - [React Native Reusables — instalação manual](https://reactnativereusables.com/docs/installation/manual) — dependências e estrutura manual; validado em 15 de julho de 2026.
