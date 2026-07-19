@@ -66,7 +66,7 @@ export function useReviewScreenSource() {
         origin: { kind: 'persisted' },
         title: 'Importe seu primeiro período',
         description:
-          'Nenhum Lote de Importação confirmado foi encontrado. Envie um arquivo OFX pelo companion web para começar.',
+          'Nenhum Lote de Importação confirmado foi encontrado. Envie um arquivo OFX ou XLSX pelo companion web para começar.',
       };
     }
 
@@ -107,8 +107,18 @@ function toReviewBatch(
 ): ReviewImportBatch {
   return {
     id: batch.batchId,
+    format: batch.format,
+    sourceAccountKind: batch.sourceAccountKind,
+    parserVersion: batch.parserVersion,
     periodStart: batch.periodStart,
     periodEnd: batch.periodEnd,
+    statementTitle: batch.statementTitle,
+    statementCompetence: batch.statementCompetence,
+    statementDueOn: batch.statementDueOn,
+    statementTotal: batch.statementTotal,
+    purchaseTotal: batch.purchaseTotal,
+    creditAdjustmentTotal: batch.creditAdjustmentTotal,
+    settlementTotal: batch.settlementTotal,
     transactionCount: batch.transactionCount,
     duplicateCount: batch.duplicateCount,
     insertedCount: batch.insertedCount,
@@ -128,5 +138,8 @@ function toReviewTransaction(
     amount: transaction.amount,
     description: transaction.description,
     transactionType: transaction.transactionType,
+    sourceAccountKind: transaction.sourceAccountKind,
+    installmentCurrent: transaction.installmentCurrent,
+    installmentTotal: transaction.installmentTotal,
   };
 }

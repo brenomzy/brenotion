@@ -42,12 +42,22 @@ function SummaryMetric({ label, value }: { label: string; value: string }) {
 }
 
 function ImportBatchSummary({ batch }: { batch: ReviewImportBatch }) {
+  const isCreditCardStatement = batch.format === 'itauCreditCardXlsx';
+
   return (
     <Card>
       <CardHeader className="gap-2">
         <View className="gap-1">
           <Text variant="overline">Lote de Importação confirmado</Text>
           <CardTitle>{formatReviewPeriod(batch)}</CardTitle>
+          {isCreditCardStatement && batch.statementTitle ? (
+            <Text variant="caption">{batch.statementTitle}</Text>
+          ) : null}
+          {isCreditCardStatement && batch.statementDueOn ? (
+            <Text variant="caption">
+              Vencimento em {formatReviewDate(batch.statementDueOn)}
+            </Text>
+          ) : null}
           <Text variant="caption">
             Confirmado em {formatReviewTimestamp(batch.confirmedAt)}
           </Text>
@@ -59,26 +69,53 @@ function ImportBatchSummary({ batch }: { batch: ReviewImportBatch }) {
           <SummaryMetric label="Movimentações salvas" value={`${batch.insertedCount}`} />
           <SummaryMetric label="Duplicidades ignoradas" value={`${batch.duplicateCount}`} />
         </View>
-        <View className="gap-3 border-t border-divider pt-4">
-          <View className="flex-row items-center justify-between gap-4">
-            <Text variant="caption">Créditos no arquivo</Text>
-            <MoneyValue
-              minorUnits={batch.creditTotal.amountInMinorUnits}
-              currency="BRL"
-              size="label"
+        {isCreditCardStatement ? (
+          <View className="gap-3 border-t border-divider pt-4">
+            <ReviewMoneyLine label="Total da fatura" money={batch.statementTotal} />
+            <ReviewMoneyLine label="Compras" money={batch.purchaseTotal} />
+            <ReviewMoneyLine
+              label="Créditos e estornos"
+              money={batch.creditAdjustmentTotal}
             />
-          </View>
-          <View className="flex-row items-center justify-between gap-4">
-            <Text variant="caption">Débitos no arquivo</Text>
-            <MoneyValue
-              minorUnits={batch.debitTotal.amountInMinorUnits}
-              currency="BRL"
-              size="label"
+            <ReviewMoneyLine
+              label="Pagamento identificado"
+              money={batch.settlementTotal}
             />
+            <Text variant="caption" className="leading-5">
+              O pagamento é liquidação do cartão e não uma nova despesa.
+            </Text>
           </View>
-        </View>
+        ) : (
+          <View className="gap-3 border-t border-divider pt-4">
+            <ReviewMoneyLine label="Créditos no arquivo" money={batch.creditTotal} />
+            <ReviewMoneyLine label="Débitos no arquivo" money={batch.debitTotal} />
+          </View>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function ReviewMoneyLine({
+  label,
+  money,
+}: {
+  label: string;
+  money: ReviewImportBatch['statementTotal'];
+}) {
+  return (
+    <View className="flex-row items-center justify-between gap-4">
+      <Text variant="caption">{label}</Text>
+      {money ? (
+        <MoneyValue
+          minorUnits={money.amountInMinorUnits}
+          currency="BRL"
+          size="label"
+        />
+      ) : (
+        <Text variant="caption">Não informado</Text>
+      )}
+    </View>
   );
 }
 
@@ -169,6 +206,9 @@ function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction 
           </Text>
           <Text variant="caption" className="tabular-nums">
             {formatReviewDate(transaction.postedOn)}
+            {transaction.installmentCurrent && transaction.installmentTotal
+              ? ` · parcela ${transaction.installmentCurrent} de ${transaction.installmentTotal}`
+              : ''}
           </Text>
         </View>
         <MoneyValue
@@ -179,7 +219,11 @@ function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction 
       </View>
       <View className="self-start rounded-full bg-surface-muted px-3 py-1.5">
         <Text variant="caption" className="text-ink">
-          Sem classificação
+          {transaction.transactionType === 'statementPayment'
+            ? 'Liquidação do cartão'
+            : transaction.transactionType === 'creditAdjustment'
+              ? 'Crédito/estorno'
+              : 'Sem classificação'}
         </Text>
       </View>
     </View>
@@ -281,7 +325,7 @@ export function ReviewScreen({
             <Text variant="overline">Dados persistidos</Text>
           )}
           <Text variant="screenTitle">Revisar</Text>
-          <Text variant="caption">Histórico importado do Itaú PF</Text>
+          <Text variant="caption">Extratos e faturas importados do Itaú PF</Text>
         </View>
 
         {model.status === 'loading' ? (

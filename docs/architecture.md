@@ -63,9 +63,11 @@ alimentou o Livro Financeiro.
 **Interface**: recebe um arquivo, produz uma prévia auditável e confirma ou descarta um Lote de Importação.
 
 Esconde parsing, normalização, deduplicação, agrupamento, validação e descarte do
-arquivo bruto. OFX/CSV e PDF do Itaú PF são adaptações internas da mesma
-interface. A confirmação também procura correspondências com Gastos Informados
-para impedir dupla contagem.
+arquivo bruto. O extrato OFX e a fatura XLSX do Itaú PF são adapters validados
+da mesma interface; CSV e PDF permanecem fallbacks candidatos. O adapter XLSX
+roda em Action Node isolada, enquanto persistência e autorização permanecem em
+mutations do runtime padrão. A confirmação também procura correspondências com
+Gastos Informados para impedir dupla contagem.
 
 ### 4.4 Livro Financeiro
 
@@ -181,10 +183,16 @@ Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevan
 ## 8. Ingestão e consistência
 
 - Cada Lote de Importação mantém competência, período coberto e instante de confirmação.
+- O lote registra formato, tipo de conta de origem e versão do parser. Faturas
+  também preservam título, competência, vencimento, total reconciliado e
+  agregados separados de compras, créditos/estornos e Liquidação do Cartão.
 - Operações de ingestão são idempotentes.
 - O hash do arquivo identifica reimportações: lotes confirmados são devolvidos sem novas Movimentações de Origem, enquanto lotes descartados ou rejeitados podem voltar ao estado de prévia.
 - Uma prévia só é persistida depois que o objeto bruto correspondente foi apagado do Convex Storage.
 - Movimentações de Origem são imutáveis; correções criam interpretações ou vínculos novos.
+- Na conta de cartão, compra é saída negativa; crédito ou estorno e Liquidação
+  do Cartão são entradas positivas com tipos explícitos. A reconciliação do
+  total da fatura exclui a liquidação para não contar o pagamento como consumo.
 - Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação de Origem correspondente.
 - O Disponível para Gastar contém `asOf` e nível de confiança.
 - O Limite de Gasto do Ciclo e seus Limites por Categoria preservam o plano mesmo sem dados atuais completos.

@@ -150,14 +150,27 @@ classificação e o adapter da fatura XLSX continuam posteriores a este
 checkpoint. Os patches recomendados do Expo SDK 57 foram alinhados e o Expo
 Doctor voltou a 20/20.
 
+Checkpoint de fatura XLSX de 19 de julho de 2026: o pipeline temporário passou
+a aceitar a fatura do cartão Itaú PF com formato e conta de origem explícitos,
+adapter Node isolado em `read-excel-file` `9.3.2`, versão do parser, hash e
+idempotência preservados. Título, competência, vencimento, data original,
+parcelas, compras, créditos/estornos e Liquidação do Cartão são persistidos de
+forma estruturada; titularidade, nome, tipo e número do cartão são ignorados na
+fronteira. O total é reconciliado em centavos sem o pagamento, com tolerância
+somente para ruído binário anterior à conversão. Fixture inteiramente sintética,
+testes de autorização/reprocessamento e uma amostra real efêmera passaram; o
+companion web e a tela Revisar distinguem extrato de fatura. O deployment Convex
+dev, 54 testes, tipos, lint, estilos, export web e Expo Doctor 20/20 passaram.
+
 ## 6. Fase 3 — Importação histórica e calibração
 
 ### Ordem de formatos
 
-1. OFX;
-2. CSV;
-3. PDF de fatura;
-4. PDF de extrato como fallback.
+1. OFX de extrato;
+2. XLSX de fatura;
+3. CSV como fallback;
+4. PDF de fatura;
+5. PDF de extrato como fallback.
 
 O perímetro detalhado é exclusivamente Itaú PF e cartão associado. Wise e Itaú
 PJ não entram por arquivo nesta fase.
@@ -324,10 +337,9 @@ superfície de acesso.
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
 | Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Próxima ação: confirmar o catálogo inicial com o Titular, persistir a primeira
-classificação sobre grupos de Movimentações de Origem e adaptar a fatura XLSX do
-Itaú a partir de uma amostra estrutural sanitizada. Limites por Categoria entram
-somente depois que o histórico classificado sustentar uma proposta
+Próxima ação: persistir decisões de classificação sobre grupos de Movimentações
+de Origem e avançar a configuração genérica de Obrigações. Limites por Categoria
+entram somente depois que o histórico classificado sustentar uma proposta
 determinística. Qualquer novo arquivo bancário real permanece fora do
 repositório.
 

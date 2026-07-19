@@ -97,6 +97,12 @@ Falhas conhecidas pelo cliente chamam uma limpeza idempotente; uploads já assoc
 também são apagados quando a intenção expira. Nenhum caminho de confirmação depende
 da permanência do arquivo bruto.
 
+Na fatura XLSX do Itaú, o adapter lê somente título, resumo e as colunas de
+data, lançamento, parcelamento e valor. Titularidade, Nome, Tipo do cartão e
+Número do cartão não entram no resultado estruturado, em logs ou na auditoria.
+Ruído binário de ponto flutuante é tolerado apenas antes da conversão para
+centavos exatos; fração real de centavo rejeita o arquivo.
+
 Prints usados para criar Gastos Informados seguem o mesmo ciclo, mas preservam
 somente o registro estruturado confirmado e os metadados mínimos de auditoria.
 

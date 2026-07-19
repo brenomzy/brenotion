@@ -37,7 +37,9 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - Um único Titular e um único dispositivo Android principal.
 - Renda da esposa fora do cálculo inicial.
 - Despesas familiares pagas pelo Titular dentro do planejamento.
-- Extrato e cartão do Itaú PF formam a única fonte de ingestão financeira detalhada do perímetro inicial, por importação periódica de arquivos.
+- Extrato OFX e fatura XLSX do cartão Itaú PF formam a única fonte de ingestão
+  financeira detalhada validada do perímetro inicial, por importação periódica
+  de arquivos.
 - Gastos relevantes do ciclo atual podem ser fornecidos como Gastos Informados curtos e provisórios; a importação posterior os concilia sem dupla contagem.
 - Cada categoria variável ou flexível pode receber um Limite por Categoria dentro do Limite de Gasto do Ciclo.
 - Itaú PJ, Wise Business e Wise Pessoal não recebem ingestão detalhada no MVP. Seus fluxos entram por um Resumo Empresarial mensal, incluindo despesas pessoais pagas pela Empresa.
@@ -249,6 +251,9 @@ Exemplos iniciais incluem internet, carro, casa, saúde, energia, água, contabi
 - Um cartão no perímetro inicial.
 - Compras reduzem o limite aplicável quando são informadas ou importadas.
 - A fatura apresenta o último fechamento importado, vencimento, pagamento e total atual somente quando informado explicitamente.
+- Compras são saídas da conta de cartão; créditos, estornos e Liquidação do
+  Cartão são entradas com tipos explícitos. O pagamento da fatura não cria nova
+  despesa nem participa da reconciliação do total da fatura.
 - Parcelamentos são projetados nos ciclos futuros.
 - Alertas imediatos ocorrem apenas para compra atípica, comprometimento relevante ou marcos de 75%, 90% e 100% de um Limite por Categoria.
 - Demais informações aparecem na revisão semanal.

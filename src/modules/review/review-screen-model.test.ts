@@ -10,8 +10,18 @@ import {
 
 const batch: ReviewImportBatch = {
   id: 'batch-1',
+  format: 'ofx',
+  sourceAccountKind: 'bankAccount',
+  parserVersion: 'itau-ofx-v1',
   periodStart: '2026-06-01',
   periodEnd: '2026-06-30',
+  statementTitle: null,
+  statementCompetence: null,
+  statementDueOn: null,
+  statementTotal: null,
+  purchaseTotal: null,
+  creditAdjustmentTotal: null,
+  settlementTotal: null,
   transactionCount: 42,
   duplicateCount: 2,
   insertedCount: 40,
@@ -41,6 +51,17 @@ describe('review screen model', () => {
     expect(formatReviewPeriod({ ...batch, periodStart: null, periodEnd: null })).toBe(
       'Período não informado',
     );
+  });
+
+  it('uses statement competence instead of purchase-date coverage for a card bill', () => {
+    expect(
+      formatReviewPeriod({
+        ...batch,
+        format: 'itauCreditCardXlsx',
+        sourceAccountKind: 'creditCard',
+        statementCompetence: '2026-07',
+      }),
+    ).toBe('julho de 2026');
   });
 
   it('resolves the batch selected by the source adapter', () => {

@@ -118,6 +118,10 @@ _Evitar_: Lançamento manual, categoria
 Um registro provisório fornecido explicitamente pelo Titular durante o ciclo atual, que reduz o limite aplicável até ser conciliado com uma Movimentação de Origem.
 _Evitar_: Movimentação de Origem, lançamento definitivo
 
+**Liquidação do Cartão**:
+O pagamento identificado da fatura que reduz a obrigação da conta de cartão sem criar uma nova despesa; as compras já representam o consumo econômico.
+_Evitar_: Compra, nova despesa, crédito de renda
+
 **Regra de Classificação**:
 Uma decisão reutilizável que associa movimentações semelhantes a uma finalidade financeira.
 _Evitar_: Categoria isolada, palpite da IA
