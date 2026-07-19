@@ -2,45 +2,267 @@ import { router } from 'expo-router';
 import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DataConfidence, ScreenStatePanel } from '@/components/domain';
+import { MoneyValue, ScreenStatePanel } from '@/components/domain';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
-import { type ReviewAction, type ReviewScreenModel } from './review-screen-model';
+import {
+  formatReviewDate,
+  formatReviewPeriod,
+  formatReviewTimestamp,
+  getSelectedBatch,
+  type ReviewImportBatch,
+  type ReviewReadyModel,
+  type ReviewScreenActions,
+  type ReviewScreenModel,
+  type ReviewSourceTransaction,
+} from './review-screen-model';
 
 function ReviewLoading() {
   return (
     <View accessibilityLiveRegion="polite" className="gap-4">
-      <Text variant="sectionTitle">Preparando sua revisão</Text>
-      <Text variant="caption">Reunindo pendências sem mostrar uma contagem provisória.</Text>
-      <View className="h-20 rounded-card bg-surface-muted" />
-      <View className="h-28 rounded-card bg-surface-muted" />
-      <View className="h-28 rounded-card bg-surface-muted" />
+      <View className="h-36 rounded-card bg-surface-muted" />
+      <View className="h-24 rounded-card bg-surface-muted" />
+      <View className="h-64 rounded-card bg-surface-muted" />
+      <Text variant="caption">Carregando importações confirmadas…</Text>
     </View>
   );
 }
 
-function ReviewActionCard({ action }: { action: ReviewAction }) {
+function SummaryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="gap-0 py-0">
-      <CardHeader className="gap-1 pb-3 pt-4">
-        <Text variant="overline">{action.scope}</Text>
-        <CardTitle>{action.title}</CardTitle>
-        <Text variant="caption" className="leading-5">
-          {action.description}
-        </Text>
+    <View className="min-w-[132px] flex-1 gap-1 rounded-control bg-surface-muted px-4 py-3">
+      <Text variant="caption">{label}</Text>
+      <Text variant="label" className="tabular-nums">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function ImportBatchSummary({ batch }: { batch: ReviewImportBatch }) {
+  return (
+    <Card>
+      <CardHeader className="gap-2">
+        <View className="gap-1">
+          <Text variant="overline">Lote de Importação confirmado</Text>
+          <CardTitle>{formatReviewPeriod(batch)}</CardTitle>
+          <Text variant="caption">
+            Confirmado em {formatReviewTimestamp(batch.confirmedAt)}
+          </Text>
+        </View>
       </CardHeader>
-      <CardFooter className="pb-4">
-        <Button variant="secondary" className="w-full" disabled={!action.enabled}>
-          <Text>{action.enabled ? action.actionLabel : 'Disponível após atualizar'}</Text>
-        </Button>
-      </CardFooter>
+      <CardContent className="gap-4">
+        <View className="flex-row flex-wrap gap-2">
+          <SummaryMetric label="No arquivo" value={`${batch.transactionCount}`} />
+          <SummaryMetric label="Movimentações salvas" value={`${batch.insertedCount}`} />
+          <SummaryMetric label="Duplicidades ignoradas" value={`${batch.duplicateCount}`} />
+        </View>
+        <View className="gap-3 border-t border-divider pt-4">
+          <View className="flex-row items-center justify-between gap-4">
+            <Text variant="caption">Créditos no arquivo</Text>
+            <MoneyValue
+              minorUnits={batch.creditTotal.amountInMinorUnits}
+              currency="BRL"
+              size="label"
+            />
+          </View>
+          <View className="flex-row items-center justify-between gap-4">
+            <Text variant="caption">Débitos no arquivo</Text>
+            <MoneyValue
+              minorUnits={batch.debitTotal.amountInMinorUnits}
+              currency="BRL"
+              size="label"
+            />
+          </View>
+        </View>
+      </CardContent>
     </Card>
   );
 }
 
-export function ReviewScreen({ model }: { model: ReviewScreenModel }) {
+function ClassificationNotice() {
+  return (
+    <View
+      accessibilityRole="summary"
+      className="flex-row items-start gap-3 rounded-card bg-status-warning-soft p-4">
+      <View
+        aria-hidden
+        importantForAccessibility="no-hide-descendants"
+        className="h-11 w-11 shrink-0 items-center justify-center rounded-control bg-surface">
+        <Text variant="sectionTitle">!</Text>
+      </View>
+      <View className="min-w-0 flex-1 gap-1">
+        <Text variant="label">Ainda não é um Fechamento Mensal</Text>
+        <Text variant="caption" className="leading-5 text-ink">
+          Estas são Movimentações de Origem importadas. Elas ainda não têm classificação,
+          conciliação ou efeito em valores oficiais do Plano Financeiro.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function ImportHistory({
+  model,
+  actions,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+}) {
+  if (model.batches.length <= 1 && !model.hasMoreBatches) {
+    return null;
+  }
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Importações confirmadas</Text>
+        <Text variant="caption">Escolha um período para conferir suas movimentações.</Text>
+      </View>
+      <View className="gap-2">
+        {model.batches.map((batch) => {
+          const selected = batch.id === model.selectedBatchId;
+
+          return (
+            <Button
+              key={batch.id}
+              variant={selected ? 'secondary' : 'outline'}
+              static={selected}
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${formatReviewPeriod(batch)}, ${batch.insertedCount} movimentações salvas`}
+              className="h-auto min-h-14 w-full justify-between px-4 py-3"
+              onPress={() => actions.selectBatch(batch.id)}>
+              <View className="min-w-0 flex-1 items-start gap-0.5">
+                <Text variant="label">{formatReviewPeriod(batch)}</Text>
+                <Text variant="caption" className="tabular-nums">
+                  {batch.insertedCount} movimentações salvas
+                </Text>
+              </View>
+              <Text variant="label">{selected ? 'Em exibição' : 'Ver'}</Text>
+            </Button>
+          );
+        })}
+      </View>
+      {model.hasMoreBatches ? (
+        <Button
+          variant="ghost"
+          disabled={model.isLoadingMoreBatches}
+          onPress={actions.loadMoreBatches}>
+          <Text>
+            {model.isLoadingMoreBatches ? 'Carregando períodos…' : 'Ver importações anteriores'}
+          </Text>
+        </Button>
+      ) : null}
+    </View>
+  );
+}
+
+function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction }) {
+  return (
+    <View className="gap-3 border-t border-divider py-4 first:border-t-0">
+      <View className="flex-row items-start justify-between gap-4">
+        <View className="min-w-0 flex-1 gap-1">
+          <Text variant="label" className="leading-5">
+            {transaction.description}
+          </Text>
+          <Text variant="caption" className="tabular-nums">
+            {formatReviewDate(transaction.postedOn)}
+          </Text>
+        </View>
+        <MoneyValue
+          minorUnits={transaction.amount.amountInMinorUnits}
+          currency="BRL"
+          size="label"
+        />
+      </View>
+      <View className="self-start rounded-full bg-surface-muted px-3 py-1.5">
+        <Text variant="caption" className="text-ink">
+          Sem classificação
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function SourceTransactions({
+  model,
+  actions,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+}) {
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Movimentações de Origem</Text>
+        <Text variant="caption">
+          {model.transactions.length} carregadas neste Lote de Importação
+        </Text>
+      </View>
+      <Card className="gap-0 py-0 shadow-none">
+        <CardContent className="px-5">
+          {model.isLoadingTransactions ? (
+            <View accessibilityLiveRegion="polite" className="gap-3 py-5">
+              <View className="h-16 rounded-control bg-surface-muted" />
+              <View className="h-16 rounded-control bg-surface-muted" />
+              <Text variant="caption">Carregando movimentações deste período…</Text>
+            </View>
+          ) : model.transactions.length > 0 ? (
+            model.transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))
+          ) : (
+            <View className="gap-1 py-5">
+              <Text variant="label">Nenhuma movimentação foi salva neste lote</Text>
+              <Text variant="caption" className="leading-5">
+                Todas as entradas podem ter sido identificadas como duplicidades.
+              </Text>
+            </View>
+          )}
+        </CardContent>
+      </Card>
+      {model.hasMoreTransactions ? (
+        <Button
+          variant="outline"
+          disabled={model.isLoadingMoreTransactions}
+          onPress={actions.loadMoreTransactions}>
+          <Text>
+            {model.isLoadingMoreTransactions ? 'Carregando movimentações…' : 'Carregar mais'}
+          </Text>
+        </Button>
+      ) : null}
+    </View>
+  );
+}
+
+function ReviewReady({
+  model,
+  actions,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+}) {
+  const batch = getSelectedBatch(model);
+
+  return (
+    <>
+      <ImportBatchSummary batch={batch} />
+      <ClassificationNotice />
+      <ImportHistory model={model} actions={actions} />
+      <SourceTransactions model={model} actions={actions} />
+    </>
+  );
+}
+
+export function ReviewScreen({
+  model,
+  actions,
+}: {
+  model: ReviewScreenModel;
+  actions: ReviewScreenActions;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -53,100 +275,40 @@ export function ReviewScreen({ model }: { model: ReviewScreenModel }) {
       }}>
       <View className="w-full max-w-[720px] self-center gap-6 px-5 web:px-8">
         <View className="gap-1">
-          <Text variant="overline">Demonstração com dados sintéticos</Text>
+          {model.origin.kind === 'synthetic' ? (
+            <Text variant="overline">{model.origin.label}</Text>
+          ) : (
+            <Text variant="overline">Dados persistidos</Text>
+          )}
           <Text variant="screenTitle">Revisar</Text>
-          <Text variant="caption">{model.periodLabel} · Empresa e Pessoal</Text>
+          <Text variant="caption">Histórico importado do Itaú PF</Text>
         </View>
 
-        {model.scenario === 'loading' ? (
+        {model.status === 'loading' ? (
           <ReviewLoading />
+        ) : model.status === 'empty' ? (
+          <ScreenStatePanel
+            state="empty"
+            title={model.title}
+            description={model.description}
+            actionLabel="Enviar arquivo"
+            onActionPress={actions.startImport}
+          />
+        ) : model.status === 'error' ? (
+          <ScreenStatePanel
+            state="error"
+            title={model.title}
+            description={model.description}
+            actionLabel="Tentar novamente"
+            onActionPress={actions.retry}
+            secondaryAction={
+              <Button variant="outline" className="w-full" onPress={() => router.push('/more')}>
+                <Text>Ver opções de importação</Text>
+              </Button>
+            }
+          />
         ) : (
-          <>
-            {model.scenario === 'recent' ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{model.state.title}</CardTitle>
-                  <DataConfidence
-                    status="recent"
-                    description={model.state.description}
-                    referenceLabel={model.periodLabel}
-                  />
-                </CardHeader>
-                <CardContent className="gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <Text variant="caption">Progresso confirmado</Text>
-                    <Text variant="label" className="tabular-nums">
-                      {model.completedCount} de {model.totalCount}
-                    </Text>
-                  </View>
-                  <View className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                    <View
-                      className="h-full rounded-full bg-ink"
-                      style={{ width: `${model.progressPercent}%` }}
-                    />
-                  </View>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full">
-                    <Text>{model.state.actionLabel}</Text>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ) : (
-              <ScreenStatePanel
-                state={model.scenario}
-                title={model.state.title}
-                description={model.state.description}
-                referenceLabel={model.periodLabel}
-                actionLabel={model.state.actionLabel!}
-                onActionPress={() => {
-                  if (model.scenario === 'empty') {
-                    router.push('/');
-                  }
-                }}
-                secondaryAction={
-                  model.scenario === 'uncertain' ? (
-                    <Button variant="outline" className="w-full">
-                      <Text>Corrigir</Text>
-                    </Button>
-                  ) : undefined
-                }
-              />
-            )}
-
-            {model.scenario !== 'recent' && model.scenario !== 'empty' ? (
-              <Card>
-                <CardContent className="gap-2 py-5">
-                  <View className="flex-row items-center justify-between">
-                    <Text variant="caption">Progresso confirmado</Text>
-                    <Text variant="label" className="tabular-nums">
-                      {model.completedCount} de {model.totalCount}
-                    </Text>
-                  </View>
-                  <View className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                    <View
-                      className="h-full rounded-full bg-ink"
-                      style={{ width: `${model.progressPercent}%` }}
-                    />
-                  </View>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {model.showsSnapshot ? (
-              <View className="gap-3">
-                <View className="gap-1">
-                  <Text variant="sectionTitle">
-                    {model.actions.length} {model.actions.length === 1 ? 'ação' : 'ações'} para agora
-                  </Text>
-                  <Text variant="caption">Até três ações, ordenadas por impacto demonstrativo</Text>
-                </View>
-                {model.actions.map((action) => (
-                  <ReviewActionCard key={action.id} action={action} />
-                ))}
-              </View>
-            ) : null}
-          </>
+          <ReviewReady model={model} actions={actions} />
         )}
       </View>
     </ScrollView>

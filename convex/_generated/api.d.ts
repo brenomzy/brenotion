@@ -10,6 +10,7 @@
 
 import type * as access from "../access.js";
 import type * as financialSnapshot from "../financialSnapshot.js";
+import type * as importHistory from "../importHistory.js";
 import type * as imports from "../imports.js";
 import type * as lib_authorization from "../lib/authorization.js";
 import type * as lib_ofxParser from "../lib/ofxParser.js";
@@ -26,6 +27,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   access: typeof access;
   financialSnapshot: typeof financialSnapshot;
+  importHistory: typeof importHistory;
   imports: typeof imports;
   "lib/authorization": typeof lib_authorization;
   "lib/ofxParser": typeof lib_ofxParser;

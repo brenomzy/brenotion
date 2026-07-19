@@ -293,6 +293,7 @@ export function ImportScreen() {
             stage={stage}
             onConfirm={handleConfirm}
             onDiscard={handleDiscard}
+            onReview={() => router.push('/review')}
             onReset={resetFlow}
           />
         ) : null}
@@ -306,12 +307,14 @@ function PreviewSection({
   stage,
   onConfirm,
   onDiscard,
+  onReview,
   onReset,
 }: {
   preview: Preview;
   stage: ImportStage;
   onConfirm: () => void;
   onDiscard: () => void;
+  onReview: () => void;
   onReset: () => void;
 }) {
   const isConfirmed = stage === 'confirmed' || preview.status === 'confirmed';
@@ -439,6 +442,27 @@ function PreviewSection({
                 />
               )}
               Descartar prévia
+            </WebButton>
+          </>
+        ) : isConfirmed ? (
+          <>
+            <WebButton onClick={onReview}>
+              <HugeiconsIcon
+                aria-hidden
+                icon={CheckmarkCircle02Icon}
+                size={16}
+                strokeWidth={1.8}
+              />
+              Revisar movimentações
+            </WebButton>
+            <WebButton variant="secondary" onClick={onReset}>
+              <HugeiconsIcon
+                aria-hidden
+                icon={RefreshIcon}
+                size={16}
+                strokeWidth={1.8}
+              />
+              Importar outro arquivo
             </WebButton>
           </>
         ) : (

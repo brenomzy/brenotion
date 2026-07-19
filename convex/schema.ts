@@ -77,7 +77,12 @@ export default defineSchema({
     discardedAt: v.optional(v.number()),
   })
     .index('by_ownerId_and_fileHash', ['ownerId', 'fileHash'])
-    .index('by_ownerId_and_createdAt', ['ownerId', 'createdAt']),
+    .index('by_ownerId_and_createdAt', ['ownerId', 'createdAt'])
+    .index('by_ownerId_and_status_and_confirmedAt', [
+      'ownerId',
+      'status',
+      'confirmedAt',
+    ]),
   importBatchEntries: defineTable({
     ownerId: v.string(),
     batchId: v.id('importBatches'),
@@ -100,7 +105,12 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_ownerId_and_sourceKey', ['ownerId', 'sourceKey'])
-    .index('by_ownerId_and_postedOn', ['ownerId', 'postedOn']),
+    .index('by_ownerId_and_postedOn', ['ownerId', 'postedOn'])
+    .index('by_ownerId_and_importBatchId_and_postedOn', [
+      'ownerId',
+      'importBatchId',
+      'postedOn',
+    ]),
   auditEvents: defineTable({
     ownerId: v.string(),
     action: v.union(

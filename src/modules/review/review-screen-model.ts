@@ -1,37 +1,115 @@
-export type ReviewScenario =
-  | 'loading'
-  | 'empty'
-  | 'recent'
-  | 'partial'
-  | 'stale'
-  | 'offline'
-  | 'error'
-  | 'uncertain';
+export type ReviewMoney = Readonly<{
+  amountInMinorUnits: bigint;
+  currency: 'BRL';
+  minorUnit: 'cent';
+}>;
 
-export type ReviewAction = Readonly<{
+export type ReviewImportBatch = Readonly<{
   id: string;
-  scope: 'Empresa' | 'Pessoal';
-  title: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  transactionCount: number;
+  duplicateCount: number;
+  insertedCount: number;
+  creditTotal: ReviewMoney;
+  debitTotal: ReviewMoney;
+  confirmedAt: number;
+}>;
+
+export type ReviewSourceTransaction = Readonly<{
+  id: string;
+  importBatchId: string;
+  postedOn: string;
+  amount: ReviewMoney;
   description: string;
-  actionLabel: string;
-  enabled: boolean;
+  transactionType: string;
 }>;
 
-export type ReviewScreenModel = Readonly<{
-  scenario: ReviewScenario;
-  periodLabel: string;
-  state: Readonly<{
-    title: string;
-    description: string;
-    actionLabel?: string;
-  }>;
-  completedCount: number;
-  totalCount: number;
-  progressPercent: number;
-  showsSnapshot: boolean;
-  actions: readonly ReviewAction[];
+export type ReviewDataOrigin =
+  | Readonly<{ kind: 'persisted' }>
+  | Readonly<{
+      kind: 'synthetic';
+      label: 'Demonstração com dados sintéticos';
+    }>;
+
+export type ReviewReadyModel = Readonly<{
+  status: 'ready';
+  origin: ReviewDataOrigin;
+  selectedBatchId: string;
+  batches: readonly ReviewImportBatch[];
+  hasMoreBatches: boolean;
+  isLoadingMoreBatches: boolean;
+  transactions: readonly ReviewSourceTransaction[];
+  isLoadingTransactions: boolean;
+  hasMoreTransactions: boolean;
+  isLoadingMoreTransactions: boolean;
 }>;
 
-export interface ReviewScreenSource {
-  get(scenario: ReviewScenario): ReviewScreenModel;
+export type ReviewScreenModel =
+  | Readonly<{ status: 'loading'; origin: ReviewDataOrigin }>
+  | Readonly<{
+      status: 'empty';
+      origin: ReviewDataOrigin;
+      title: string;
+      description: string;
+    }>
+  | Readonly<{
+      status: 'error';
+      origin: ReviewDataOrigin;
+      title: string;
+      description: string;
+    }>
+  | ReviewReadyModel;
+
+export type ReviewScreenActions = Readonly<{
+  selectBatch: (batchId: string) => void;
+  loadMoreBatches: () => void;
+  loadMoreTransactions: () => void;
+  retry: () => void;
+  startImport: () => void;
+}>;
+
+export function getSelectedBatch(model: ReviewReadyModel): ReviewImportBatch {
+  const selected = model.batches.find((batch) => batch.id === model.selectedBatchId);
+
+  if (!selected) {
+    throw new Error('Selected import batch is not available in the review model.');
+  }
+
+  return selected;
+}
+
+export function formatReviewDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+    .format(new Date(`${isoDate}T00:00:00.000Z`))
+    .replace('.', '');
+}
+
+export function formatReviewTimestamp(timestamp: number): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date(timestamp))
+    .replace('.', '');
+}
+
+export function formatReviewPeriod(batch: ReviewImportBatch): string {
+  if (!batch.periodStart || !batch.periodEnd) {
+    return 'Período não informado';
+  }
+
+  if (batch.periodStart === batch.periodEnd) {
+    return formatReviewDate(batch.periodStart);
+  }
+
+  return `${formatReviewDate(batch.periodStart)} – ${formatReviewDate(batch.periodEnd)}`;
 }
