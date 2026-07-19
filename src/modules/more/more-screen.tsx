@@ -78,13 +78,16 @@ export function MoreScreen({ model }: { model: MoreScreenModel }) {
           <CardHeader>
             <CardTitle>Importação financeira</CardTitle>
             <CardDescription className="text-body leading-6">
-              Envie extratos OFX pelo companion web, confira a prévia e confirme somente os dados
-              estruturados.
+              Envie extratos OFX e faturas XLSX do Itaú PF pelo companion web. Depois, acompanhe os
+              lotes e as movimentações confirmadas em Revisar.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button variant="secondary" onPress={() => router.push('/import')}>
-              <Text>Importar extrato OFX</Text>
+          <CardContent className="gap-3">
+            <Button variant="secondary" className="w-full" onPress={() => router.push('/import')}>
+              <Text>Importar extrato ou fatura</Text>
+            </Button>
+            <Button variant="ghost" className="w-full" onPress={() => router.push('/review')}>
+              <Text>Revisar importações</Text>
             </Button>
           </CardContent>
         </Card>
