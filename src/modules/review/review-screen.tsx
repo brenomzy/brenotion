@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
+import { type EconomicNature } from './review-classification-model';
 import {
   formatReviewDate,
   formatReviewPeriod,
@@ -18,6 +19,19 @@ import {
   type ReviewScreenModel,
   type ReviewSourceTransaction,
 } from './review-screen-model';
+import {
+  type ReviewClassificationGroup,
+  useReviewClassificationDecisions,
+} from './use-review-classification-decisions';
+
+const ECONOMIC_NATURE_OPTIONS: readonly Readonly<{
+  value: EconomicNature;
+  label: string;
+}>[] = [
+  { value: 'personal', label: 'Pessoal' },
+  { value: 'business', label: 'Empresa' },
+  { value: 'mixed', label: 'Mista' },
+];
 
 function ReviewLoading() {
   return (
@@ -133,11 +147,151 @@ function ClassificationNotice() {
       <View className="min-w-0 flex-1 gap-1">
         <Text variant="label">Ainda não é um Fechamento Mensal</Text>
         <Text variant="caption" className="leading-5 text-ink">
-          Estas são Movimentações de Origem importadas. Elas ainda não têm classificação,
-          conciliação ou efeito em valores oficiais do Plano Financeiro.
+          Você pode confirmar a Natureza Econômica dos grupos abaixo. Isso ainda não faz
+          conciliação nem altera valores oficiais do Plano Financeiro.
         </Text>
       </View>
     </View>
+  );
+}
+
+function ClassificationGroups({ model }: { model: ReviewReadyModel }) {
+  const source = useReviewClassificationDecisions({
+    transactions: model.transactions,
+    isLoadingTransactions: model.isLoadingTransactions,
+    hasMoreTransactions: model.hasMoreTransactions,
+  });
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Natureza Econômica</Text>
+        <Text variant="caption" className="leading-5">
+          Confirme se cada grupo é Pessoal, Empresa ou Mista. Nenhuma opção é escolhida
+          automaticamente.
+        </Text>
+      </View>
+
+      {source.status === 'error' ? (
+        <View
+          accessibilityLiveRegion="polite"
+          className="gap-1 rounded-card bg-status-danger-soft p-4">
+          <Text variant="label">Não foi possível carregar as decisões</Text>
+          <Text variant="caption" className="leading-5 text-ink">
+            Nenhuma decisão foi alterada. Recarregue a tela para tentar novamente.
+          </Text>
+        </View>
+      ) : source.groups.length === 0 ? (
+        <View accessibilityLiveRegion="polite" className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">
+            {source.status === 'loading'
+              ? 'Preparando grupos para classificação…'
+              : 'Nenhum grupo disponível neste lote.'}
+          </Text>
+        </View>
+      ) : (
+        <View className="gap-3">
+          {source.status === 'loading' ? (
+            <Text accessibilityLiveRegion="polite" variant="caption">
+              Carregando decisões já confirmadas…
+            </Text>
+          ) : null}
+          {source.groups.map((group) => (
+            <ClassificationGroupCard
+              key={group.groupKey}
+              group={group}
+              decisionsAreLoading={source.status === 'loading'}
+              onSelect={(economicNature) =>
+                void source.setEconomicNature(group.groupKey, economicNature)
+              }
+            />
+          ))}
+        </View>
+      )}
+
+      {!source.isComplete && source.groups.length > 0 ? (
+        <Text variant="caption" className="leading-5">
+          Estes grupos consideram somente as movimentações carregadas. Use “Carregar mais” para
+          revisar os demais grupos deste lote.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function ClassificationGroupCard({
+  group,
+  decisionsAreLoading,
+  onSelect,
+}: {
+  group: ReviewClassificationGroup;
+  decisionsAreLoading: boolean;
+  onSelect: (economicNature: EconomicNature) => void;
+}) {
+  const isSaving = group.saveStatus === 'saving';
+  const selectedLabel = ECONOMIC_NATURE_OPTIONS.find(
+    (option) => option.value === group.economicNature,
+  )?.label;
+
+  return (
+    <Card className="gap-3 py-4">
+      <CardContent className="gap-3">
+        <View className="gap-1">
+          <Text variant="label" className="leading-5">
+            {group.representativeDescription}
+          </Text>
+          <Text variant="caption" className="tabular-nums">
+            {group.count} {group.count === 1 ? 'movimentação' : 'movimentações'} ·{' '}
+            {formatReviewDate(group.firstPostedOn)}
+            {group.firstPostedOn === group.lastPostedOn
+              ? ''
+              : ` – ${formatReviewDate(group.lastPostedOn)}`}
+          </Text>
+        </View>
+
+        <View className="gap-2">
+          <Text variant="caption" accessibilityLiveRegion="polite">
+            {isSaving
+              ? 'Salvando decisão…'
+              : decisionsAreLoading
+                ? 'Carregando decisão…'
+                : selectedLabel
+                  ? `Decisão atual: ${selectedLabel}`
+                  : 'Ainda não confirmado'}
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {ECONOMIC_NATURE_OPTIONS.map((option) => {
+              const selected = group.economicNature === option.value;
+
+              return (
+                <Button
+                  key={option.value}
+                  size="compact"
+                  variant={selected ? 'secondary' : 'outline'}
+                  static={selected}
+                  disabled={decisionsAreLoading || isSaving}
+                  accessibilityLabel={`Definir ${group.representativeDescription} como ${option.label}`}
+                  accessibilityState={{
+                    selected,
+                    disabled: decisionsAreLoading || isSaving,
+                    busy: isSaving,
+                  }}
+                  className="min-w-[104px] flex-1"
+                  onPress={() => onSelect(option.value)}>
+                  <Text>{option.label}</Text>
+                </Button>
+              );
+            })}
+          </View>
+        </View>
+
+        {group.saveStatus === 'error' ? (
+          <Text accessibilityLiveRegion="polite" variant="caption" className="text-status-danger">
+            Não foi possível salvar. Sua escolha anterior foi preservada; tente novamente.
+          </Text>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -223,7 +377,7 @@ function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction 
             ? 'Liquidação do cartão'
             : transaction.transactionType === 'creditAdjustment'
               ? 'Crédito/estorno'
-              : 'Sem classificação'}
+              : 'Movimentação de Origem'}
         </Text>
       </View>
     </View>
@@ -295,6 +449,7 @@ function ReviewReady({
       <ImportBatchSummary batch={batch} />
       <ClassificationNotice />
       <ImportHistory model={model} actions={actions} />
+      <ClassificationGroups model={model} />
       <SourceTransactions model={model} actions={actions} />
     </>
   );
