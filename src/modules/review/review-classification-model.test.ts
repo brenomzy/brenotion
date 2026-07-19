@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chunkClassificationGroupKeys,
   collectClassificationQueryResults,
+  reconcileRecentlySavedDecisions,
   resolveEconomicNature,
   selectTransactionsForEconomicNature,
   type ReviewClassificationDecision,
@@ -40,6 +41,7 @@ describe('review classification model', () => {
       groupKey: 'group-a',
       normalizedDescription: 'grupo sintetico',
       economicNature: 'mixed',
+      updatedAt: 20,
     };
 
     const result = collectClassificationQueryResults({
@@ -56,13 +58,44 @@ describe('review classification model', () => {
       groupKey: 'group-a',
       normalizedDescription: 'grupo sintetico',
       economicNature: 'personal',
+      updatedAt: 10,
     };
 
     expect(
       resolveEconomicNature('group-a', new Map([[persisted.groupKey, persisted]]), {
-        'group-a': 'business',
+        'group-a': { economicNature: 'business', updatedAt: 20 },
       }),
     ).toBe('business');
+  });
+
+  it('reconciles a recent save once Convex publishes the same or a newer state', () => {
+    const recent = {
+      'group-a': { economicNature: 'personal', updatedAt: 20 },
+    } as const;
+    const stalePersisted: ReviewClassificationDecision = {
+      groupKey: 'group-a',
+      normalizedDescription: 'grupo sintetico',
+      economicNature: 'business',
+      updatedAt: 19,
+    };
+    const newerPersisted: ReviewClassificationDecision = {
+      ...stalePersisted,
+      economicNature: 'mixed',
+      updatedAt: 21,
+    };
+
+    expect(
+      reconcileRecentlySavedDecisions(
+        new Map([[stalePersisted.groupKey, stalePersisted]]),
+        recent,
+      ),
+    ).toEqual(recent);
+    expect(
+      reconcileRecentlySavedDecisions(
+        new Map([[newerPersisted.groupKey, newerPersisted]]),
+        recent,
+      ),
+    ).toEqual({});
   });
 
   it('turns invalid or failed query responses into an explicit error state', () => {

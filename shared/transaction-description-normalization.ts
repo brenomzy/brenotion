@@ -96,11 +96,13 @@ export function normalizeTransactionDescription(
     groupingBasis === 'normalized-description'
       ? normalizedDescription
       : compatibilityFolded.toLowerCase().trim();
-  const transactionType = normalizeGroupingDimension(input.metadata.transactionType);
+  const transactionType = normalizeCanonicalDescriptionText(
+    input.metadata.transactionType,
+  );
   const sourceKind =
     input.metadata.sourceKind === undefined
       ? null
-      : normalizeGroupingDimension(input.metadata.sourceKind);
+      : normalizeCanonicalDescriptionText(input.metadata.sourceKind);
 
   return {
     originalDescription: input.description,
@@ -189,10 +191,6 @@ export function normalizeCanonicalDescriptionText(value: string): string {
     .trim();
 }
 
-export function normalizeGroupingDimension(value: string): string {
-  return normalizeCanonicalDescriptionText(value);
-}
-
 export function parseTransactionDescriptionGroupKey(
   groupKey: string,
 ): ParsedTransactionDescriptionGroupKey | null {
@@ -218,8 +216,8 @@ export function parseTransactionDescriptionGroupKey(
 
   if (
     transactionType.length === 0 ||
-    normalizeGroupingDimension(transactionType) !== transactionType ||
-    normalizeGroupingDimension(sourceKind) !== sourceKind ||
+    normalizeCanonicalDescriptionText(transactionType) !== transactionType ||
+    normalizeCanonicalDescriptionText(sourceKind) !== sourceKind ||
     CONTROL_CHARACTER_PATTERN.test(transactionType) ||
     CONTROL_CHARACTER_PATTERN.test(sourceKind) ||
     CONTROL_CHARACTER_PATTERN.test(groupingText)

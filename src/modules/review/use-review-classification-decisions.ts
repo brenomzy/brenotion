@@ -9,9 +9,11 @@ import { api } from '../../../convex/_generated/api';
 import {
   chunkClassificationGroupKeys,
   collectClassificationQueryResults,
+  reconcileRecentlySavedDecisions,
   resolveEconomicNature,
   selectTransactionsForEconomicNature,
   type EconomicNature,
+  type RecentlySavedClassificationDecision,
 } from './review-classification-model';
 import { type ReviewSourceTransaction } from './review-screen-model';
 
@@ -75,8 +77,8 @@ export function useReviewClassificationDecisions(input: {
     [queryResults],
   );
   const persistDecision = useMutation(api.classificationDecisions.upsert);
-  const [confirmedDecisions, setConfirmedDecisions] = useState<
-    Record<string, EconomicNature>
+  const [recentlySavedDecisions, setRecentlySavedDecisions] = useState<
+    Readonly<Record<string, RecentlySavedClassificationDecision>>
   >({});
   const [saveStatuses, setSaveStatuses] = useState<
     Record<string, ClassificationSaveStatus>
@@ -96,14 +98,17 @@ export function useReviewClassificationDecisions(input: {
       }));
 
       try {
-        await persistDecision({
+        const result = await persistDecision({
           groupKey: group.groupKey,
           normalizedDescription: group.normalizedDescription,
           economicNature,
         });
-        setConfirmedDecisions((current) => ({
+        setRecentlySavedDecisions((current) => ({
           ...current,
-          [groupKey]: economicNature,
+          [groupKey]: {
+            economicNature,
+            updatedAt: result.decision.updatedAt,
+          },
         }));
         setSaveStatuses((current) => omitKey(current, groupKey));
       } catch {
@@ -116,6 +121,14 @@ export function useReviewClassificationDecisions(input: {
     [groups, persistDecision],
   );
 
+  const activeRecentlySavedDecisions = useMemo(
+    () =>
+      reconcileRecentlySavedDecisions(
+        queryState.decisionsByGroupKey,
+        recentlySavedDecisions,
+      ),
+    [queryState.decisionsByGroupKey, recentlySavedDecisions],
+  );
   const classificationGroups = useMemo<readonly ReviewClassificationGroup[]>(
     () =>
       groups.map((group) => ({
@@ -123,11 +136,16 @@ export function useReviewClassificationDecisions(input: {
         economicNature: resolveEconomicNature(
           group.groupKey,
           queryState.decisionsByGroupKey,
-          confirmedDecisions,
+          activeRecentlySavedDecisions,
         ),
         saveStatus: saveStatuses[group.groupKey] ?? null,
       })),
-    [confirmedDecisions, groups, queryState.decisionsByGroupKey, saveStatuses],
+    [
+      activeRecentlySavedDecisions,
+      groups,
+      queryState.decisionsByGroupKey,
+      saveStatuses,
+    ],
   );
 
   return {

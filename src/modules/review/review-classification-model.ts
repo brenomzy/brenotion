@@ -4,6 +4,12 @@ export type ReviewClassificationDecision = Readonly<{
   groupKey: string;
   normalizedDescription: string;
   economicNature: EconomicNature;
+  updatedAt: number;
+}>;
+
+export type RecentlySavedClassificationDecision = Readonly<{
+  economicNature: EconomicNature;
+  updatedAt: number;
 }>;
 
 export type ClassificationQueryResult = Readonly<{
@@ -78,9 +84,32 @@ export function collectClassificationQueryResults(
 export function resolveEconomicNature(
   groupKey: string,
   persistedDecisions: ReadonlyMap<string, ReviewClassificationDecision>,
-  confirmedDecisions: Readonly<Record<string, EconomicNature>>,
+  recentlySavedDecisions: Readonly<Record<string, RecentlySavedClassificationDecision>>,
 ): EconomicNature | null {
-  return confirmedDecisions[groupKey] ?? persistedDecisions.get(groupKey)?.economicNature ?? null;
+  return (
+    recentlySavedDecisions[groupKey]?.economicNature ??
+    persistedDecisions.get(groupKey)?.economicNature ??
+    null
+  );
+}
+
+export function reconcileRecentlySavedDecisions(
+  persistedDecisions: ReadonlyMap<string, ReviewClassificationDecision>,
+  recentlySavedDecisions: Readonly<Record<string, RecentlySavedClassificationDecision>>,
+): Readonly<Record<string, RecentlySavedClassificationDecision>> {
+  const reconciled = { ...recentlySavedDecisions };
+  let changed = false;
+
+  for (const [groupKey, recentDecision] of Object.entries(recentlySavedDecisions)) {
+    const persistedDecision = persistedDecisions.get(groupKey);
+
+    if (persistedDecision && persistedDecision.updatedAt >= recentDecision.updatedAt) {
+      delete reconciled[groupKey];
+      changed = true;
+    }
+  }
+
+  return changed ? reconciled : recentlySavedDecisions;
 }
 
 function isReviewClassificationDecision(
@@ -96,6 +125,7 @@ function isReviewClassificationDecision(
     typeof decision.groupKey === 'string' &&
     typeof decision.normalizedDescription === 'string' &&
     typeof decision.economicNature === 'string' &&
-    ECONOMIC_NATURES.has(decision.economicNature as EconomicNature)
+    ECONOMIC_NATURES.has(decision.economicNature as EconomicNature) &&
+    typeof decision.updatedAt === 'number'
   );
 }
