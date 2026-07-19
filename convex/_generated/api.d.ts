@@ -9,6 +9,7 @@
  */
 
 import type * as access from "../access.js";
+import type * as classificationDecisions from "../classificationDecisions.js";
 import type * as financialSnapshot from "../financialSnapshot.js";
 import type * as importHistory from "../importHistory.js";
 import type * as importXlsx from "../importXlsx.js";
@@ -19,6 +20,7 @@ import type * as lib_itauCreditCardXlsxAdapter from "../lib/itauCreditCardXlsxAd
 import type * as lib_ofxParser from "../lib/ofxParser.js";
 import type * as lib_persistence from "../lib/persistence.js";
 import type * as lib_sourceKey from "../lib/sourceKey.js";
+import type * as obligations from "../obligations.js";
 import type * as ownerProfile from "../ownerProfile.js";
 import type * as testFixtures_syntheticOfx from "../testFixtures/syntheticOfx.js";
 
@@ -30,6 +32,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  classificationDecisions: typeof classificationDecisions;
   financialSnapshot: typeof financialSnapshot;
   importHistory: typeof importHistory;
   importXlsx: typeof importXlsx;
@@ -40,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "lib/ofxParser": typeof lib_ofxParser;
   "lib/persistence": typeof lib_persistence;
   "lib/sourceKey": typeof lib_sourceKey;
+  obligations: typeof obligations;
   ownerProfile: typeof ownerProfile;
   "testFixtures/syntheticOfx": typeof testFixtures_syntheticOfx;
 }>;

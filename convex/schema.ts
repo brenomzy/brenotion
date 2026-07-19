@@ -43,6 +43,31 @@ export const creditCardTransactionKindValidator = v.union(
   v.literal('statementPayment'),
 );
 
+export const economicNatureValidator = v.union(
+  v.literal('personal'),
+  v.literal('business'),
+  v.literal('mixed'),
+);
+
+export const businessSharePolicyValidator = v.union(
+  v.object({
+    status: v.literal('notApplicable'),
+  }),
+  v.object({
+    status: v.literal('needsConfirmation'),
+  }),
+  v.object({
+    status: v.literal('confirmed'),
+    basisPoints: v.int64(),
+  }),
+);
+
+export const paymentOriginValidator = v.union(
+  v.literal('personal'),
+  v.literal('business'),
+  v.literal('needsConfirmation'),
+);
+
 export default defineSchema({
   ownerProfiles: defineTable({
     ownerId: v.string(),
@@ -143,6 +168,30 @@ export default defineSchema({
       'importBatchId',
       'postedOn',
     ]),
+  obligations: defineTable({
+    ownerId: v.string(),
+    obligationKey: v.string(),
+    name: v.string(),
+    economicNature: economicNatureValidator,
+    businessSharePolicy: businessSharePolicyValidator,
+    paymentOrigin: paymentOriginValidator,
+    expectedAmount: v.optional(brlMoneyValidator),
+    dueDayOfMonth: v.optional(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_ownerId_and_obligationKey', ['ownerId', 'obligationKey'])
+    .index('by_ownerId_and_name', ['ownerId', 'name'])
+    .index('by_ownerId_and_isActive_and_name', ['ownerId', 'isActive', 'name']),
+  classificationDecisions: defineTable({
+    ownerId: v.string(),
+    groupKey: v.string(),
+    normalizedDescription: v.string(),
+    economicNature: economicNatureValidator,
+    decidedAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_ownerId_and_groupKey', ['ownerId', 'groupKey']),
   auditEvents: defineTable({
     ownerId: v.string(),
     action: v.union(
@@ -156,18 +205,25 @@ export default defineSchema({
       v.literal('import_batch.discarded'),
       v.literal('import_batch.rejected'),
       v.literal('bank_file.deleted'),
+      v.literal('obligation.created'),
+      v.literal('obligation.updated'),
+      v.literal('classification_decision.upserted'),
     ),
     targetType: v.union(
       v.literal('owner_profile'),
       v.literal('financial_snapshot'),
       v.literal('import_upload'),
       v.literal('import_batch'),
+      v.literal('obligation'),
+      v.literal('classification_decision'),
     ),
     targetId: v.union(
       v.id('ownerProfiles'),
       v.id('financialSnapshots'),
       v.id('importUploads'),
       v.id('importBatches'),
+      v.id('obligations'),
+      v.id('classificationDecisions'),
     ),
     result: v.literal('succeeded'),
     occurredAt: v.number(),

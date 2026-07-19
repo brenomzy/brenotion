@@ -13,6 +13,16 @@ type AuditEvent =
       targetId: Id<'financialSnapshots'>;
     }
   | {
+      action: 'classification_decision.upserted';
+      targetType: 'classification_decision';
+      targetId: Id<'classificationDecisions'>;
+    }
+  | {
+      action: 'obligation.created' | 'obligation.updated';
+      targetType: 'obligation';
+      targetId: Id<'obligations'>;
+    }
+  | {
       action: 'import_upload.expired' | 'import_upload.cleaned';
       targetType: 'import_upload';
       targetId: Id<'importUploads'>;
