@@ -37,6 +37,22 @@ export const sourceAccountKindValidator = v.union(
   v.literal('creditCard'),
 );
 
+export const sourcePatrimonyValidator = v.union(
+  v.literal('personal'),
+  v.literal('business'),
+);
+
+export const reportedExpenseSourcePatrimonyValidator = v.union(
+  sourcePatrimonyValidator,
+  v.literal('needsConfirmation'),
+);
+
+export const reportedExpenseStatusValidator = v.union(
+  v.literal('provisional'),
+  v.literal('reconciled'),
+  v.literal('voided'),
+);
+
 export const creditCardTransactionKindValidator = v.union(
   v.literal('purchase'),
   v.literal('creditAdjustment'),
@@ -46,20 +62,6 @@ export const creditCardTransactionKindValidator = v.union(
 export const economicNatureValidator = v.union(
   v.literal('personal'),
   v.literal('business'),
-  v.literal('mixed'),
-);
-
-export const businessSharePolicyValidator = v.union(
-  v.object({
-    status: v.literal('notApplicable'),
-  }),
-  v.object({
-    status: v.literal('needsConfirmation'),
-  }),
-  v.object({
-    status: v.literal('confirmed'),
-    basisPoints: v.int64(),
-  }),
 );
 
 export const paymentOriginValidator = v.union(
@@ -67,6 +69,67 @@ export const paymentOriginValidator = v.union(
   v.literal('business'),
   v.literal('needsConfirmation'),
 );
+
+export const obligationOccurrenceStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('completed'),
+  v.literal('waived'),
+  v.literal('needsAttention'),
+);
+
+export const obligationOccurrenceCompletionKindValidator = v.literal(
+  'manualConfirmation',
+);
+
+export const obligationOccurrenceWaiverReasonValidator = v.union(
+  v.literal('notDueThisCompetence'),
+  v.literal('cancelledForCompetence'),
+  v.literal('duplicateOccurrence'),
+);
+
+export const monthlyClosureCheckCodeValidator = v.union(
+  v.literal('OWNER_PROFILE_UNAVAILABLE'),
+  v.literal('IMPORT_SEARCH_TRUNCATED'),
+  v.literal('OBLIGATION_SEARCH_TRUNCATED'),
+  v.literal('PERSONAL_BANK_MISSING'),
+  v.literal('PERSONAL_BANK_PREVIEW_ONLY'),
+  v.literal('CREDIT_CARD_MISSING'),
+  v.literal('CREDIT_CARD_PREVIEW_ONLY'),
+  v.literal('BUSINESS_BANK_MISSING'),
+  v.literal('BUSINESS_BANK_PREVIEW_ONLY'),
+  v.literal('OBLIGATION_OCCURRENCES_NOT_MATERIALIZED'),
+  v.literal('OBLIGATION_OCCURRENCES_PENDING'),
+  v.literal('OBLIGATION_OCCURRENCES_NEED_ATTENTION'),
+  v.literal('CLASSIFICATION_COMPLETENESS_UNAVAILABLE'),
+  v.literal('OBLIGATION_PAYMENT_IDENTIFICATION_UNAVAILABLE'),
+  v.literal('REPORTED_EXPENSE_CLOSURE_CHECK_UNAVAILABLE'),
+  v.literal('DOCUMENT_CHECK_UNAVAILABLE'),
+  v.literal('DISTRIBUTION_CHECK_UNAVAILABLE'),
+  v.literal('MARGIN_CHECK_UNAVAILABLE'),
+  v.literal('BUSINESS_SUMMARY_UNAVAILABLE'),
+  v.literal('FINANCIAL_CALCULATION_UNAVAILABLE'),
+);
+
+export const monthlyClosureUnavailableCapabilityValidator = v.union(
+  v.literal('classificationCompleteness'),
+  v.literal('identifiedObligationPayments'),
+  v.literal('reportedExpenseClosureCheck'),
+  v.literal('documents'),
+  v.literal('distributions'),
+  v.literal('unexpectedMargin'),
+  v.literal('businessSummary'),
+  v.literal('financialCalculation'),
+);
+
+const monthlyClosureSourceSnapshotValidator = v.object({
+  status: v.union(
+    v.literal('missing'),
+    v.literal('preview'),
+    v.literal('confirmed'),
+  ),
+  batchId: v.union(v.id('importBatches'), v.null()),
+  importedAt: v.union(v.number(), v.null()),
+});
 
 export default defineSchema({
   ownerProfiles: defineTable({
@@ -88,6 +151,7 @@ export default defineSchema({
   importUploads: defineTable({
     ownerId: v.string(),
     format: v.optional(importFormatValidator),
+    sourcePatrimony: v.optional(sourcePatrimonyValidator),
     status: importUploadStatusValidator,
     storageId: v.optional(v.id('_storage')),
     fileHash: v.optional(v.string()),
@@ -103,6 +167,7 @@ export default defineSchema({
     fileHash: v.string(),
     format: importFormatValidator,
     sourceAccountKind: v.optional(sourceAccountKindValidator),
+    sourcePatrimony: v.optional(sourcePatrimonyValidator),
     parserVersion: v.optional(v.string()),
     status: importBatchStatusValidator,
     periodStart: v.optional(v.string()),
@@ -144,6 +209,7 @@ export default defineSchema({
     description: v.string(),
     transactionType: v.string(),
     sourceAccountKind: v.optional(sourceAccountKindValidator),
+    sourcePatrimony: v.optional(sourcePatrimonyValidator),
     installmentCurrent: v.optional(v.number()),
     installmentTotal: v.optional(v.number()),
     isDuplicate: v.boolean(),
@@ -157,6 +223,7 @@ export default defineSchema({
     description: v.string(),
     transactionType: v.string(),
     sourceAccountKind: v.optional(sourceAccountKindValidator),
+    sourcePatrimony: v.optional(sourcePatrimonyValidator),
     installmentCurrent: v.optional(v.number()),
     installmentTotal: v.optional(v.number()),
     createdAt: v.number(),
@@ -168,12 +235,27 @@ export default defineSchema({
       'importBatchId',
       'postedOn',
     ]),
+  cardSettlementReconciliations: defineTable({
+    ownerId: v.string(),
+    statementPaymentTransactionId: v.id('sourceTransactions'),
+    bankDebitTransactionId: v.id('sourceTransactions'),
+    ruleVersion: v.literal('exact-opposite-within-seven-days-v1'),
+    dayDistance: v.number(),
+    confirmedAt: v.number(),
+  })
+    .index('by_ownerId_and_statementPaymentTransactionId', [
+      'ownerId',
+      'statementPaymentTransactionId',
+    ])
+    .index('by_ownerId_and_bankDebitTransactionId', [
+      'ownerId',
+      'bankDebitTransactionId',
+    ]),
   obligations: defineTable({
     ownerId: v.string(),
     obligationKey: v.string(),
     name: v.string(),
     economicNature: economicNatureValidator,
-    businessSharePolicy: businessSharePolicyValidator,
     paymentOrigin: paymentOriginValidator,
     expectedAmount: v.optional(brlMoneyValidator),
     dueDayOfMonth: v.optional(v.number()),
@@ -186,6 +268,152 @@ export default defineSchema({
     .index('by_ownerId_and_obligationKey', ['ownerId', 'obligationKey'])
     .index('by_ownerId_and_name', ['ownerId', 'name'])
     .index('by_ownerId_and_isActive_and_name', ['ownerId', 'isActive', 'name']),
+  obligationOccurrences: defineTable({
+    ownerId: v.string(),
+    obligationId: v.id('obligations'),
+    sourceObligationRevisionId: v.optional(v.id('obligationRevisions')),
+    competence: v.string(),
+    obligationKey: v.string(),
+    name: v.string(),
+    economicNature: economicNatureValidator,
+    paymentOrigin: paymentOriginValidator,
+    expectedAmount: v.optional(brlMoneyValidator),
+    dueDayOfMonth: v.optional(v.number()),
+    dueOn: v.optional(v.string()),
+    status: obligationOccurrenceStatusValidator,
+    materializedAt: v.number(),
+    updatedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    completionKind: v.optional(obligationOccurrenceCompletionKindValidator),
+    waivedAt: v.optional(v.number()),
+    waiverReason: v.optional(obligationOccurrenceWaiverReasonValidator),
+  })
+    .index('by_ownerId_and_competence_and_obligationId', [
+      'ownerId',
+      'competence',
+      'obligationId',
+    ])
+    .index('by_ownerId_and_competence_and_dueOn', [
+      'ownerId',
+      'competence',
+      'dueOn',
+    ])
+    .index('by_ownerId_and_competence_and_status_and_dueOn', [
+      'ownerId',
+      'competence',
+      'status',
+      'dueOn',
+    ]),
+  monthlyClosures: defineTable({
+    ownerId: v.string(),
+    competence: v.string(),
+    revisionNumber: v.int64(),
+    supersedesClosureId: v.optional(v.id('monthlyClosures')),
+    closedAt: v.number(),
+    timeZone: v.string(),
+    readinessVersion: v.literal('monthly-closure-readiness-v1'),
+    closurePolicyVersion: v.literal('metadata-only-partial-v1'),
+    inputFingerprint: v.string(),
+    sourceCoverage: v.object({
+      personalBank: monthlyClosureSourceSnapshotValidator,
+      creditCard: monthlyClosureSourceSnapshotValidator,
+      businessBank: monthlyClosureSourceSnapshotValidator,
+    }),
+    occurrenceSummary: v.object({
+      total: v.number(),
+      pending: v.number(),
+      completed: v.number(),
+      waived: v.number(),
+      needsAttention: v.number(),
+      manualCompletionCount: v.number(),
+      identifiedPaymentCount: v.literal(0),
+      isSearchExhaustive: v.boolean(),
+    }),
+    acknowledgedCheckCodes: v.array(monthlyClosureCheckCodeValidator),
+    unavailableCapabilities: v.array(
+      monthlyClosureUnavailableCapabilityValidator,
+    ),
+    confidenceAtClosure: v.literal('partial'),
+    financialCalculationStatus: v.literal('unavailable'),
+    idempotencyKey: v.string(),
+  })
+    .index('by_ownerId_and_competence_and_revisionNumber', [
+      'ownerId',
+      'competence',
+      'revisionNumber',
+    ])
+    .index('by_ownerId_and_closedAt', ['ownerId', 'closedAt'])
+    .index('by_ownerId_and_idempotencyKey', ['ownerId', 'idempotencyKey']),
+  financialCycles: defineTable({
+    ownerId: v.string(),
+    startedOn: v.string(),
+    expectedNextReceiptOn: v.string(),
+    timeZone: v.string(),
+    status: v.literal('open'),
+    clientRequestId: v.string(),
+    openedAt: v.number(),
+  })
+    .index('by_ownerId_and_status', ['ownerId', 'status'])
+    .index('by_ownerId_and_clientRequestId', ['ownerId', 'clientRequestId']),
+  reportedExpenses: defineTable({
+    ownerId: v.string(),
+    financialCycleId: v.id('financialCycles'),
+    amount: brlMoneyValidator,
+    description: v.string(),
+    occurredOn: v.string(),
+    economicNature: economicNatureValidator,
+    sourcePatrimony: reportedExpenseSourcePatrimonyValidator,
+    status: reportedExpenseStatusValidator,
+    clientRequestId: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    revisionNumber: v.int64(),
+    currentRevisionId: v.optional(v.id('reportedExpenseRevisions')),
+  })
+    .index('by_ownerId_and_financialCycleId_and_occurredOn', [
+      'ownerId',
+      'financialCycleId',
+      'occurredOn',
+    ])
+    .index('by_ownerId_and_clientRequestId', ['ownerId', 'clientRequestId']),
+  reportedExpenseRevisions: defineTable({
+    ownerId: v.string(),
+    reportedExpenseId: v.id('reportedExpenses'),
+    revisionNumber: v.int64(),
+    reason: v.union(
+      v.literal('created'),
+      v.literal('updated'),
+      v.literal('voided'),
+      v.literal('reconciled'),
+    ),
+    snapshot: v.object({
+      amount: brlMoneyValidator,
+      description: v.string(),
+      occurredOn: v.string(),
+      economicNature: economicNatureValidator,
+      sourcePatrimony: reportedExpenseSourcePatrimonyValidator,
+      status: reportedExpenseStatusValidator,
+      updatedAt: v.number(),
+    }),
+    recordedAt: v.number(),
+  }).index('by_ownerId_and_reportedExpenseId_and_revisionNumber', [
+    'ownerId',
+    'reportedExpenseId',
+    'revisionNumber',
+  ]),
+  reportedExpenseReconciliations: defineTable({
+    ownerId: v.string(),
+    reportedExpenseId: v.id('reportedExpenses'),
+    sourceTransactionId: v.id('sourceTransactions'),
+    ruleVersion: v.literal('exact-opposite-within-seven-days-v1'),
+    dayDistance: v.number(),
+    confirmedAt: v.number(),
+  })
+    .index('by_ownerId_and_reportedExpenseId', ['ownerId', 'reportedExpenseId'])
+    .index('by_ownerId_and_sourceTransactionId', [
+      'ownerId',
+      'sourceTransactionId',
+    ]),
   classificationDecisions: defineTable({
     ownerId: v.string(),
     groupKey: v.string(),
@@ -209,7 +437,6 @@ export default defineSchema({
       obligationKey: v.string(),
       name: v.string(),
       economicNature: economicNatureValidator,
-      businessSharePolicy: businessSharePolicyValidator,
       paymentOrigin: paymentOriginValidator,
       expectedAmount: v.optional(brlMoneyValidator),
       dueDayOfMonth: v.optional(v.number()),
@@ -260,7 +487,19 @@ export default defineSchema({
       v.literal('bank_file.deleted'),
       v.literal('obligation.created'),
       v.literal('obligation.updated'),
+      v.literal('obligation_occurrence.materialized'),
+      v.literal('obligation_occurrence.manual_completion_confirmed'),
+      v.literal('obligation_occurrence.waived'),
+      v.literal('obligation_occurrence.marked_needs_attention'),
+      v.literal('obligation_occurrence.reopened'),
+      v.literal('monthly_closure.closed'),
+      v.literal('financial_cycle.opened'),
+      v.literal('reported_expense.created'),
+      v.literal('reported_expense.updated'),
+      v.literal('reported_expense.voided'),
+      v.literal('reported_expense.reconciled'),
       v.literal('classification_decision.upserted'),
+      v.literal('card_settlement.reconciled'),
     ),
     targetType: v.union(
       v.literal('owner_profile'),
@@ -268,7 +507,13 @@ export default defineSchema({
       v.literal('import_upload'),
       v.literal('import_batch'),
       v.literal('obligation'),
+      v.literal('obligation_occurrence'),
+      v.literal('monthly_closure'),
+      v.literal('financial_cycle'),
+      v.literal('reported_expense'),
+      v.literal('reported_expense_reconciliation'),
       v.literal('classification_decision'),
+      v.literal('card_settlement_reconciliation'),
     ),
     targetId: v.union(
       v.id('ownerProfiles'),
@@ -276,13 +521,26 @@ export default defineSchema({
       v.id('importUploads'),
       v.id('importBatches'),
       v.id('obligations'),
+      v.id('obligationOccurrences'),
+      v.id('monthlyClosures'),
+      v.id('financialCycles'),
+      v.id('reportedExpenses'),
+      v.id('reportedExpenseReconciliations'),
       v.id('classificationDecisions'),
+      v.id('cardSettlementReconciliations'),
     ),
     revisionId: v.optional(
       v.union(
         v.id('obligationRevisions'),
         v.id('classificationDecisionRevisions'),
+        v.id('reportedExpenseRevisions'),
       ),
+    ),
+    occurrenceCompletionKind: v.optional(
+      obligationOccurrenceCompletionKindValidator,
+    ),
+    occurrenceWaiverReason: v.optional(
+      obligationOccurrenceWaiverReasonValidator,
     ),
     result: v.literal('succeeded'),
     occurredAt: v.number(),

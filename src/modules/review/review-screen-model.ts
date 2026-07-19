@@ -8,6 +8,7 @@ export type ReviewImportBatch = Readonly<{
   id: string;
   format: 'ofx' | 'itauCreditCardXlsx';
   sourceAccountKind: 'bankAccount' | 'creditCard';
+  sourcePatrimony: 'personal' | 'business' | null;
   parserVersion: string;
   periodStart: string | null;
   periodEnd: string | null;
@@ -34,6 +35,8 @@ export type ReviewSourceTransaction = Readonly<{
   description: string;
   transactionType: string;
   sourceAccountKind: 'bankAccount' | 'creditCard';
+  sourcePatrimony: 'personal' | 'business' | null;
+  cardSettlementRole: 'statementPayment' | 'bankDebit' | null;
   installmentCurrent: number | null;
   installmentTotal: number | null;
 }>;
@@ -113,6 +116,16 @@ export function formatReviewTimestamp(timestamp: number): string {
   })
     .format(new Date(timestamp))
     .replace('.', '');
+}
+
+export function formatSourcePatrimony(
+  sourcePatrimony: 'personal' | 'business' | null,
+): string {
+  return sourcePatrimony === 'personal'
+    ? 'Pessoal'
+    : sourcePatrimony === 'business'
+      ? 'Empresa'
+      : 'Não informado em lote legado';
 }
 
 export function formatReviewPeriod(batch: ReviewImportBatch): string {

@@ -19,6 +19,7 @@ import {
   importBatchStatusValidator,
   importFormatValidator,
   sourceAccountKindValidator,
+  sourcePatrimonyValidator,
 } from './schema';
 
 const acceptedXlsxContentTypes = new Set([
@@ -41,6 +42,7 @@ const previewResultValidator = v.object({
   batchId: v.id('importBatches'),
   format: importFormatValidator,
   sourceAccountKind: sourceAccountKindValidator,
+  sourcePatrimony: v.union(sourcePatrimonyValidator, v.null()),
   parserVersion: v.string(),
   status: importBatchStatusValidator,
   periodStart: v.union(v.string(), v.null()),
@@ -71,6 +73,7 @@ type PreviewResult = {
   batchId: Id<'importBatches'>;
   format: 'ofx' | 'itauCreditCardXlsx';
   sourceAccountKind: 'bankAccount' | 'creditCard';
+  sourcePatrimony: 'personal' | 'business' | null;
   parserVersion: string;
   status: 'preview' | 'confirmed' | 'discarded' | 'rejected';
   periodStart: string | null;
@@ -105,10 +108,15 @@ type UploadAttachmentResult =
       sha256: string;
       size: number;
       contentType: string | null;
+      sourcePatrimony: 'personal' | 'business';
     }
   | {
       status: 'error';
-      code: 'OFX_UPLOAD_NOT_FOUND' | 'OFX_UPLOAD_EXPIRED' | 'OFX_UPLOAD_ALREADY_USED';
+      code:
+        | 'OFX_UPLOAD_NOT_FOUND'
+        | 'OFX_UPLOAD_EXPIRED'
+        | 'OFX_UPLOAD_ALREADY_USED'
+        | 'IMPORT_SOURCE_PATRIMONY_REQUIRED';
     };
 
 type XlsxRejectionCode =
@@ -141,6 +149,7 @@ export const createPreview = action({
         fileHash: attachment.sha256,
         format: 'itauCreditCardXlsx',
         sourceAccountKind: 'creditCard',
+        sourcePatrimony: attachment.sourcePatrimony,
         parserVersion: ITAU_CREDIT_CARD_XLSX_PARSER_VERSION,
         rejectionCode: metadataError,
         rawDeletedAt: Date.now(),
@@ -161,6 +170,7 @@ export const createPreview = action({
         parsed.transactions.map(async (transaction) => ({
           sequence: transaction.sequence,
           sourceKey: await createCreditCardSourceKey({
+            sourcePatrimony: attachment.sourcePatrimony,
             statementCompetence: parsed.statementCompetence,
             sequence: transaction.sequence,
             postedOn: transaction.postedOn,
@@ -190,6 +200,7 @@ export const createPreview = action({
         fileHash: attachment.sha256,
         format: 'itauCreditCardXlsx',
         sourceAccountKind: 'creditCard',
+        sourcePatrimony: attachment.sourcePatrimony,
         parserVersion: ITAU_CREDIT_CARD_XLSX_PARSER_VERSION,
         periodStart: parsed.periodStart,
         periodEnd: parsed.periodEnd,
@@ -220,6 +231,7 @@ export const createPreview = action({
         fileHash: attachment.sha256,
         format: 'itauCreditCardXlsx',
         sourceAccountKind: 'creditCard',
+        sourcePatrimony: attachment.sourcePatrimony,
         parserVersion: ITAU_CREDIT_CARD_XLSX_PARSER_VERSION,
         rejectionCode,
         rawDeletedAt: Date.now(),

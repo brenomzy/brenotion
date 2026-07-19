@@ -193,7 +193,7 @@ describe('classificationDecisions', () => {
         ownerId: 'synthetic-identity|isolated-owner',
         groupKey: SYNTHETIC_GROUP_KEY,
         normalizedDescription: 'mercado sintetico',
-        economicNature: 'mixed',
+        economicNature: 'personal',
         decidedAt: 1,
         updatedAt: 1,
       });
@@ -298,7 +298,7 @@ describe('classificationDecisions', () => {
     const updated = await owner.mutation(api.classificationDecisions.upsert, {
       groupKey: SYNTHETIC_GROUP_KEY,
       normalizedDescription: 'mercado sintetico',
-      economicNature: 'mixed',
+      economicNature: 'business',
     });
     expect(updated.status).toBe('updated');
 
@@ -323,7 +323,7 @@ describe('classificationDecisions', () => {
     expect(stored.revisions[1]).toMatchObject({
       revisionNumber: 2n,
       reason: 'updated',
-      snapshot: { economicNature: 'mixed' },
+      snapshot: { economicNature: 'business' },
     });
     expect(stored.decision).toMatchObject({
       revisionNumber: 2n,

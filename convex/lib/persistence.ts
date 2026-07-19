@@ -38,6 +38,11 @@ type AuditEvent =
         | 'bank_file.deleted';
       targetType: 'import_batch';
       targetId: Id<'importBatches'>;
+    }
+  | {
+      action: 'card_settlement.reconciled';
+      targetType: 'card_settlement_reconciliation';
+      targetId: Id<'cardSettlementReconciliations'>;
     };
 
 export async function appendAuditEvent(

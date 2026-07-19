@@ -377,7 +377,7 @@ function toClassificationDecision(decision: {
   _id: Id<'classificationDecisions'>;
   groupKey: string;
   normalizedDescription: string;
-  economicNature: 'personal' | 'business' | 'mixed';
+  economicNature: 'personal' | 'business';
   decidedAt: number;
   updatedAt: number;
 }) {

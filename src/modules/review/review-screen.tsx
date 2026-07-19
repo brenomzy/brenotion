@@ -11,6 +11,7 @@ import { type EconomicNature } from './review-classification-model';
 import {
   formatReviewDate,
   formatReviewPeriod,
+  formatSourcePatrimony,
   formatReviewTimestamp,
   getSelectedBatch,
   type ReviewImportBatch,
@@ -19,6 +20,7 @@ import {
   type ReviewScreenModel,
   type ReviewSourceTransaction,
 } from './review-screen-model';
+import { useCardSettlementReconciliation } from './use-card-settlement-reconciliation';
 import {
   type ReviewClassificationGroup,
   useReviewClassificationDecisions,
@@ -30,7 +32,6 @@ const ECONOMIC_NATURE_OPTIONS: readonly Readonly<{
 }>[] = [
   { value: 'personal', label: 'Pessoal' },
   { value: 'business', label: 'Empresa' },
-  { value: 'mixed', label: 'Mista' },
 ];
 
 function ReviewLoading() {
@@ -74,6 +75,9 @@ function ImportBatchSummary({ batch }: { batch: ReviewImportBatch }) {
           ) : null}
           <Text variant="caption">
             Confirmado em {formatReviewTimestamp(batch.confirmedAt)}
+          </Text>
+          <Text variant="caption">
+            Patrimônio de Origem: {formatSourcePatrimony(batch.sourcePatrimony)}
           </Text>
         </View>
       </CardHeader>
@@ -148,7 +152,7 @@ function ClassificationNotice() {
         <Text variant="label">Ainda não é um Fechamento Mensal</Text>
         <Text variant="caption" className="leading-5 text-ink">
           Você pode confirmar a Natureza Econômica dos grupos abaixo. Isso ainda não faz
-          conciliação nem altera valores oficiais do Plano Financeiro.
+          classificação automática nem altera valores oficiais do Plano Financeiro.
         </Text>
       </View>
     </View>
@@ -167,7 +171,7 @@ function ClassificationGroups({ model }: { model: ReviewReadyModel }) {
       <View className="gap-1">
         <Text variant="sectionTitle">Natureza Econômica</Text>
         <Text variant="caption" className="leading-5">
-          Confirme se cada grupo é Pessoal, Empresa ou Mista. Nenhuma opção é escolhida
+          Confirme se cada grupo é Pessoal ou Empresa. Nenhuma opção é escolhida
           automaticamente.
         </Text>
       </View>
@@ -375,11 +379,143 @@ function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction 
         <Text variant="caption" className="text-ink">
           {transaction.transactionType === 'statementPayment'
             ? 'Liquidação do cartão'
+            : transaction.cardSettlementRole === 'bankDebit'
+              ? 'Liquidação do cartão · débito bancário conciliado'
             : transaction.transactionType === 'creditAdjustment'
               ? 'Crédito/estorno'
               : 'Movimentação de Origem'}
         </Text>
       </View>
+      <Text variant="caption">
+        Patrimônio de Origem: {formatSourcePatrimony(transaction.sourcePatrimony)}
+      </Text>
+    </View>
+  );
+}
+
+function CardSettlementReconciliation({ batch }: { batch: ReviewImportBatch }) {
+  const source = useCardSettlementReconciliation(batch);
+
+  if (batch.format !== 'itauCreditCardXlsx') {
+    return null;
+  }
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Liquidação do Cartão</Text>
+        <Text variant="caption" className="leading-5">
+          O Brenotion procura um débito bancário de valor exatamente oposto em até sete dias.
+          Nada é conciliado sem sua confirmação.
+        </Text>
+      </View>
+
+      {source.status === 'loading' ? (
+        <View className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">Procurando candidatos determinísticos…</Text>
+        </View>
+      ) : source.result?.statementPayments.length === 0 ? (
+        <View className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">Esta fatura não contém pagamento estruturado.</Text>
+        </View>
+      ) : (
+        source.result?.statementPayments.map((payment) => (
+          <Card key={payment.transactionId} className="gap-3 py-4">
+            <CardContent className="gap-3">
+              <View className="flex-row items-center justify-between gap-4">
+                <View className="min-w-0 flex-1 gap-1">
+                  <Text variant="label">Pagamento identificado na fatura</Text>
+                  <Text variant="caption">
+                    {formatReviewDate(payment.postedOn)} · origem{' '}
+                    {formatSourcePatrimony(payment.sourcePatrimony)}
+                  </Text>
+                </View>
+                <MoneyValue
+                  minorUnits={payment.amount.amountInMinorUnits}
+                  currency="BRL"
+                  size="label"
+                />
+              </View>
+
+              {payment.reconciliation ? (
+                <View className="gap-1 rounded-control bg-status-recent-soft p-4">
+                  <Text variant="label">Conciliação confirmada</Text>
+                  <Text variant="caption" className="leading-5 text-ink">
+                    Vinculado ao débito bancário de{' '}
+                    {formatReviewDate(payment.reconciliation.bankDebit.postedOn)} · Patrimônio de
+                    Origem{' '}
+                    {formatSourcePatrimony(
+                      payment.reconciliation.bankDebit.sourcePatrimony,
+                    )}. O débito passa a ser tratado como Liquidação do Cartão, não como nova
+                    despesa.
+                  </Text>
+                </View>
+              ) : payment.candidates.length === 0 ? (
+                <View className="gap-1 rounded-control bg-status-warning-soft p-4">
+                  <Text variant="label">Nenhum candidato exato</Text>
+                  <Text variant="caption" className="leading-5 text-ink">
+                    Nenhum débito bancário com origem explícita, valor oposto exato e data
+                    compatível foi encontrado.
+                  </Text>
+                </View>
+              ) : (
+                <View className="gap-3">
+                  {payment.candidates.map((candidate) => {
+                    const isSaving = source.savingCandidateId === candidate.transactionId;
+                    const hasError = source.errorCandidateId === candidate.transactionId;
+
+                    return (
+                      <View
+                        key={candidate.transactionId}
+                        className="gap-3 rounded-control bg-surface-muted p-4">
+                        <View className="flex-row items-center justify-between gap-4">
+                          <View className="min-w-0 flex-1 gap-1">
+                            <Text variant="label">Débito bancário candidato</Text>
+                            <Text variant="caption">
+                              {formatReviewDate(candidate.postedOn)} · Patrimônio de Origem{' '}
+                              {formatSourcePatrimony(candidate.sourcePatrimony)} · diferença de{' '}
+                              {candidate.dayDistance}{' '}
+                              {candidate.dayDistance === 1 ? 'dia' : 'dias'}
+                            </Text>
+                          </View>
+                          <MoneyValue
+                            minorUnits={candidate.amount.amountInMinorUnits}
+                            currency="BRL"
+                            size="label"
+                          />
+                        </View>
+                        <Text variant="caption" className="leading-5">
+                          Confirmar cria somente o vínculo auditável e impede que este débito seja
+                          tratado como outra despesa. Nenhum valor ou Natureza Econômica é alterado.
+                        </Text>
+                        <Button
+                          variant="secondary"
+                          disabled={isSaving}
+                          accessibilityState={{ busy: isSaving, disabled: isSaving }}
+                          onPress={() =>
+                            void source.confirm(
+                              payment.transactionId,
+                              candidate.transactionId,
+                            )
+                          }>
+                          <Text>
+                            {isSaving ? 'Confirmando conciliação…' : 'Confirmar conciliação'}
+                          </Text>
+                        </Button>
+                        {hasError ? (
+                          <Text variant="caption" className="text-status-danger">
+                            Não foi possível confirmar. Nenhum vínculo foi alterado; tente novamente.
+                          </Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        ))
+      )}
     </View>
   );
 }
@@ -449,6 +585,7 @@ function ReviewReady({
       <ImportBatchSummary batch={batch} />
       <ClassificationNotice />
       <ImportHistory model={model} actions={actions} />
+      <CardSettlementReconciliation batch={batch} />
       <ClassificationGroups model={model} />
       <SourceTransactions model={model} actions={actions} />
     </>
@@ -480,7 +617,7 @@ export function ReviewScreen({
             <Text variant="overline">Dados persistidos</Text>
           )}
           <Text variant="screenTitle">Revisar</Text>
-          <Text variant="caption">Extratos e faturas importados do Itaú PF</Text>
+          <Text variant="caption">Extratos e faturas importados do Itaú</Text>
         </View>
 
         {model.status === 'loading' ? (

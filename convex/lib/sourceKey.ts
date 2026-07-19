@@ -1,4 +1,5 @@
 export async function createOfxSourceKey(input: {
+  sourcePatrimony: 'personal' | 'business';
   externalId: string | null;
   postedOn: string;
   amountInMinorUnits: bigint;
@@ -6,6 +7,7 @@ export async function createOfxSourceKey(input: {
 }): Promise<string> {
   return await sha256Hex(
     [
+      input.sourcePatrimony,
       input.externalId ?? 'missing-external-id',
       input.postedOn,
       input.amountInMinorUnits.toString(),
@@ -15,6 +17,7 @@ export async function createOfxSourceKey(input: {
 }
 
 export async function createCreditCardSourceKey(input: {
+  sourcePatrimony: 'personal' | 'business';
   statementCompetence: string;
   sequence: number;
   postedOn: string;
@@ -27,6 +30,7 @@ export async function createCreditCardSourceKey(input: {
   return await sha256Hex(
     [
       'itauCreditCardXlsx',
+      input.sourcePatrimony,
       input.statementCompetence,
       input.sequence.toString(),
       input.postedOn,

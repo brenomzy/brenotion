@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
   cn(
-    'group shrink-0 flex-row items-center justify-center gap-2 rounded-control',
+    'group scale-100 shrink-0 flex-row items-center justify-center gap-2 rounded-control',
     Platform.select({
       web: 'outline-none transition-transform duration-150 ease-out focus-visible:ring-[3px] focus-visible:ring-focus-ring/45 disabled:pointer-events-none',
     })

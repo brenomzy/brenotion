@@ -1,4 +1,4 @@
-export type EconomicNature = 'personal' | 'business' | 'mixed';
+export type EconomicNature = 'personal' | 'business';
 
 export type ReviewClassificationDecision = Readonly<{
   groupKey: string;
@@ -17,13 +17,18 @@ export type ClassificationQueryResult = Readonly<{
   decisionsByGroupKey: ReadonlyMap<string, ReviewClassificationDecision>;
 }>;
 
-const ECONOMIC_NATURES = new Set<EconomicNature>(['personal', 'business', 'mixed']);
+const ECONOMIC_NATURES = new Set<EconomicNature>(['personal', 'business']);
 
 export function selectTransactionsForEconomicNature<
-  Transaction extends Readonly<{ transactionType: string }>,
+  Transaction extends Readonly<{
+    transactionType: string;
+    cardSettlementRole?: 'statementPayment' | 'bankDebit' | null;
+  }>,
 >(transactions: readonly Transaction[]): readonly Transaction[] {
   return transactions.filter(
-    (transaction) => transaction.transactionType !== 'statementPayment',
+    (transaction) =>
+      transaction.transactionType !== 'statementPayment' &&
+      transaction.cardSettlementRole !== 'bankDebit',
   );
 }
 

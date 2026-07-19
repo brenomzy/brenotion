@@ -26,12 +26,20 @@ describe('imports', () => {
     const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
     const otherUser = t.withIdentity({ subject: SYNTHETIC_OTHER_ID });
 
-    await expect(t.mutation(api.imports.generateUploadUrl, {})).rejects.toMatchObject({
+    await expect(
+      t.mutation(api.imports.generateUploadUrl, {
+        format: 'ofx',
+        sourcePatrimony: 'personal',
+      }),
+    ).rejects.toMatchObject({
       data: { code: 'AUTHENTICATION_REQUIRED' },
     });
-    await expect(otherUser.mutation(api.imports.generateUploadUrl, {})).rejects.toMatchObject({
-      data: { code: 'ACCESS_DENIED' },
-    });
+    await expect(
+      otherUser.mutation(api.imports.generateUploadUrl, {
+        format: 'ofx',
+        sourcePatrimony: 'personal',
+      }),
+    ).rejects.toMatchObject({ data: { code: 'ACCESS_DENIED' } });
 
     const stored = await storeSyntheticUpload(t, owner);
     await expect(
@@ -60,6 +68,7 @@ describe('imports', () => {
 
     expect(preview).toMatchObject({
       status: 'preview',
+      sourcePatrimony: 'personal',
       periodStart: '2026-06-01',
       periodEnd: '2026-06-30',
       transactionCount: 2,
@@ -78,10 +87,15 @@ describe('imports', () => {
       auditEvents: await ctx.db.query('auditEvents').take(6),
     }));
     expect(persisted.uploads).toHaveLength(1);
-    expect(persisted.uploads[0]).toMatchObject({ status: 'consumed' });
+    expect(persisted.uploads[0]).toMatchObject({
+      status: 'consumed',
+      sourcePatrimony: 'personal',
+    });
     expect(persisted.uploads[0].storageId).toBeUndefined();
     expect(persisted.batches).toHaveLength(1);
     expect(persisted.entries).toHaveLength(2);
+    expect(persisted.batches[0]).toMatchObject({ sourcePatrimony: 'personal' });
+    expect(persisted.entries[0]).toMatchObject({ sourcePatrimony: 'personal' });
     expect(persisted.auditEvents.map((event) => event.action)).toEqual([
       'import_batch.preview_created',
       'bank_file.deleted',
@@ -114,6 +128,7 @@ describe('imports', () => {
       ),
     }));
     expect(persisted.sources).toHaveLength(2);
+    expect(persisted.sources[0]).toMatchObject({ sourcePatrimony: 'personal' });
     expect(persisted.confirmedAudits).toHaveLength(1);
   });
 
@@ -220,6 +235,7 @@ async function storeUpload(
 ): Promise<{ uploadId: Id<'importUploads'>; storageId: Id<'_storage'> }> {
   const upload = await owner.mutation(api.imports.generateUploadUrl, {
     format: 'ofx',
+    sourcePatrimony: 'personal',
   });
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob([content], { type: contentType })));
   return { uploadId: upload.uploadId, storageId };

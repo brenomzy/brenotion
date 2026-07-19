@@ -107,6 +107,7 @@ describe('importHistory', () => {
       batchId: newestId,
       format: 'ofx',
       sourceAccountKind: 'bankAccount',
+      sourcePatrimony: null,
       parserVersion: 'legacy-itau-ofx-v1',
       periodStart: '2026-06-01',
       periodEnd: '2026-06-30',
@@ -184,6 +185,8 @@ describe('importHistory', () => {
       description: 'Synthetic income gamma',
       transactionType: 'CREDIT',
       sourceAccountKind: 'bankAccount',
+      sourcePatrimony: null,
+      cardSettlementRole: null,
       installmentCurrent: null,
       installmentTotal: null,
     });

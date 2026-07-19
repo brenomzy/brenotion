@@ -19,11 +19,12 @@ import {
   importBatchStatusValidator,
   importFormatValidator,
   sourceAccountKindValidator,
+  sourcePatrimonyValidator,
 } from './schema';
 
 const PREVIEW_ROW_LIMIT = 8;
 const UPLOAD_EXPIRATION_MS = 15 * 60 * 1_000;
-const OFX_PARSER_VERSION = 'itau-ofx-v1';
+const OFX_PARSER_VERSION = 'itau-ofx-v2';
 const acceptedOfxContentTypes = new Set([
   'application/octet-stream',
   'application/ofx',
@@ -66,6 +67,7 @@ const previewResultValidator = v.object({
   batchId: v.id('importBatches'),
   format: importFormatValidator,
   sourceAccountKind: sourceAccountKindValidator,
+  sourcePatrimony: v.union(sourcePatrimonyValidator, v.null()),
   parserVersion: v.string(),
   status: importBatchStatusValidator,
   periodStart: v.union(v.string(), v.null()),
@@ -92,6 +94,7 @@ const uploadAttachmentResultValidator = v.union(
     sha256: v.string(),
     size: v.number(),
     contentType: v.union(v.string(), v.null()),
+    sourcePatrimony: sourcePatrimonyValidator,
   }),
   v.object({
     status: v.literal('error'),
@@ -99,6 +102,7 @@ const uploadAttachmentResultValidator = v.union(
       v.literal('OFX_UPLOAD_NOT_FOUND'),
       v.literal('OFX_UPLOAD_EXPIRED'),
       v.literal('OFX_UPLOAD_ALREADY_USED'),
+      v.literal('IMPORT_SOURCE_PATRIMONY_REQUIRED'),
     ),
   }),
 );
@@ -113,6 +117,7 @@ type PreviewResult = {
   batchId: Id<'importBatches'>;
   format: 'ofx' | 'itauCreditCardXlsx';
   sourceAccountKind: 'bankAccount' | 'creditCard';
+  sourcePatrimony: 'personal' | 'business' | null;
   parserVersion: string;
   status: 'preview' | 'confirmed' | 'discarded' | 'rejected';
   periodStart: string | null;
@@ -158,10 +163,15 @@ type UploadAttachmentResult =
       sha256: string;
       size: number;
       contentType: string | null;
+      sourcePatrimony: 'personal' | 'business';
     }
   | {
       status: 'error';
-      code: 'OFX_UPLOAD_NOT_FOUND' | 'OFX_UPLOAD_EXPIRED' | 'OFX_UPLOAD_ALREADY_USED';
+      code:
+        | 'OFX_UPLOAD_NOT_FOUND'
+        | 'OFX_UPLOAD_EXPIRED'
+        | 'OFX_UPLOAD_ALREADY_USED'
+        | 'IMPORT_SOURCE_PATRIMONY_REQUIRED';
     };
 
 type RejectionCode =
@@ -170,7 +180,10 @@ type RejectionCode =
   | 'OFX_UNSUPPORTED_CONTENT_TYPE';
 
 export const generateUploadUrl = mutation({
-  args: { format: v.optional(importFormatValidator) },
+  args: {
+    format: importFormatValidator,
+    sourcePatrimony: sourcePatrimonyValidator,
+  },
   returns: v.object({
     uploadId: v.id('importUploads'),
     uploadUrl: v.string(),
@@ -182,7 +195,8 @@ export const generateUploadUrl = mutation({
     const expiresAt = now + UPLOAD_EXPIRATION_MS;
     const uploadId = await ctx.db.insert('importUploads', {
       ownerId,
-      format: args.format ?? 'ofx',
+      format: args.format,
+      sourcePatrimony: args.sourcePatrimony,
       status: 'pending',
       createdAt: now,
       updatedAt: now,
@@ -310,6 +324,21 @@ export const attachUpload = internalMutation({
 
     const metadata = await ctx.db.system.get('_storage', args.storageId);
 
+    if (!upload.sourcePatrimony) {
+      if (metadata) {
+        await ctx.storage.delete(args.storageId);
+      }
+      const now = Date.now();
+      await ctx.db.patch('importUploads', upload._id, {
+        status: 'cleaned',
+        storageId: undefined,
+        fileHash: metadata?.sha256 ?? upload.fileHash,
+        cleanedAt: upload.cleanedAt ?? now,
+        updatedAt: now,
+      });
+      return { status: 'error', code: 'IMPORT_SOURCE_PATRIMONY_REQUIRED' };
+    }
+
     if ((upload.format ?? 'ofx') !== args.format) {
       if (metadata) {
         await ctx.storage.delete(args.storageId);
@@ -370,6 +399,7 @@ export const attachUpload = internalMutation({
       sha256: metadata.sha256,
       size: metadata.size,
       contentType: metadata.contentType ?? null,
+      sourcePatrimony: upload.sourcePatrimony,
     };
   },
 });
@@ -399,6 +429,7 @@ export const createPreview = action({
         fileHash: attachment.sha256,
         format: 'ofx',
         sourceAccountKind: 'bankAccount',
+        sourcePatrimony: attachment.sourcePatrimony,
         parserVersion: OFX_PARSER_VERSION,
         rejectionCode: metadataError,
         rawDeletedAt: Date.now(),
@@ -425,6 +456,7 @@ export const createPreview = action({
         parsed.transactions.map(async (transaction) => ({
           sequence: transaction.sequence,
           sourceKey: await createOfxSourceKey({
+            sourcePatrimony: attachment.sourcePatrimony,
             externalId: transaction.externalId,
             postedOn: transaction.postedOn,
             amountInMinorUnits: transaction.amountInMinorUnits,
@@ -452,6 +484,7 @@ export const createPreview = action({
         fileHash: attachment.sha256,
         format: 'ofx',
         sourceAccountKind: 'bankAccount',
+        sourcePatrimony: attachment.sourcePatrimony,
         parserVersion: OFX_PARSER_VERSION,
         rejectionCode,
         rawDeletedAt: Date.now(),
@@ -466,6 +499,7 @@ export const createPreview = action({
       fileHash: attachment.sha256,
       format: 'ofx',
       sourceAccountKind: 'bankAccount',
+      sourcePatrimony: attachment.sourcePatrimony,
       parserVersion: OFX_PARSER_VERSION,
       periodStart: prepared.periodStart,
       periodEnd: prepared.periodEnd,
@@ -483,6 +517,7 @@ export const createOrReusePreview = internalMutation({
     fileHash: v.string(),
     format: importFormatValidator,
     sourceAccountKind: sourceAccountKindValidator,
+    sourcePatrimony: sourcePatrimonyValidator,
     parserVersion: v.string(),
     periodStart: v.string(),
     periodEnd: v.string(),
@@ -536,6 +571,7 @@ export const createOrReusePreview = internalMutation({
       await ctx.db.patch('importBatches', batchId, {
         format: args.format,
         sourceAccountKind: args.sourceAccountKind,
+        sourcePatrimony: args.sourcePatrimony,
         parserVersion: args.parserVersion,
         status: 'preview',
         periodStart: args.periodStart,
@@ -576,6 +612,7 @@ export const createOrReusePreview = internalMutation({
         fileHash: args.fileHash,
         format: args.format,
         sourceAccountKind: args.sourceAccountKind,
+        sourcePatrimony: args.sourcePatrimony,
         parserVersion: args.parserVersion,
         status: 'preview',
         periodStart: args.periodStart,
@@ -615,6 +652,7 @@ export const createOrReusePreview = internalMutation({
       ownerId,
       batchId,
       args.sourceAccountKind,
+      args.sourcePatrimony,
       args.entries,
       duplicateSequences,
     );
@@ -645,6 +683,7 @@ export const recordRejectedUpload = internalMutation({
     fileHash: v.string(),
     format: importFormatValidator,
     sourceAccountKind: sourceAccountKindValidator,
+    sourcePatrimony: sourcePatrimonyValidator,
     parserVersion: v.string(),
     rejectionCode: rejectionCodeValidator,
     rawDeletedAt: v.number(),
@@ -667,6 +706,7 @@ export const recordRejectedUpload = internalMutation({
         fileHash: args.fileHash,
         format: args.format,
         sourceAccountKind: args.sourceAccountKind,
+        sourcePatrimony: args.sourcePatrimony,
         parserVersion: args.parserVersion,
         status: 'rejected',
         transactionCount: 0,
@@ -711,6 +751,9 @@ export const confirmBatch = mutation({
     if (batch.status !== 'preview') {
       throw new ConvexError({ code: 'IMPORT_BATCH_NOT_CONFIRMABLE' });
     }
+    if (!batch.sourcePatrimony) {
+      throw new ConvexError({ code: 'IMPORT_SOURCE_PATRIMONY_REQUIRED' });
+    }
 
     const entries = await ctx.db
       .query('importBatchEntries')
@@ -741,6 +784,7 @@ export const confirmBatch = mutation({
           description: entry.description,
           transactionType: entry.transactionType,
           sourceAccountKind: entry.sourceAccountKind ?? batch.sourceAccountKind,
+          sourcePatrimony: entry.sourcePatrimony ?? batch.sourcePatrimony,
           installmentCurrent: entry.installmentCurrent,
           installmentTotal: entry.installmentTotal,
           createdAt: now,
@@ -845,6 +889,7 @@ async function buildPreviewResult(
     format: batch.format,
     sourceAccountKind:
       batch.sourceAccountKind ?? (batch.format === 'ofx' ? 'bankAccount' : 'creditCard'),
+    sourcePatrimony: batch.sourcePatrimony ?? null,
     parserVersion:
       batch.parserVersion ?? (batch.format === 'ofx' ? 'legacy-itau-ofx-v1' : 'unknown'),
     statementTitle: batch.statementTitle ?? null,
@@ -941,6 +986,7 @@ async function insertPreviewEntries(
   ownerId: string,
   batchId: Id<'importBatches'>,
   sourceAccountKind: 'bankAccount' | 'creditCard',
+  sourcePatrimony: 'personal' | 'business',
   entries: PreparedEntry[],
   duplicateSequences: Set<number>,
 ): Promise<void> {
@@ -955,6 +1001,7 @@ async function insertPreviewEntries(
       description: entry.description,
       transactionType: entry.transactionType,
       sourceAccountKind,
+      sourcePatrimony,
       installmentCurrent: entry.installmentCurrent,
       installmentTotal: entry.installmentTotal,
       isDuplicate: duplicateSequences.has(entry.sequence),

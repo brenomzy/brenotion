@@ -6,22 +6,18 @@ import { requireAuthorizedOwner } from './lib/authorization';
 import { appendAuditEvent } from './lib/persistence';
 import {
   brlMoneyValidator,
-  businessSharePolicyValidator,
   economicNatureValidator,
   paymentOriginValidator,
 } from './schema';
 
 const MAX_LIST_ITEMS = 200;
 const MAX_REVISION_ITEMS = 200;
-const MIN_MIXED_BUSINESS_SHARE_BASIS_POINTS = 1n;
-const MAX_MIXED_BUSINESS_SHARE_BASIS_POINTS = 9_999n;
 
 const obligationValidator = v.object({
   obligationId: v.id('obligations'),
   obligationKey: v.string(),
   name: v.string(),
   economicNature: economicNatureValidator,
-  businessSharePolicy: businessSharePolicyValidator,
   paymentOrigin: paymentOriginValidator,
   expectedAmount: v.optional(brlMoneyValidator),
   dueDayOfMonth: v.optional(v.number()),
@@ -42,7 +38,6 @@ const obligationRevisionValidator = v.object({
     obligationKey: v.string(),
     name: v.string(),
     economicNature: economicNatureValidator,
-    businessSharePolicy: businessSharePolicyValidator,
     paymentOrigin: paymentOriginValidator,
     expectedAmount: v.optional(brlMoneyValidator),
     dueDayOfMonth: v.optional(v.number()),
@@ -122,7 +117,6 @@ export const upsert = mutation({
     obligationKey: v.string(),
     name: v.string(),
     economicNature: economicNatureValidator,
-    businessSharePolicy: businessSharePolicyValidator,
     paymentOrigin: paymentOriginValidator,
     expectedAmount: v.optional(brlMoneyValidator),
     dueDayOfMonth: v.optional(v.number()),
@@ -136,7 +130,6 @@ export const upsert = mutation({
     const { ownerId } = await requireAuthorizedOwner(ctx);
     const obligationKey = normalizeObligationKey(args.obligationKey);
     const name = normalizeName(args.name);
-    validateBusinessSharePolicy(args.economicNature, args.businessSharePolicy);
     validateExpectedAmount(args.expectedAmount);
     validateDueDayOfMonth(args.dueDayOfMonth);
 
@@ -151,10 +144,6 @@ export const upsert = mutation({
       existing &&
       existing.name === name &&
       existing.economicNature === args.economicNature &&
-      businessSharePoliciesEqual(
-        existing.businessSharePolicy,
-        args.businessSharePolicy,
-      ) &&
       existing.paymentOrigin === args.paymentOrigin &&
       moneyValuesEqual(existing.expectedAmount, args.expectedAmount) &&
       existing.dueDayOfMonth === args.dueDayOfMonth &&
@@ -174,7 +163,6 @@ export const upsert = mutation({
         obligationKey,
         name,
         economicNature: args.economicNature,
-        businessSharePolicy: args.businessSharePolicy,
         paymentOrigin: args.paymentOrigin,
         expectedAmount: args.expectedAmount,
         dueDayOfMonth: args.dueDayOfMonth,
@@ -226,7 +214,6 @@ export const upsert = mutation({
       obligationKey,
       name,
       economicNature: args.economicNature,
-      businessSharePolicy: args.businessSharePolicy,
       paymentOrigin: args.paymentOrigin,
       expectedAmount: args.expectedAmount,
       dueDayOfMonth: args.dueDayOfMonth,
@@ -245,7 +232,6 @@ export const upsert = mutation({
         obligationKey,
         name,
         economicNature: args.economicNature,
-        businessSharePolicy: args.businessSharePolicy,
         paymentOrigin: args.paymentOrigin,
         expectedAmount: args.expectedAmount,
         dueDayOfMonth: args.dueDayOfMonth,
@@ -278,7 +264,6 @@ export const upsert = mutation({
         obligationKey,
         name,
         economicNature: args.economicNature,
-        businessSharePolicy: args.businessSharePolicy,
         paymentOrigin: args.paymentOrigin,
         expectedAmount: args.expectedAmount,
         dueDayOfMonth: args.dueDayOfMonth,
@@ -340,7 +325,6 @@ function toObligationSnapshot(
     | 'obligationKey'
     | 'name'
     | 'economicNature'
-    | 'businessSharePolicy'
     | 'paymentOrigin'
     | 'expectedAmount'
     | 'dueDayOfMonth'
@@ -353,7 +337,6 @@ function toObligationSnapshot(
     obligationKey: obligation.obligationKey,
     name: obligation.name,
     economicNature: obligation.economicNature,
-    businessSharePolicy: obligation.businessSharePolicy,
     paymentOrigin: obligation.paymentOrigin,
     expectedAmount: obligation.expectedAmount,
     dueDayOfMonth: obligation.dueDayOfMonth,
@@ -383,33 +366,6 @@ function normalizeName(value: string): string {
   return normalized;
 }
 
-function validateBusinessSharePolicy(
-  economicNature: 'personal' | 'business' | 'mixed',
-  policy:
-    | { status: 'notApplicable' }
-    | { status: 'needsConfirmation' }
-    | { status: 'confirmed'; basisPoints: bigint },
-): void {
-  if (economicNature !== 'mixed') {
-    if (policy.status !== 'notApplicable') {
-      throwValidationError('BUSINESS_SHARE_ONLY_FOR_MIXED_NATURE');
-    }
-    return;
-  }
-
-  if (policy.status === 'notApplicable') {
-    throwValidationError('MIXED_BUSINESS_SHARE_REQUIRED');
-  }
-
-  if (
-    policy.status === 'confirmed' &&
-    (policy.basisPoints < MIN_MIXED_BUSINESS_SHARE_BASIS_POINTS ||
-      policy.basisPoints > MAX_MIXED_BUSINESS_SHARE_BASIS_POINTS)
-  ) {
-    throwValidationError('INVALID_MIXED_BUSINESS_SHARE');
-  }
-}
-
 function validateExpectedAmount(
   expectedAmount:
     | {
@@ -433,17 +389,6 @@ function validateDueDayOfMonth(dueDayOfMonth: number | undefined): void {
   }
 }
 
-function businessSharePoliciesEqual(
-  left: Doc<'obligations'>['businessSharePolicy'],
-  right: Doc<'obligations'>['businessSharePolicy'],
-): boolean {
-  return (
-    left.status === right.status &&
-    (left.status !== 'confirmed' ||
-      (right.status === 'confirmed' && left.basisPoints === right.basisPoints))
-  );
-}
-
 function moneyValuesEqual(
   left: Doc<'obligations'>['expectedAmount'],
   right: Doc<'obligations'>['expectedAmount'],
@@ -462,7 +407,6 @@ function toObligation(obligation: Pick<
   | 'obligationKey'
   | 'name'
   | 'economicNature'
-  | 'businessSharePolicy'
   | 'paymentOrigin'
   | 'expectedAmount'
   | 'dueDayOfMonth'
@@ -475,7 +419,6 @@ function toObligation(obligation: Pick<
     obligationKey: obligation.obligationKey,
     name: obligation.name,
     economicNature: obligation.economicNature,
-    businessSharePolicy: obligation.businessSharePolicy,
     paymentOrigin: obligation.paymentOrigin,
     expectedAmount: obligation.expectedAmount,
     dueDayOfMonth: obligation.dueDayOfMonth,
@@ -488,9 +431,6 @@ function toObligation(obligation: Pick<
 type ObligationValidationErrorCode =
   | 'INVALID_OBLIGATION_KEY'
   | 'INVALID_OBLIGATION_NAME'
-  | 'BUSINESS_SHARE_ONLY_FOR_MIXED_NATURE'
-  | 'MIXED_BUSINESS_SHARE_REQUIRED'
-  | 'INVALID_MIXED_BUSINESS_SHARE'
   | 'INVALID_EXPECTED_AMOUNT'
   | 'INVALID_DUE_DAY_OF_MONTH';
 

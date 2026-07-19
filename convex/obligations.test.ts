@@ -52,7 +52,6 @@ describe('obligations', () => {
         obligationKey: 'synthetic-connectivity',
         name: 'Synthetic connectivity',
         economicNature: 'business',
-        businessSharePolicy: { status: 'notApplicable' },
         paymentOrigin: 'business',
         isActive: true,
         createdAt: 1,
@@ -140,74 +139,15 @@ describe('obligations', () => {
     expect(created.obligation).toMatchObject({
       economicNature: 'personal',
       paymentOrigin: 'business',
-      businessSharePolicy: { status: 'notApplicable' },
     });
   });
 
-  it('requires mixed business share to be confirmed or explicitly pending', async () => {
+  it('rejects invalid obligation boundaries', async () => {
     vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
     const owner = convexTest(schema, modules).withIdentity({
       subject: SYNTHETIC_OWNER_ID,
     });
 
-    const pending = await owner.mutation(api.obligations.upsert, {
-      obligationKey: 'synthetic-utilities',
-      name: 'Synthetic utilities',
-      economicNature: 'mixed',
-      businessSharePolicy: { status: 'needsConfirmation' },
-      paymentOrigin: 'personal',
-      isActive: true,
-    });
-    const confirmed = await owner.mutation(api.obligations.upsert, {
-      obligationKey: 'synthetic-utilities',
-      name: 'Synthetic utilities',
-      economicNature: 'mixed',
-      businessSharePolicy: { status: 'confirmed', basisPoints: 3_500n },
-      paymentOrigin: 'personal',
-      isActive: true,
-    });
-
-    expect(pending.obligation.businessSharePolicy).toEqual({
-      status: 'needsConfirmation',
-    });
-    expect(confirmed.status).toBe('updated');
-    expect(confirmed.obligation.businessSharePolicy).toEqual({
-      status: 'confirmed',
-      basisPoints: 3_500n,
-    });
-  });
-
-  it('rejects contradictory shares, invented percentages and invalid boundaries', async () => {
-    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
-    const owner = convexTest(schema, modules).withIdentity({
-      subject: SYNTHETIC_OWNER_ID,
-    });
-
-    await expect(
-      owner.mutation(api.obligations.upsert, {
-        ...personalObligation(),
-        businessSharePolicy: { status: 'needsConfirmation' },
-      }),
-    ).rejects.toMatchObject({
-      data: { code: 'BUSINESS_SHARE_ONLY_FOR_MIXED_NATURE' },
-    });
-    await expect(
-      owner.mutation(api.obligations.upsert, {
-        ...personalObligation(),
-        economicNature: 'mixed',
-      }),
-    ).rejects.toMatchObject({
-      data: { code: 'MIXED_BUSINESS_SHARE_REQUIRED' },
-    });
-    await expect(
-      owner.mutation(api.obligations.upsert, {
-        ...personalObligation(),
-        economicNature: 'mixed',
-        businessSharePolicy: { status: 'confirmed', basisPoints: 0n },
-      }),
-    ).rejects.toMatchObject({
-      data: { code: 'INVALID_MIXED_BUSINESS_SHARE' },
-    });
     await expect(
       owner.mutation(api.obligations.upsert, {
         ...personalObligation(),
@@ -215,6 +155,14 @@ describe('obligations', () => {
       }),
     ).rejects.toMatchObject({
       data: { code: 'INVALID_OBLIGATION_KEY' },
+    });
+    await expect(
+      owner.mutation(api.obligations.upsert, {
+        ...personalObligation(),
+        name: ' ',
+      }),
+    ).rejects.toMatchObject({
+      data: { code: 'INVALID_OBLIGATION_NAME' },
     });
     await expect(
       owner.mutation(api.obligations.upsert, {
@@ -236,6 +184,32 @@ describe('obligations', () => {
     ).rejects.toMatchObject({
       data: { code: 'INVALID_EXPECTED_AMOUNT' },
     });
+  });
+
+  it('allows an unknown payment origin and clears optional configuration fields', async () => {
+    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
+    const owner = convexTest(schema, modules).withIdentity({
+      subject: SYNTHETIC_OWNER_ID,
+    });
+
+    await owner.mutation(api.obligations.upsert, personalObligation());
+    const updated = await owner.mutation(api.obligations.upsert, {
+      obligationKey: 'synthetic-housing',
+      name: 'Synthetic housing',
+      economicNature: 'personal',
+      paymentOrigin: 'needsConfirmation',
+      isActive: true,
+    });
+
+    expect(updated).toMatchObject({
+      status: 'updated',
+      obligation: {
+        economicNature: 'personal',
+        paymentOrigin: 'needsConfirmation',
+      },
+    });
+    expect(updated.obligation).not.toHaveProperty('expectedAmount');
+    expect(updated.obligation).not.toHaveProperty('dueDayOfMonth');
   });
 
   it('updates and deactivates without duplicating the logical obligation', async () => {
@@ -308,7 +282,6 @@ describe('obligations', () => {
         obligationKey: 'synthetic-legacy',
         name: 'Synthetic legacy',
         economicNature: 'personal',
-        businessSharePolicy: { status: 'notApplicable' },
         paymentOrigin: 'personal',
         isActive: true,
         createdAt: 10,
@@ -320,7 +293,6 @@ describe('obligations', () => {
       obligationKey: 'synthetic-legacy',
       name: 'Synthetic legacy',
       economicNature: 'personal',
-      businessSharePolicy: { status: 'notApplicable' },
       paymentOrigin: 'personal',
       isActive: true,
     });
@@ -336,7 +308,6 @@ describe('obligations', () => {
       obligationKey: 'synthetic-legacy',
       name: 'Synthetic legacy renamed',
       economicNature: 'personal',
-      businessSharePolicy: { status: 'notApplicable' },
       paymentOrigin: 'personal',
       isActive: true,
     });
@@ -385,7 +356,6 @@ describe('obligations', () => {
         obligationKey: 'synthetic-isolated',
         name: 'Synthetic isolated',
         economicNature: 'business',
-        businessSharePolicy: { status: 'notApplicable' },
         paymentOrigin: 'business',
         isActive: true,
         createdAt: 1,
@@ -408,7 +378,6 @@ function personalObligation() {
     obligationKey: 'synthetic-housing',
     name: 'Synthetic housing',
     economicNature: 'personal' as const,
-    businessSharePolicy: { status: 'notApplicable' as const },
     paymentOrigin: 'personal' as const,
     expectedAmount: {
       amountInMinorUnits: 125_00n,

@@ -1,9 +1,11 @@
 export const MAX_ITAU_CREDIT_CARD_XLSX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const MAX_ITAU_CREDIT_CARD_TRANSACTIONS = 1_000;
-export const ITAU_CREDIT_CARD_XLSX_PARSER_VERSION = 'itau-credit-card-xlsx-v1';
+export const ITAU_CREDIT_CARD_XLSX_PARSER_VERSION = 'itau-credit-card-xlsx-v3';
 
 const MONEY_FLOAT_NOISE_TOLERANCE = 1e-7;
 const HEADER_SEARCH_ROW_LIMIT = 40;
+const STATEMENT_TITLE_PATTERN =
+  /^Fatura\s+(?:Paga|Aberta)\s*-\s*([A-Za-zÀ-ÿ]+)\/(\d{4})$/i;
 
 export type ItauCreditCardXlsxParseErrorCode =
   | 'XLSX_EMPTY_FILE'
@@ -145,15 +147,13 @@ function findStatementTitle(
   rows: readonly (readonly unknown[])[],
   headerRowIndex: number,
 ): string {
-  const pattern = /^Fatura\s+Paga\s*-\s*([A-Za-zÀ-ÿ]+)\/(\d{4})$/i;
-
   for (let rowIndex = 0; rowIndex < headerRowIndex; rowIndex += 1) {
     const row = rows[rowIndex];
     for (let columnIndex = 0; columnIndex <= 4; columnIndex += 1) {
       const value = row[columnIndex];
       if (typeof value === 'string') {
         const sanitized = sanitizeText(value, 120);
-        if (pattern.test(sanitized)) {
+        if (STATEMENT_TITLE_PATTERN.test(sanitized)) {
           return sanitized;
         }
       }
@@ -164,7 +164,7 @@ function findStatementTitle(
 }
 
 function parseStatementCompetence(title: string): string {
-  const match = /^Fatura\s+Paga\s*-\s*([A-Za-zÀ-ÿ]+)\/(\d{4})$/i.exec(title);
+  const match = STATEMENT_TITLE_PATTERN.exec(title);
   const month = match ? MONTHS[normalizeLabel(match[1])] : undefined;
   const year = match ? Number(match[2]) : Number.NaN;
 

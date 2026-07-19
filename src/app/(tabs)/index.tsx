@@ -1,6 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { HomeScreen } from '@/modules/home/home-screen';
+import {
+  HomeScreen,
+  SyntheticHomeScreen,
+} from '@/modules/home/home-screen';
 import { type HomeScenario } from '@/modules/home/home-snapshot-source';
 
 const HOME_SCENARIOS = new Set<HomeScenario>([
@@ -19,7 +22,11 @@ export default function HomeRoute() {
   const activeScenario =
     requestedScenario && HOME_SCENARIOS.has(requestedScenario as HomeScenario)
       ? (requestedScenario as HomeScenario)
-      : 'recent';
+      : null;
 
-  return <HomeScreen scenario={activeScenario} />;
+  return activeScenario ? (
+    <SyntheticHomeScreen scenario={activeScenario} />
+  ) : (
+    <HomeScreen />
+  );
 }

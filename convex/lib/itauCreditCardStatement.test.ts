@@ -71,6 +71,20 @@ describe('parseItauCreditCardStatementRows', () => {
     ]);
   });
 
+  it('accepts an open statement title and preserves its competence', () => {
+    const rows = syntheticRows();
+    rows[7][1] = 'Fatura Aberta - Agosto/2026';
+    rows[9][8] = new Date(Date.UTC(2026, 7, 12));
+
+    const parsed = parseItauCreditCardStatementRows(rows);
+
+    expect(parsed).toMatchObject({
+      statementTitle: 'Fatura Aberta - Agosto/2026',
+      statementCompetence: '2026-08',
+      statementDueOn: '2026-08-12',
+    });
+  });
+
   it('tolerates binary float noise below one ten-millionth before exact minor units', () => {
     const rows = syntheticRows();
     rows[14][4] = 123.45000004;

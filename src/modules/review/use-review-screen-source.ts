@@ -109,6 +109,7 @@ function toReviewBatch(
     id: batch.batchId,
     format: batch.format,
     sourceAccountKind: batch.sourceAccountKind,
+    sourcePatrimony: batch.sourcePatrimony,
     parserVersion: batch.parserVersion,
     periodStart: batch.periodStart,
     periodEnd: batch.periodEnd,
@@ -139,6 +140,8 @@ function toReviewTransaction(
     description: transaction.description,
     transactionType: transaction.transactionType,
     sourceAccountKind: transaction.sourceAccountKind,
+    sourcePatrimony: transaction.sourcePatrimony,
+    cardSettlementRole: transaction.cardSettlementRole,
     installmentCurrent: transaction.installmentCurrent,
     installmentTotal: transaction.installmentTotal,
   };

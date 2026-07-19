@@ -10,6 +10,7 @@ import {
   brlMoneyValidator,
   importFormatValidator,
   sourceAccountKindValidator,
+  sourcePatrimonyValidator,
 } from './schema';
 
 const MAX_HISTORY_PAGE_SIZE = 50;
@@ -18,6 +19,7 @@ const confirmedBatchValidator = v.object({
   batchId: v.id('importBatches'),
   format: importFormatValidator,
   sourceAccountKind: sourceAccountKindValidator,
+  sourcePatrimony: v.union(sourcePatrimonyValidator, v.null()),
   parserVersion: v.string(),
   periodStart: v.string(),
   periodEnd: v.string(),
@@ -44,6 +46,12 @@ const sourceTransactionValidator = v.object({
   description: v.string(),
   transactionType: v.string(),
   sourceAccountKind: sourceAccountKindValidator,
+  sourcePatrimony: v.union(sourcePatrimonyValidator, v.null()),
+  cardSettlementRole: v.union(
+    v.literal('statementPayment'),
+    v.literal('bankDebit'),
+    v.null(),
+  ),
   installmentCurrent: v.union(v.number(), v.null()),
   installmentTotal: v.union(v.number(), v.null()),
 });
@@ -81,6 +89,7 @@ export const listConfirmedBatches = query({
           sourceAccountKind:
             batch.sourceAccountKind ??
             (batch.format === 'ofx' ? 'bankAccount' : 'creditCard'),
+          sourcePatrimony: batch.sourcePatrimony ?? null,
           parserVersion:
             batch.parserVersion ??
             (batch.format === 'ofx' ? 'legacy-itau-ofx-v1' : 'unknown'),
@@ -130,19 +139,43 @@ export const listSourceTransactions = query({
 
     return {
       ...result,
-      page: result.page.map((transaction) => ({
-        transactionId: transaction._id,
-        importBatchId: transaction.importBatchId,
-        postedOn: transaction.postedOn,
-        amount: transaction.amount,
-        description: transaction.description,
-        transactionType: transaction.transactionType,
-        sourceAccountKind:
-          transaction.sourceAccountKind ??
-          (batch.format === 'ofx' ? 'bankAccount' : 'creditCard'),
-        installmentCurrent: transaction.installmentCurrent ?? null,
-        installmentTotal: transaction.installmentTotal ?? null,
-      })),
+      page: await Promise.all(
+        result.page.map(async (transaction) => {
+          const bankDebitReconciliation =
+            transaction.transactionType === 'statementPayment'
+              ? null
+              : await ctx.db
+                  .query('cardSettlementReconciliations')
+                  .withIndex('by_ownerId_and_bankDebitTransactionId', (q) =>
+                    q
+                      .eq('ownerId', ownerId)
+                      .eq('bankDebitTransactionId', transaction._id),
+                  )
+                  .unique();
+
+          return {
+            transactionId: transaction._id,
+            importBatchId: transaction.importBatchId,
+            postedOn: transaction.postedOn,
+            amount: transaction.amount,
+            description: transaction.description,
+            transactionType: transaction.transactionType,
+            sourceAccountKind:
+              transaction.sourceAccountKind ??
+              (batch.format === 'ofx' ? 'bankAccount' : 'creditCard'),
+            sourcePatrimony:
+              transaction.sourcePatrimony ?? batch.sourcePatrimony ?? null,
+            cardSettlementRole:
+              transaction.transactionType === 'statementPayment'
+                ? ('statementPayment' as const)
+                : bankDebitReconciliation
+                  ? ('bankDebit' as const)
+                  : null,
+            installmentCurrent: transaction.installmentCurrent ?? null,
+            installmentTotal: transaction.installmentTotal ?? null,
+          };
+        }),
+      ),
     };
   },
 });

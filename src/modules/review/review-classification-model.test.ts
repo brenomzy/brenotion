@@ -15,6 +15,11 @@ describe('review classification model', () => {
       { id: 'purchase', transactionType: 'purchase' },
       { id: 'credit', transactionType: 'creditAdjustment' },
       { id: 'settlement', transactionType: 'statementPayment' },
+      {
+        id: 'reconciled-bank-debit',
+        transactionType: 'DEBIT',
+        cardSettlementRole: 'bankDebit' as const,
+      },
     ];
 
     expect(selectTransactionsForEconomicNature(transactions).map(({ id }) => id)).toEqual([
@@ -40,7 +45,7 @@ describe('review classification model', () => {
     const decision: ReviewClassificationDecision = {
       groupKey: 'group-a',
       normalizedDescription: 'grupo sintetico',
-      economicNature: 'mixed',
+      economicNature: 'business',
       updatedAt: 20,
     };
 
@@ -80,7 +85,7 @@ describe('review classification model', () => {
     };
     const newerPersisted: ReviewClassificationDecision = {
       ...stalePersisted,
-      economicNature: 'mixed',
+      economicNature: 'personal',
       updatedAt: 21,
     };
 

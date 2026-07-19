@@ -20,7 +20,15 @@ function MoreLoading() {
   );
 }
 
-export function MoreScreen({ model }: { model: MoreScreenModel }) {
+export function MoreScreen() {
+  return <MoreScreenContent model={null} />;
+}
+
+export function SyntheticMoreScreen({ model }: { model: MoreScreenModel }) {
+  return <MoreScreenContent model={model} />;
+}
+
+function MoreScreenContent({ model }: { model: MoreScreenModel | null }) {
   const router = useRouter();
   const access = useAccessSession();
   const insets = useSafeAreaInsets();
@@ -45,41 +53,47 @@ export function MoreScreen({ model }: { model: MoreScreenModel }) {
       }}>
       <View className="w-full max-w-[720px] self-center gap-6 px-5 web:px-8">
         <View className="gap-1">
-          <Text variant="overline">Demonstração com dados sintéticos</Text>
+          <Text variant="overline">Configurações</Text>
           <Text variant="screenTitle">Mais</Text>
           <Text variant="caption">Acesso do Titular e configurações</Text>
         </View>
 
-        {model.scenario === 'loading' ? (
-          <MoreLoading />
-        ) : model.scenario === 'recent' ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{model.state.title}</CardTitle>
-              <DataConfidence status="recent" description={model.state.description} />
-            </CardHeader>
-            <CardContent>
-              <Button variant="secondary" className="w-full">
-                <Text>{model.state.actionLabel}</Text>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <ScreenStatePanel
-            state={model.scenario}
-            title={model.state.title}
-            description={model.state.description}
-            actionLabel={model.state.actionLabel!}
-            onActionPress={() => undefined}
-          />
-        )}
+        {model ? (
+          model.scenario === 'loading' ? (
+            <MoreLoading />
+          ) : model.scenario === 'recent' ? (
+            <Card>
+              <CardHeader>
+                <Text variant="overline">Demonstração com dados sintéticos</Text>
+                <CardTitle>{model.state.title}</CardTitle>
+                <DataConfidence
+                  status="recent"
+                  description={model.state.description}
+                />
+              </CardHeader>
+              <CardContent>
+                <Button variant="secondary" className="w-full">
+                  <Text>{model.state.actionLabel}</Text>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <ScreenStatePanel
+              state={model.scenario}
+              title={model.state.title}
+              description={model.state.description}
+              actionLabel={model.state.actionLabel!}
+              onActionPress={() => undefined}
+            />
+          )
+        ) : null}
 
         <Card>
           <CardHeader>
             <CardTitle>Importação financeira</CardTitle>
             <CardDescription className="text-body leading-6">
-              Envie extratos OFX e faturas XLSX do Itaú PF pelo companion web. Depois, acompanhe os
-              lotes e as movimentações confirmadas em Revisar.
+              Acompanhe por competência o Itaú Pessoal, a fatura e o Itaú Empresa
+              pelo companion web. Depois, revise os lotes confirmados.
             </CardDescription>
           </CardHeader>
           <CardContent className="gap-3">
@@ -94,10 +108,64 @@ export function MoreScreen({ model }: { model: MoreScreenModel }) {
 
         <Card>
           <CardHeader>
+            <CardTitle>Obrigações</CardTitle>
+            <CardDescription className="text-body leading-6">
+              Configure compromissos recorrentes com Natureza Econômica e origem
+              pagadora independentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onPress={() => router.push('/obligations')}>
+              <Text>Gerenciar Obrigações</Text>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Fechamento Mensal</CardTitle>
+            <CardDescription className="text-body leading-6">
+              Revise cobertura e lacunas da competência. O registro atual é
+              parcial e não publica Disponível para Gastar, limites ou reservas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onPress={() => router.push('/close')}>
+              <Text>Abrir Fechamento Mensal</Text>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ciclo Financeiro e Gastos Informados</CardTitle>
+            <CardDescription className="text-body leading-6">
+              Abra o ciclo explicitamente e registre gastos recentes como
+              provisórios, sem inventar impacto no Plano Financeiro.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onPress={() => router.push('/reported-expenses')}>
+              <Text>Abrir ciclo atual</Text>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Preferências e Cofre Fiscal</CardTitle>
             <CardDescription className="text-body leading-6">
-              Entradas iniciais preservadas para a próxima fatia, sem documentos ou identificadores
-              financeiros nesta demonstração.
+              Entradas iniciais preservadas para uma fatia posterior, sem
+              documentos ou identificadores financeiros nesta demonstração.
             </CardDescription>
           </CardHeader>
         </Card>

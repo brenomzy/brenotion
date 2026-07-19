@@ -53,7 +53,8 @@ describe('XLSX imports', () => {
     expect(preview).toMatchObject({
       format: 'itauCreditCardXlsx',
       sourceAccountKind: 'creditCard',
-      parserVersion: 'itau-credit-card-xlsx-v1',
+      sourcePatrimony: 'personal',
+      parserVersion: 'itau-credit-card-xlsx-v3',
       status: 'preview',
       statementTitle: 'Fatura Paga - Julho/2026',
       statementCompetence: '2026-07',
@@ -98,6 +99,7 @@ describe('XLSX imports', () => {
     ]);
     expect(persisted.sources[1]).toMatchObject({
       sourceAccountKind: 'creditCard',
+      sourcePatrimony: 'personal',
       installmentCurrent: 2,
       installmentTotal: 4,
     });
@@ -120,6 +122,7 @@ describe('XLSX imports', () => {
 async function storeSyntheticXlsxUpload(t: TestBackend, owner: TestClient) {
   const upload = await owner.mutation(api.imports.generateUploadUrl, {
     format: 'itauCreditCardXlsx',
+    sourcePatrimony: 'personal',
   });
   const bytes = await readFile(FIXTURE_PATH);
   const storageId = await t.run((ctx) =>

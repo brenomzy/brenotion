@@ -12,6 +12,7 @@ const batch: ReviewImportBatch = {
   id: 'batch-1',
   format: 'ofx',
   sourceAccountKind: 'bankAccount',
+  sourcePatrimony: 'personal',
   parserVersion: 'itau-ofx-v1',
   periodStart: '2026-06-01',
   periodEnd: '2026-06-30',

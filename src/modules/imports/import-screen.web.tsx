@@ -19,11 +19,17 @@ import type { Id } from '../../../convex/_generated/dataModel';
 import { WebButton } from '@/components/web/ui/button.web';
 import { WebProgress } from '@/components/web/ui/progress.web';
 import { cn } from '@/lib/utils';
+import { MonthlyImportCoverage } from './monthly-import-coverage.web';
+import {
+  currentCompetence,
+  type MonthlyImportSourceId,
+} from './monthly-import-coverage-model';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 type Preview = FunctionReturnType<typeof api.imports.createPreview>;
 type ImportFormat = 'ofx' | 'itauCreditCardXlsx';
+type SourcePatrimony = 'personal' | 'business';
 type ImportStage =
   | 'idle'
   | 'uploading'
@@ -38,6 +44,7 @@ type ImportStage =
 export function ImportScreen() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const importFormRef = useRef<HTMLDivElement>(null);
   const generateUploadUrl = useMutation(api.imports.generateUploadUrl);
   const cleanupUpload = useMutation(api.imports.cleanupUpload);
   const createOfxPreview = useAction(api.imports.createPreview);
@@ -45,10 +52,15 @@ export function ImportScreen() {
   const confirmBatch = useMutation(api.imports.confirmBatch);
   const discardBatch = useMutation(api.imports.discardBatch);
   const [file, setFile] = useState<File | null>(null);
+  const [sourcePatrimony, setSourcePatrimony] = useState<SourcePatrimony | null>(null);
   const [stage, setStage] = useState<ImportStage>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [competence, setCompetence] = useState(() => currentCompetence());
+  const [importTarget, setImportTarget] = useState<MonthlyImportSourceId | null>(
+    null,
+  );
 
   const busy = ['uploading', 'validating', 'confirming', 'discarding'].includes(stage);
 
@@ -62,14 +74,38 @@ export function ImportScreen() {
 
   const resetFlow = () => {
     selectFile(null);
+    setSourcePatrimony(null);
+    setImportTarget(null);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
   };
 
+  const startNextImport = () => {
+    resetFlow();
+    inputRef.current?.click();
+  };
+
+  const startImportForSource = (source: MonthlyImportSourceId) => {
+    resetFlow();
+    setImportTarget(source);
+    requestAnimationFrame(() => {
+      importFormRef.current?.focus();
+      importFormRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) {
       setErrorMessage('Escolha um arquivo OFX ou XLSX antes de continuar.');
+      setStage('error');
+      return;
+    }
+    if (!sourcePatrimony) {
+      setErrorMessage('Informe o Patrimônio de Origem antes de continuar.');
       setStage('error');
       return;
     }
@@ -82,7 +118,7 @@ export function ImportScreen() {
       setErrorMessage(null);
       setStage('uploading');
       setUploadProgress(0);
-      const upload = await generateUploadUrl({ format });
+      const upload = await generateUploadUrl({ format, sourcePatrimony });
       uploadId = upload.uploadId;
       storageId = await uploadFile(upload.uploadUrl, file, format, setUploadProgress);
       setStage('validating');
@@ -134,7 +170,7 @@ export function ImportScreen() {
   };
 
   return (
-    <main className="min-h-screen bg-canvas px-5 pb-32 pt-8 font-sans text-ink antialiased sm:px-8 sm:pt-10">
+    <main className="h-screen overflow-y-auto bg-canvas px-5 pb-32 pt-8 font-sans text-ink antialiased sm:px-8 sm:pt-10">
       <div className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid gap-4">
           <WebButton variant="ghost" className="w-fit pl-3 pr-4" onClick={() => router.replace('/more')}>
@@ -151,18 +187,29 @@ export function ImportScreen() {
               Companion web
             </p>
             <h1 className="max-w-2xl text-balance text-title-screen font-sans-bold leading-tight tracking-[-0.02em]">
-              Importar dados do Itaú PF
+              Importar dados do Itaú
             </h1>
             <p className="max-w-2xl text-pretty text-body leading-relaxed text-ink-muted">
-              Envie o extrato em OFX ou a fatura do cartão em XLSX, confira a prévia
+              Envie um extrato do Itaú em OFX ou a fatura do cartão em XLSX, confira a prévia
               estruturada e só então confirme as movimentações. O arquivo bruto é apagado
               antes de qualquer prévia ser persistida.
             </p>
           </div>
         </header>
 
+        <MonthlyImportCoverage
+          competence={competence}
+          disabled={busy}
+          onCompetenceChange={setCompetence}
+          onStartImport={startImportForSource}
+          onOpenReview={() => router.push('/review')}
+        />
+
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
-          <div className="rounded-2xl bg-surface p-2 shadow-card">
+          <div
+            ref={importFormRef}
+            tabIndex={-1}
+            className="scroll-mt-6 rounded-2xl bg-surface p-2 shadow-card outline-none focus-visible:ring-[3px] focus-visible:ring-focus-ring/35">
             <div className="grid gap-5 rounded-lg p-4 sm:p-6">
               <div className="flex items-start gap-3">
                 <span className="grid size-11 shrink-0 place-items-center rounded-control bg-action-primary-soft">
@@ -175,14 +222,74 @@ export function ImportScreen() {
                 </span>
                 <div className="grid gap-1">
                   <h2 className="text-title-section font-sans-bold leading-tight">
-                    Extrato ou fatura
+                    {importTarget
+                      ? `Adicionar ${importTargetLabel(importTarget)}`
+                      : 'Extrato ou fatura'}
                   </h2>
                   <p className="text-pretty text-body leading-relaxed text-ink-muted">
-                    Use o extrato OFX ou a fatura XLSX exportados pelo Itaú. Limite de 5 MB
-                    por arquivo.
+                    {importTarget
+                      ? 'Escolha o arquivo indicado e confirme manualmente a origem antes do envio.'
+                      : 'Use o extrato OFX ou a fatura XLSX exportados pelo Itaú. Limite de 5 MB por arquivo.'}
                   </p>
                 </div>
               </div>
+
+              {importTarget ? (
+                <p className="rounded-control bg-action-primary-soft px-4 py-3 text-body leading-relaxed">
+                  Entrada do mês: <span className="font-sans-bold">{importTargetLabel(importTarget)}</span>
+                  . A sugestão do fluxo não seleciona o Patrimônio de Origem por você.
+                </p>
+              ) : null}
+
+              <fieldset className="grid gap-3" disabled={busy}>
+                <legend className="text-label font-sans-bold">Patrimônio de Origem</legend>
+                <p className="text-body leading-relaxed text-ink-muted">
+                  Informe a quem pertence a conta ou o cartão. Isso preserva a proveniência e
+                  não define a Natureza Econômica das movimentações.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([
+                    {
+                      value: 'personal',
+                      label: 'Pessoal',
+                      description: 'Conta ou cartão do patrimônio pessoal.',
+                    },
+                    {
+                      value: 'business',
+                      label: 'Empresa',
+                      description: 'Conta ou cartão pertencente à Empresa.',
+                    },
+                  ] as const).map((option) => {
+                    const selected = sourcePatrimony === option.value;
+
+                    return (
+                      <label
+                        key={option.value}
+                        className={cn(
+                          'grid cursor-pointer gap-1 rounded-card border px-4 py-3 transition-[background-color,border-color] duration-150 ease-out',
+                          selected
+                            ? 'border-action-primary bg-action-primary-soft'
+                            : 'border-divider bg-canvas hover:border-focus-ring',
+                          busy && 'cursor-not-allowed opacity-60',
+                        )}>
+                        <span className="flex items-center gap-2 text-label font-sans-bold">
+                          <input
+                            type="radio"
+                            name="source-patrimony"
+                            value={option.value}
+                            checked={selected}
+                            onChange={() => setSourcePatrimony(option.value)}
+                          />
+                          {option.label}
+                        </span>
+                        <span className="text-caption leading-relaxed text-ink-muted">
+                          {option.description}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
               <label
                 htmlFor="financial-file"
@@ -253,7 +360,7 @@ export function ImportScreen() {
 
               {!preview || stage === 'error' ? (
                 <div className="flex flex-wrap gap-3">
-                  <WebButton onClick={handleUpload} disabled={!file || busy}>
+                  <WebButton onClick={handleUpload} disabled={!file || !sourcePatrimony || busy}>
                     {busy ? (
                       <HugeiconsIcon
                         aria-hidden
@@ -291,7 +398,7 @@ export function ImportScreen() {
               <li>O backend aceita somente o Titular autorizado.</li>
               <li>O parser valida formato, período ou competência, totais e centavos exatos.</li>
               <li>
-                Conta, CPF, titularidade, nome e número do cartão não entram na prévia nem na
+                CPF, titularidade, nome, números de conta e cartão não entram na prévia nem na
                 auditoria.
               </li>
               <li>Reimportar o mesmo arquivo não duplica movimentações.</li>
@@ -306,7 +413,7 @@ export function ImportScreen() {
             onConfirm={handleConfirm}
             onDiscard={handleDiscard}
             onReview={() => router.push('/review')}
-            onReset={resetFlow}
+            onReset={startNextImport}
           />
         ) : null}
       </div>
@@ -437,6 +544,19 @@ function PreviewSection({
         </dl>
       )}
 
+      <p className="rounded-control bg-canvas px-4 py-3 text-body leading-relaxed text-ink-muted">
+        Patrimônio de Origem:{' '}
+        <span className="font-sans-semibold text-ink">
+          {preview.sourcePatrimony === 'personal'
+            ? 'Pessoal'
+            : preview.sourcePatrimony === 'business'
+              ? 'Empresa'
+              : 'não informado em lote legado'}
+        </span>
+        . Essa origem não classifica a Natureza Econômica nem transforma uma Liquidação do
+        Cartão em nova despesa.
+      </p>
+
       {preview.duplicateCount > 0 ? (
         <p className="rounded-control bg-status-warning-soft px-4 py-3 text-body leading-relaxed">
           {preview.duplicateCount} movimentação(ões) já conhecida(s) será(ão) ignorada(s) na
@@ -444,42 +564,12 @@ function PreviewSection({
         </p>
       ) : null}
 
-      {preview.previewRows.length > 0 ? (
-        <div className="overflow-x-auto rounded-card shadow-[0_0_0_1px_oklch(0_0_0/0.06)]">
-          <table className="w-full min-w-[760px] border-collapse text-start text-label">
-            <thead className="bg-surface-muted text-ink-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Data</th>
-                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Descrição</th>
-                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Tipo</th>
-                <th scope="col" className="px-4 py-3 text-end font-sans-bold">Valor</th>
-                <th scope="col" className="px-4 py-3 text-end font-sans-bold">Situação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.previewRows.map((row, index) => (
-                <tr key={`${row.postedOn}-${index}`} className="border-t border-divider">
-                  <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDate(row.postedOn)}</td>
-                  <td className="max-w-md break-words px-4 py-3">
-                    {row.description}
-                    {row.installmentCurrent && row.installmentTotal
-                      ? ` · parcela ${row.installmentCurrent} de ${row.installmentTotal}`
-                      : ''}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-caption text-ink-muted">
-                    {transactionTypeLabel(row.transactionType)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-end font-sans-semibold tabular-nums">
-                    {formatBRL(row.amount.amountInMinorUnits)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-end text-caption font-sans-semibold text-ink-muted">
-                    {row.isDuplicate ? 'Duplicada' : 'Nova'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {!isConfirmed && !isDiscarded ? (
+        <p className="rounded-control bg-canvas px-4 py-3 text-body leading-relaxed text-ink-muted">
+          Para importar outro arquivo, confirme este Lote de Importação ou descarte a prévia.
+          Confirmar persiste as movimentações estruturadas; descartar não cria Movimentações de
+          Origem.
+        </p>
       ) : null}
 
       <div className="flex flex-wrap gap-3">
@@ -557,6 +647,44 @@ function PreviewSection({
           </WebButton>
         )}
       </div>
+
+      {preview.previewRows.length > 0 ? (
+        <div className="overflow-x-auto rounded-card shadow-[0_0_0_1px_oklch(0_0_0/0.06)]">
+          <table className="w-full min-w-[760px] border-collapse text-start text-label">
+            <thead className="bg-surface-muted text-ink-muted">
+              <tr>
+                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Data</th>
+                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Descrição</th>
+                <th scope="col" className="px-4 py-3 text-start font-sans-bold">Tipo</th>
+                <th scope="col" className="px-4 py-3 text-end font-sans-bold">Valor</th>
+                <th scope="col" className="px-4 py-3 text-end font-sans-bold">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.previewRows.map((row, index) => (
+                <tr key={`${row.postedOn}-${index}`} className="border-t border-divider">
+                  <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatDate(row.postedOn)}</td>
+                  <td className="max-w-md break-words px-4 py-3">
+                    {row.description}
+                    {row.installmentCurrent && row.installmentTotal
+                      ? ` · parcela ${row.installmentCurrent} de ${row.installmentTotal}`
+                      : ''}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-caption text-ink-muted">
+                    {transactionTypeLabel(row.transactionType)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-end font-sans-semibold tabular-nums">
+                    {formatBRL(row.amount.amountInMinorUnits)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-end text-caption font-sans-semibold text-ink-muted">
+                    {row.isDuplicate ? 'Duplicada' : 'Nova'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -733,6 +861,16 @@ function transactionTypeLabel(transactionType: string): string {
     statementPayment: 'Liquidação',
   };
   return labels[transactionType] ?? 'Movimentação';
+}
+
+function importTargetLabel(source: MonthlyImportSourceId): string {
+  const labels: Record<MonthlyImportSourceId, string> = {
+    personalBank: 'Itaú Pessoal',
+    creditCard: 'fatura do cartão',
+    businessBank: 'Itaú Empresa',
+  };
+
+  return labels[source];
 }
 
 function formatBRL(amountInMinorUnits: bigint): string {

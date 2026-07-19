@@ -48,7 +48,7 @@ const TAB_ITEMS = [
 export default function AppTabs() {
   return (
     <Tabs>
-      <TabSlot className="h-full" />
+      <TabSlot style={{ flex: 1, minHeight: 0 }} />
       <TabList asChild>
         <CustomTabList>
           {TAB_ITEMS.map((item) => (

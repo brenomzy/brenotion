@@ -23,7 +23,9 @@ export function ImportScreen() {
         <View className="gap-1">
           <Text variant="overline">Companion web</Text>
           <Text variant="screenTitle">Importar arquivos</Text>
-          <Text variant="caption">Extratos OFX e faturas XLSX do Itaú PF</Text>
+          <Text variant="caption">
+            Ciclo mensal com Itaú Pessoal, fatura e Itaú Empresa
+          </Text>
         </View>
 
         <Card>
@@ -32,7 +34,7 @@ export function ImportScreen() {
             <CardDescription className="text-body leading-6">
               A seleção e o envio do arquivo ficam disponíveis na versão web do mesmo Brenotion.
               Depois do processamento temporário, o arquivo bruto é apagado e somente os dados
-              estruturados seguem para confirmação.
+              estruturados seguem para confirmação. Cada entrada mantém seu Patrimônio de Origem.
             </CardDescription>
           </CardHeader>
           <CardContent className="gap-3">
