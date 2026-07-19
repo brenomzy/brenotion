@@ -172,7 +172,7 @@ limites ou fórmulas oficiais. Revisar agora consulta e confirma Natureza
 Econômica por grupo, exceto Liquidação do Cartão. Alterações materiais preservam
 revisões imutáveis numeradas e auditáveis; reprocessamentos sem mudança não
 produzem histórico artificial. A navegação Android mantém Revisar como ação
-principal. Setenta e sete testes, tipos, lint e estilos passaram neste checkpoint.
+principal. Setenta e oito testes, tipos, lint e estilos passaram neste checkpoint.
 
 ## 6. Fase 3 — Importação histórica e calibração
 
