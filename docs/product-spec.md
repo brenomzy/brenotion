@@ -119,6 +119,11 @@ A revisão semanal é um checkpoint opcional de aproximadamente cinco minutos e 
 - impacto sobre as reservas;
 - até três ações recomendadas.
 
+Na fundação inicial, Revisar agrupa Movimentações de Origem por descrição
+normalizada e permite confirmar somente sua Natureza Econômica. Liquidação do
+Cartão permanece fora dessa decisão, e nenhuma confirmação classifica categorias,
+concilia pagamentos ou altera valores oficiais.
+
 ### 5.5 Fechamento mensal
 
 O fechamento mensal:

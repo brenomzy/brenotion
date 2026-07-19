@@ -149,7 +149,10 @@ Registrar, sem duplicar conteúdo sensível:
 - exportação de pacote fiscal;
 - ação administrativa ou falha de autorização.
 
-Eventos de auditoria são append-only e usam IDs, não payloads completos.
+Eventos de auditoria são append-only e usam IDs, não payloads completos. Quando
+uma Obrigação ou Decisão de Classificação muda, o evento referencia uma revisão
+imutável autorizada que preserva o estado estruturado necessário para reconstruir
+a alteração; reprocessamentos sem mudança não criam revisão ou evento.
 
 ## 12. Backup, exportação e recuperação
 

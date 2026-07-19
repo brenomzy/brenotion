@@ -84,7 +84,13 @@ Esconde normalização de estabelecimentos, regras do Titular, recorrência e su
 As Decisões de Classificação confirmadas são persistidas pelo identificador
 versionado do agrupamento determinístico (`description-v1`). Nesta fundação, a
 decisão registra somente a Natureza Econômica; categorias e limites permanecem
-fora da interface até a modelagem própria.
+fora da interface até a modelagem própria. Revisar consulta e confirma essas
+decisões diretamente, mas exclui a Liquidação do Cartão do conjunto
+classificável.
+
+Cada alteração material cria uma revisão imutável numerada e o evento de
+auditoria referencia essa revisão. O documento corrente serve à leitura reativa;
+as revisões preservam os estados anteriores sem recalculá-los.
 
 ### 4.6 Obrigações
 
@@ -95,7 +101,8 @@ Esconde recorrência, tolerância de valor e data, correspondência de movimenta
 A configuração persistida é genérica e autorizada por proprietário, sem seed de
 dados pessoais. Ela separa Natureza Econômica da origem pagadora e representa a
 parcela empresarial de uma Obrigação Mista como `precisa confirmar` ou como
-percentual explícito em basis points.
+percentual explícito em basis points. Criações e alterações materiais também
+produzem revisões imutáveis numeradas.
 
 ### 4.7 Planejador
 

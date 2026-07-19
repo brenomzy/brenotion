@@ -47,7 +47,9 @@ configuração local. Nunca registre valores reais no Git.
 - Configuração diária: Obrigações genéricas e Decisões de Classificação já
   possuem persistência autorizada, idempotente e auditável, sem seed de dados
   pessoais. Natureza Econômica e origem pagadora permanecem distintas; as
-  parcelas empresariais de obrigações mistas continuam `precisa confirmar`.
+  parcelas empresariais de obrigações mistas continuam `precisa confirmar`. A
+  tela Revisar permite confirmar a Natureza Econômica por grupo e o backend
+  preserva revisões imutáveis de cada alteração material.
 - Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados; tela Início navegável e visualmente validada no Android com retrato sintético.
 
 Nenhuma credencial, CNPJ, CPF, número de conta ou documento financeiro bruto deve ser commitido neste repositório.

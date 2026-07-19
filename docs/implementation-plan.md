@@ -168,9 +168,11 @@ idempotente e auditável. A configuração não contém seed de dados pessoais,
 separa Natureza Econômica de origem pagadora e mantém a parcela empresarial das
 obrigações mistas como `precisa confirmar` até confirmação explícita. A decisão
 de revisão usa o agrupamento determinístico versionado e não antecipa categorias,
-limites ou fórmulas oficiais. A navegação Android mantém Revisar como ação
-principal. Sessenta e quatro testes, tipos, lint e estilos passaram neste
-checkpoint.
+limites ou fórmulas oficiais. Revisar agora consulta e confirma Natureza
+Econômica por grupo, exceto Liquidação do Cartão. Alterações materiais preservam
+revisões imutáveis numeradas e auditáveis; reprocessamentos sem mudança não
+produzem histórico artificial. A navegação Android mantém Revisar como ação
+principal. Setenta e sete testes, tipos, lint e estilos passaram neste checkpoint.
 
 ## 6. Fase 3 — Importação histórica e calibração
 
@@ -347,10 +349,10 @@ superfície de acesso.
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
 | Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
 
-Próxima ação: persistir decisões de classificação sobre grupos de Movimentações
-de Origem e avançar a configuração genérica de Obrigações. Limites por Categoria
-entram somente depois que o histórico classificado sustentar uma proposta
-determinística. Qualquer novo arquivo bancário real permanece fora do
+Próxima ação: expor a configuração genérica de Obrigações na interface, sem seed
+de dados pessoais, e implementar Gastos Informados para o ciclo atual. Limites
+por Categoria entram somente depois que o histórico classificado sustentar uma
+proposta determinística. Qualquer novo arquivo bancário real permanece fora do
 repositório.
 
 ## 11. Fases posteriores
