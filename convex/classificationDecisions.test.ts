@@ -9,6 +9,7 @@ import schema from './schema';
 const modules = import.meta.glob('./**/*.ts');
 const SYNTHETIC_OWNER_ID = 'user_test_authorized_owner';
 const SYNTHETIC_OTHER_ID = 'user_test_someone_else';
+const SYNTHETIC_OWNER_TOKEN = `https://convex.test|${SYNTHETIC_OWNER_ID}`;
 const SYNTHETIC_GROUP_KEY =
   'description-v1|transaction-type=debit|source-kind=bankaccount|basis=normalized-description|description=mercado%20sintetico';
 const SYNTHETIC_SECOND_GROUP_KEY =
@@ -100,6 +101,14 @@ describe('classificationDecisions', () => {
 
     const stored = await t.run(async (ctx) => ({
       decisions: await ctx.db.query('classificationDecisions').take(3),
+      revisions: await ctx.db
+        .query('classificationDecisionRevisions')
+        .withIndex('by_ownerId_and_decisionId_and_revisionNumber', (q) =>
+          q
+            .eq('ownerId', SYNTHETIC_OWNER_TOKEN)
+            .eq('decisionId', created.decision.decisionId),
+        )
+        .take(4),
       auditEvents: await ctx.db.query('auditEvents').take(4),
     }));
     expect(stored.decisions).toHaveLength(1);
@@ -109,13 +118,43 @@ describe('classificationDecisions', () => {
       economicNature: 'business',
       decidedAt: created.decision.decidedAt,
       updatedAt: updated.decision.updatedAt,
+      revisionNumber: 2n,
+      currentRevisionId: stored.revisions[1]._id,
     });
+    expect(stored.revisions).toHaveLength(2);
+    expect(stored.revisions).toEqual([
+      expect.objectContaining({
+        decisionId: created.decision.decisionId,
+        revisionNumber: 1n,
+        reason: 'created',
+        snapshot: {
+          groupKey: SYNTHETIC_GROUP_KEY,
+          normalizedDescription: 'mercado sintetico',
+          economicNature: 'personal',
+          decidedAt: created.decision.decidedAt,
+          updatedAt: created.decision.updatedAt,
+        },
+      }),
+      expect.objectContaining({
+        decisionId: created.decision.decisionId,
+        revisionNumber: 2n,
+        reason: 'updated',
+        snapshot: {
+          groupKey: SYNTHETIC_GROUP_KEY,
+          normalizedDescription: 'mercado sintetico',
+          economicNature: 'business',
+          decidedAt: created.decision.decidedAt,
+          updatedAt: updated.decision.updatedAt,
+        },
+      }),
+    ]);
     expect(stored.auditEvents).toHaveLength(2);
     expect(stored.auditEvents).toEqual([
       expect.objectContaining({
         action: 'classification_decision.upserted',
         targetType: 'classification_decision',
         targetId: created.decision.decisionId,
+        revisionId: stored.revisions[0]._id,
         result: 'succeeded',
         occurredAt: created.decision.updatedAt,
       }),
@@ -123,10 +162,26 @@ describe('classificationDecisions', () => {
         action: 'classification_decision.upserted',
         targetType: 'classification_decision',
         targetId: created.decision.decisionId,
+        revisionId: stored.revisions[1]._id,
         result: 'succeeded',
         occurredAt: updated.decision.updatedAt,
       }),
     ]);
+
+    await expect(
+      t.query(api.classificationDecisions.listRevisions, {
+        decisionId: created.decision.decisionId,
+      }),
+    ).resolves.toEqual({
+      items: stored.revisions.map((revision) => ({
+        revisionId: revision._id,
+        revisionNumber: revision.revisionNumber,
+        reason: revision.reason,
+        snapshot: revision.snapshot,
+        recordedAt: revision.recordedAt,
+      })),
+      isTruncated: false,
+    });
   });
 
   it('returns only requested decisions belonging to the authenticated owner', async () => {
@@ -210,5 +265,99 @@ describe('classificationDecisions', () => {
       auditEvents: await ctx.db.query('auditEvents').take(1),
     }));
     expect(stored).toEqual({ decisions: [], auditEvents: [] });
+  });
+
+  it('backfills a legacy baseline only for a material change', async () => {
+    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
+    const backend = convexTest(schema, modules);
+    const owner = backend.withIdentity({ subject: SYNTHETIC_OWNER_ID });
+    const legacyDecisionId = await backend.run(async (ctx) => {
+      return await ctx.db.insert('classificationDecisions', {
+        ownerId: SYNTHETIC_OWNER_TOKEN,
+        groupKey: SYNTHETIC_GROUP_KEY,
+        normalizedDescription: 'mercado sintetico',
+        economicNature: 'personal',
+        decidedAt: 10,
+        updatedAt: 10,
+      });
+    });
+
+    const unchanged = await owner.mutation(api.classificationDecisions.upsert, {
+      groupKey: SYNTHETIC_GROUP_KEY,
+      normalizedDescription: 'mercado sintetico',
+      economicNature: 'personal',
+    });
+    expect(unchanged.status).toBe('unchanged');
+    await expect(
+      backend.run(async (ctx) => ({
+        revisions: await ctx.db.query('classificationDecisionRevisions').take(3),
+        audits: await ctx.db.query('auditEvents').take(3),
+      })),
+    ).resolves.toEqual({ revisions: [], audits: [] });
+
+    const updated = await owner.mutation(api.classificationDecisions.upsert, {
+      groupKey: SYNTHETIC_GROUP_KEY,
+      normalizedDescription: 'mercado sintetico',
+      economicNature: 'mixed',
+    });
+    expect(updated.status).toBe('updated');
+
+    const stored = await backend.run(async (ctx) => ({
+      decision: await ctx.db.get('classificationDecisions', legacyDecisionId),
+      revisions: await ctx.db
+        .query('classificationDecisionRevisions')
+        .withIndex('by_ownerId_and_decisionId_and_revisionNumber', (q) =>
+          q
+            .eq('ownerId', SYNTHETIC_OWNER_TOKEN)
+            .eq('decisionId', legacyDecisionId),
+        )
+        .take(3),
+      audits: await ctx.db.query('auditEvents').take(3),
+    }));
+    expect(stored.revisions).toHaveLength(2);
+    expect(stored.revisions[0]).toMatchObject({
+      revisionNumber: 1n,
+      reason: 'legacyBaseline',
+      snapshot: { economicNature: 'personal', updatedAt: 10 },
+    });
+    expect(stored.revisions[1]).toMatchObject({
+      revisionNumber: 2n,
+      reason: 'updated',
+      snapshot: { economicNature: 'mixed' },
+    });
+    expect(stored.decision).toMatchObject({
+      revisionNumber: 2n,
+      currentRevisionId: stored.revisions[1]._id,
+    });
+    expect(stored.audits).toEqual([
+      expect.objectContaining({
+        action: 'classification_decision.upserted',
+        revisionId: stored.revisions[1]._id,
+      }),
+    ]);
+  });
+
+  it('does not expose revision history for another owner', async () => {
+    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
+    const backend = convexTest(schema, modules);
+    const owner = backend.withIdentity({ subject: SYNTHETIC_OWNER_ID });
+    const otherDecisionId = await backend.run(async (ctx) => {
+      return await ctx.db.insert('classificationDecisions', {
+        ownerId: 'https://convex.test|isolated-owner',
+        groupKey: SYNTHETIC_GROUP_KEY,
+        normalizedDescription: 'mercado sintetico',
+        economicNature: 'business',
+        decidedAt: 1,
+        updatedAt: 1,
+      });
+    });
+
+    await expect(
+      owner.query(api.classificationDecisions.listRevisions, {
+        decisionId: otherDecisionId,
+      }),
+    ).rejects.toMatchObject({
+      data: { code: 'CLASSIFICATION_DECISION_NOT_FOUND' },
+    });
   });
 });

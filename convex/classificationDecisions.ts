@@ -1,20 +1,20 @@
 import { ConvexError, v } from 'convex/values';
 
-import type { Id } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
+import type { Doc, Id } from './_generated/dataModel';
+import { mutation, query, type MutationCtx } from './_generated/server';
 import { requireAuthorizedOwner } from './lib/authorization';
 import { appendAuditEvent } from './lib/persistence';
 import { economicNatureValidator } from './schema';
+import {
+  normalizeCanonicalDescriptionText,
+  parseTransactionDescriptionGroupKey,
+} from '../shared/transaction-description-normalization';
 
 const MAX_GROUP_KEYS_PER_REQUEST = 100;
+const MAX_REVISION_ITEMS = 200;
 const MAX_GROUP_KEY_LENGTH = 2_048;
 const MAX_NORMALIZED_DESCRIPTION_LENGTH = 512;
-const GROUP_KEY_PATTERN =
-  /^description-v1\|transaction-type=([^|]*)\|source-kind=([^|]*)\|basis=(normalized-description|original-description-fallback)\|description=([^|]*)$/;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
-const COMBINING_MARK_PATTERN = /\p{M}+/gu;
-const SEPARATOR_PATTERN = /[^\p{L}\p{N}\s]+/gu;
-const WHITESPACE_PATTERN = /\s+/gu;
 
 const classificationDecisionValidator = v.object({
   decisionId: v.id('classificationDecisions'),
@@ -23,6 +23,24 @@ const classificationDecisionValidator = v.object({
   economicNature: economicNatureValidator,
   decidedAt: v.number(),
   updatedAt: v.number(),
+});
+
+const classificationDecisionRevisionValidator = v.object({
+  revisionId: v.id('classificationDecisionRevisions'),
+  revisionNumber: v.int64(),
+  reason: v.union(
+    v.literal('created'),
+    v.literal('updated'),
+    v.literal('legacyBaseline'),
+  ),
+  snapshot: v.object({
+    groupKey: v.string(),
+    normalizedDescription: v.string(),
+    economicNature: economicNatureValidator,
+    decidedAt: v.number(),
+    updatedAt: v.number(),
+  }),
+  recordedAt: v.number(),
 });
 
 export const upsert = mutation({
@@ -59,10 +77,33 @@ export const upsert = mutation({
     const updatedAt = Date.now();
 
     if (existing) {
-      await ctx.db.patch('classificationDecisions', existing._id, {
+      const replacement = {
+        ownerId,
+        groupKey: existing.groupKey,
         normalizedDescription: args.normalizedDescription,
         economicNature: args.economicNature,
+        decidedAt: existing.decidedAt,
         updatedAt,
+      };
+      const nextRevisionNumber = await prepareClassificationRevisionSequence(
+        ctx,
+        ownerId,
+        existing,
+        updatedAt,
+      );
+      const revisionId = await insertClassificationRevision(
+        ctx,
+        ownerId,
+        existing._id,
+        nextRevisionNumber,
+        'updated',
+        toClassificationSnapshot(replacement),
+        updatedAt,
+      );
+      await ctx.db.replace('classificationDecisions', existing._id, {
+        ...replacement,
+        revisionNumber: nextRevisionNumber,
+        currentRevisionId: revisionId,
       });
       await appendAuditEvent(
         ctx,
@@ -71,6 +112,7 @@ export const upsert = mutation({
           action: 'classification_decision.upserted',
           targetType: 'classification_decision',
           targetId: existing._id,
+          revisionId,
         },
         updatedAt,
       );
@@ -96,6 +138,26 @@ export const upsert = mutation({
       decidedAt: updatedAt,
       updatedAt,
     });
+    const revisionNumber = 1n;
+    const revisionId = await insertClassificationRevision(
+      ctx,
+      ownerId,
+      decisionId,
+      revisionNumber,
+      'created',
+      {
+        groupKey: args.groupKey,
+        normalizedDescription: args.normalizedDescription,
+        economicNature: args.economicNature,
+        decidedAt: updatedAt,
+        updatedAt,
+      },
+      updatedAt,
+    );
+    await ctx.db.patch('classificationDecisions', decisionId, {
+      revisionNumber,
+      currentRevisionId: revisionId,
+    });
     await appendAuditEvent(
       ctx,
       ownerId,
@@ -103,6 +165,7 @@ export const upsert = mutation({
         action: 'classification_decision.upserted',
         targetType: 'classification_decision',
         targetId: decisionId,
+        revisionId,
       },
       updatedAt,
     );
@@ -117,6 +180,42 @@ export const upsert = mutation({
         decidedAt: updatedAt,
         updatedAt,
       },
+    };
+  },
+});
+
+export const listRevisions = query({
+  args: {
+    decisionId: v.id('classificationDecisions'),
+  },
+  returns: v.object({
+    items: v.array(classificationDecisionRevisionValidator),
+    isTruncated: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const { ownerId } = await requireAuthorizedOwner(ctx);
+    const decision = await ctx.db.get('classificationDecisions', args.decisionId);
+
+    if (!decision || decision.ownerId !== ownerId) {
+      throw new ConvexError({ code: 'CLASSIFICATION_DECISION_NOT_FOUND' });
+    }
+
+    const revisions = await ctx.db
+      .query('classificationDecisionRevisions')
+      .withIndex('by_ownerId_and_decisionId_and_revisionNumber', (q) =>
+        q.eq('ownerId', ownerId).eq('decisionId', args.decisionId),
+      )
+      .take(MAX_REVISION_ITEMS + 1);
+
+    return {
+      items: revisions.slice(0, MAX_REVISION_ITEMS).map((revision) => ({
+        revisionId: revision._id,
+        revisionNumber: revision.revisionNumber,
+        reason: revision.reason,
+        snapshot: revision.snapshot,
+        recordedAt: revision.recordedAt,
+      })),
+      isTruncated: revisions.length > MAX_REVISION_ITEMS,
     };
   },
 });
@@ -166,6 +265,65 @@ function validateGroupKeys(groupKeys: string[]): void {
   }
 }
 
+async function prepareClassificationRevisionSequence(
+  ctx: MutationCtx,
+  ownerId: string,
+  existing: Doc<'classificationDecisions'>,
+  recordedAt: number,
+): Promise<bigint> {
+  if (
+    existing.revisionNumber !== undefined &&
+    existing.currentRevisionId !== undefined
+  ) {
+    return existing.revisionNumber + 1n;
+  }
+
+  await insertClassificationRevision(
+    ctx,
+    ownerId,
+    existing._id,
+    1n,
+    'legacyBaseline',
+    toClassificationSnapshot(existing),
+    recordedAt,
+  );
+  return 2n;
+}
+
+async function insertClassificationRevision(
+  ctx: MutationCtx,
+  ownerId: string,
+  decisionId: Id<'classificationDecisions'>,
+  revisionNumber: bigint,
+  reason: 'created' | 'updated' | 'legacyBaseline',
+  snapshot: Doc<'classificationDecisionRevisions'>['snapshot'],
+  recordedAt: number,
+): Promise<Id<'classificationDecisionRevisions'>> {
+  return await ctx.db.insert('classificationDecisionRevisions', {
+    ownerId,
+    decisionId,
+    revisionNumber,
+    reason,
+    snapshot,
+    recordedAt,
+  });
+}
+
+function toClassificationSnapshot(
+  decision: Pick<
+    Doc<'classificationDecisions'>,
+    'groupKey' | 'normalizedDescription' | 'economicNature' | 'decidedAt' | 'updatedAt'
+  >,
+): Doc<'classificationDecisionRevisions'>['snapshot'] {
+  return {
+    groupKey: decision.groupKey,
+    normalizedDescription: decision.normalizedDescription,
+    economicNature: decision.economicNature,
+    decidedAt: decision.decidedAt,
+    updatedAt: decision.updatedAt,
+  };
+}
+
 function validateGroupIdentity(groupKey: string, normalizedDescription: string): void {
   if (
     normalizedDescription.length > MAX_NORMALIZED_DESCRIPTION_LENGTH ||
@@ -181,7 +339,7 @@ function validateGroupIdentity(groupKey: string, normalizedDescription: string):
     (parsedGroupKey.basis === 'normalized-description' &&
       (normalizedDescription.length === 0 ||
         parsedGroupKey.description !== normalizedDescription ||
-        normalizeDescriptionForValidation(normalizedDescription) !==
+        normalizeCanonicalDescriptionText(normalizedDescription) !==
           normalizedDescription)) ||
     (parsedGroupKey.basis === 'original-description-fallback' &&
       normalizedDescription.length !== 0)
@@ -203,57 +361,16 @@ function parseGroupKey(groupKey: string): {
     throw new ConvexError({ code: 'INVALID_CLASSIFICATION_GROUP_KEY' });
   }
 
-  const match = GROUP_KEY_PATTERN.exec(groupKey);
+  const parsed = parseTransactionDescriptionGroupKey(groupKey);
 
-  if (!match) {
-    throw new ConvexError({ code: 'INVALID_CLASSIFICATION_GROUP_KEY' });
-  }
-
-  const transactionType = decodeGroupKeyPart(match[1]);
-  const sourceKind = decodeGroupKeyPart(match[2]);
-  const description = decodeGroupKeyPart(match[4]);
-
-  if (
-    encodeURIComponent(transactionType) !== match[1] ||
-    encodeURIComponent(sourceKind) !== match[2] ||
-    encodeURIComponent(description) !== match[4] ||
-    transactionType.length === 0 ||
-    normalizeMetadataForValidation(transactionType) !== transactionType ||
-    normalizeMetadataForValidation(sourceKind) !== sourceKind ||
-    CONTROL_CHARACTER_PATTERN.test(transactionType) ||
-    CONTROL_CHARACTER_PATTERN.test(sourceKind) ||
-    CONTROL_CHARACTER_PATTERN.test(description)
-  ) {
+  if (!parsed) {
     throw new ConvexError({ code: 'INVALID_CLASSIFICATION_GROUP_KEY' });
   }
 
   return {
-    basis: match[3] as 'normalized-description' | 'original-description-fallback',
-    description,
+    basis: parsed.groupingBasis,
+    description: parsed.groupingText,
   };
-}
-
-function decodeGroupKeyPart(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    throw new ConvexError({ code: 'INVALID_CLASSIFICATION_GROUP_KEY' });
-  }
-}
-
-function normalizeDescriptionForValidation(value: string): string {
-  return value
-    .normalize('NFKC')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(COMBINING_MARK_PATTERN, '')
-    .replace(SEPARATOR_PATTERN, ' ')
-    .replace(WHITESPACE_PATTERN, ' ')
-    .trim();
-}
-
-function normalizeMetadataForValidation(value: string): string {
-  return normalizeDescriptionForValidation(value);
 }
 
 function toClassificationDecision(decision: {

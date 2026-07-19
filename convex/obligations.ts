@@ -1,7 +1,7 @@
 import { ConvexError, v } from 'convex/values';
 
-import type { Doc } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
+import type { Doc, Id } from './_generated/dataModel';
+import { mutation, query, type MutationCtx } from './_generated/server';
 import { requireAuthorizedOwner } from './lib/authorization';
 import { appendAuditEvent } from './lib/persistence';
 import {
@@ -12,6 +12,7 @@ import {
 } from './schema';
 
 const MAX_LIST_ITEMS = 200;
+const MAX_REVISION_ITEMS = 200;
 const MIN_MIXED_BUSINESS_SHARE_BASIS_POINTS = 1n;
 const MAX_MIXED_BUSINESS_SHARE_BASIS_POINTS = 9_999n;
 
@@ -27,6 +28,29 @@ const obligationValidator = v.object({
   isActive: v.boolean(),
   createdAt: v.number(),
   updatedAt: v.number(),
+});
+
+const obligationRevisionValidator = v.object({
+  revisionId: v.id('obligationRevisions'),
+  revisionNumber: v.int64(),
+  reason: v.union(
+    v.literal('created'),
+    v.literal('updated'),
+    v.literal('legacyBaseline'),
+  ),
+  snapshot: v.object({
+    obligationKey: v.string(),
+    name: v.string(),
+    economicNature: economicNatureValidator,
+    businessSharePolicy: businessSharePolicyValidator,
+    paymentOrigin: paymentOriginValidator,
+    expectedAmount: v.optional(brlMoneyValidator),
+    dueDayOfMonth: v.optional(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
+  recordedAt: v.number(),
 });
 
 export const list = query({
@@ -53,6 +77,42 @@ export const list = query({
     return {
       items: obligations.slice(0, MAX_LIST_ITEMS).map(toObligation),
       isTruncated: obligations.length > MAX_LIST_ITEMS,
+    };
+  },
+});
+
+export const listRevisions = query({
+  args: {
+    obligationId: v.id('obligations'),
+  },
+  returns: v.object({
+    items: v.array(obligationRevisionValidator),
+    isTruncated: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const { ownerId } = await requireAuthorizedOwner(ctx);
+    const obligation = await ctx.db.get('obligations', args.obligationId);
+
+    if (!obligation || obligation.ownerId !== ownerId) {
+      throw new ConvexError({ code: 'OBLIGATION_NOT_FOUND' });
+    }
+
+    const revisions = await ctx.db
+      .query('obligationRevisions')
+      .withIndex('by_ownerId_and_obligationId_and_revisionNumber', (q) =>
+        q.eq('ownerId', ownerId).eq('obligationId', args.obligationId),
+      )
+      .take(MAX_REVISION_ITEMS + 1);
+
+    return {
+      items: revisions.slice(0, MAX_REVISION_ITEMS).map((revision) => ({
+        revisionId: revision._id,
+        revisionNumber: revision.revisionNumber,
+        reason: revision.reason,
+        snapshot: revision.snapshot,
+        recordedAt: revision.recordedAt,
+      })),
+      isTruncated: revisions.length > MAX_REVISION_ITEMS,
     };
   },
 });
@@ -122,7 +182,26 @@ export const upsert = mutation({
         createdAt: existing.createdAt,
         updatedAt,
       };
-      await ctx.db.replace('obligations', existing._id, replacement);
+      const nextRevisionNumber = await prepareObligationRevisionSequence(
+        ctx,
+        ownerId,
+        existing,
+        updatedAt,
+      );
+      const revisionId = await insertObligationRevision(
+        ctx,
+        ownerId,
+        existing._id,
+        nextRevisionNumber,
+        'updated',
+        toObligationSnapshot(replacement),
+        updatedAt,
+      );
+      await ctx.db.replace('obligations', existing._id, {
+        ...replacement,
+        revisionNumber: nextRevisionNumber,
+        currentRevisionId: revisionId,
+      });
       await appendAuditEvent(
         ctx,
         ownerId,
@@ -130,6 +209,7 @@ export const upsert = mutation({
           action: 'obligation.updated',
           targetType: 'obligation',
           targetId: existing._id,
+          revisionId,
         },
         updatedAt,
       );
@@ -154,6 +234,31 @@ export const upsert = mutation({
       createdAt,
       updatedAt,
     });
+    const revisionNumber = 1n;
+    const revisionId = await insertObligationRevision(
+      ctx,
+      ownerId,
+      obligationId,
+      revisionNumber,
+      'created',
+      {
+        obligationKey,
+        name,
+        economicNature: args.economicNature,
+        businessSharePolicy: args.businessSharePolicy,
+        paymentOrigin: args.paymentOrigin,
+        expectedAmount: args.expectedAmount,
+        dueDayOfMonth: args.dueDayOfMonth,
+        isActive: args.isActive,
+        createdAt,
+        updatedAt,
+      },
+      updatedAt,
+    );
+    await ctx.db.patch('obligations', obligationId, {
+      revisionNumber,
+      currentRevisionId: revisionId,
+    });
     await appendAuditEvent(
       ctx,
       ownerId,
@@ -161,6 +266,7 @@ export const upsert = mutation({
         action: 'obligation.created',
         targetType: 'obligation',
         targetId: obligationId,
+        revisionId,
       },
       updatedAt,
     );
@@ -183,6 +289,79 @@ export const upsert = mutation({
     };
   },
 });
+
+async function prepareObligationRevisionSequence(
+  ctx: MutationCtx,
+  ownerId: string,
+  existing: Doc<'obligations'>,
+  recordedAt: number,
+): Promise<bigint> {
+  if (
+    existing.revisionNumber !== undefined &&
+    existing.currentRevisionId !== undefined
+  ) {
+    return existing.revisionNumber + 1n;
+  }
+
+  await insertObligationRevision(
+    ctx,
+    ownerId,
+    existing._id,
+    1n,
+    'legacyBaseline',
+    toObligationSnapshot(existing),
+    recordedAt,
+  );
+  return 2n;
+}
+
+async function insertObligationRevision(
+  ctx: MutationCtx,
+  ownerId: string,
+  obligationId: Id<'obligations'>,
+  revisionNumber: bigint,
+  reason: 'created' | 'updated' | 'legacyBaseline',
+  snapshot: Doc<'obligationRevisions'>['snapshot'],
+  recordedAt: number,
+): Promise<Id<'obligationRevisions'>> {
+  return await ctx.db.insert('obligationRevisions', {
+    ownerId,
+    obligationId,
+    revisionNumber,
+    reason,
+    snapshot,
+    recordedAt,
+  });
+}
+
+function toObligationSnapshot(
+  obligation: Pick<
+    Doc<'obligations'>,
+    | 'obligationKey'
+    | 'name'
+    | 'economicNature'
+    | 'businessSharePolicy'
+    | 'paymentOrigin'
+    | 'expectedAmount'
+    | 'dueDayOfMonth'
+    | 'isActive'
+    | 'createdAt'
+    | 'updatedAt'
+  >,
+): Doc<'obligationRevisions'>['snapshot'] {
+  return {
+    obligationKey: obligation.obligationKey,
+    name: obligation.name,
+    economicNature: obligation.economicNature,
+    businessSharePolicy: obligation.businessSharePolicy,
+    paymentOrigin: obligation.paymentOrigin,
+    expectedAmount: obligation.expectedAmount,
+    dueDayOfMonth: obligation.dueDayOfMonth,
+    isActive: obligation.isActive,
+    createdAt: obligation.createdAt,
+    updatedAt: obligation.updatedAt,
+  };
+}
 
 function normalizeObligationKey(value: string): string {
   const normalized = value.trim();
@@ -306,6 +485,15 @@ function toObligation(obligation: Pick<
   };
 }
 
-function throwValidationError(code: string): never {
+type ObligationValidationErrorCode =
+  | 'INVALID_OBLIGATION_KEY'
+  | 'INVALID_OBLIGATION_NAME'
+  | 'BUSINESS_SHARE_ONLY_FOR_MIXED_NATURE'
+  | 'MIXED_BUSINESS_SHARE_REQUIRED'
+  | 'INVALID_MIXED_BUSINESS_SHARE'
+  | 'INVALID_EXPECTED_AMOUNT'
+  | 'INVALID_DUE_DAY_OF_MONTH';
+
+function throwValidationError(code: ObligationValidationErrorCode): never {
   throw new ConvexError({ code });
 }

@@ -16,11 +16,13 @@ type AuditEvent =
       action: 'classification_decision.upserted';
       targetType: 'classification_decision';
       targetId: Id<'classificationDecisions'>;
+      revisionId: Id<'classificationDecisionRevisions'>;
     }
   | {
       action: 'obligation.created' | 'obligation.updated';
       targetType: 'obligation';
       targetId: Id<'obligations'>;
+      revisionId: Id<'obligationRevisions'>;
     }
   | {
       action: 'import_upload.expired' | 'import_upload.cleaned';
@@ -49,6 +51,7 @@ export async function appendAuditEvent(
     action: event.action,
     targetType: event.targetType,
     targetId: event.targetId,
+    ...('revisionId' in event ? { revisionId: event.revisionId } : {}),
     result: 'succeeded',
     occurredAt,
   });

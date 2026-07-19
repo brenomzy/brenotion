@@ -180,6 +180,8 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
+    revisionNumber: v.optional(v.int64()),
+    currentRevisionId: v.optional(v.id('obligationRevisions')),
   })
     .index('by_ownerId_and_obligationKey', ['ownerId', 'obligationKey'])
     .index('by_ownerId_and_name', ['ownerId', 'name'])
@@ -191,7 +193,58 @@ export default defineSchema({
     economicNature: economicNatureValidator,
     decidedAt: v.number(),
     updatedAt: v.number(),
+    revisionNumber: v.optional(v.int64()),
+    currentRevisionId: v.optional(v.id('classificationDecisionRevisions')),
   }).index('by_ownerId_and_groupKey', ['ownerId', 'groupKey']),
+  obligationRevisions: defineTable({
+    ownerId: v.string(),
+    obligationId: v.id('obligations'),
+    revisionNumber: v.int64(),
+    reason: v.union(
+      v.literal('created'),
+      v.literal('updated'),
+      v.literal('legacyBaseline'),
+    ),
+    snapshot: v.object({
+      obligationKey: v.string(),
+      name: v.string(),
+      economicNature: economicNatureValidator,
+      businessSharePolicy: businessSharePolicyValidator,
+      paymentOrigin: paymentOriginValidator,
+      expectedAmount: v.optional(brlMoneyValidator),
+      dueDayOfMonth: v.optional(v.number()),
+      isActive: v.boolean(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    recordedAt: v.number(),
+  }).index('by_ownerId_and_obligationId_and_revisionNumber', [
+    'ownerId',
+    'obligationId',
+    'revisionNumber',
+  ]),
+  classificationDecisionRevisions: defineTable({
+    ownerId: v.string(),
+    decisionId: v.id('classificationDecisions'),
+    revisionNumber: v.int64(),
+    reason: v.union(
+      v.literal('created'),
+      v.literal('updated'),
+      v.literal('legacyBaseline'),
+    ),
+    snapshot: v.object({
+      groupKey: v.string(),
+      normalizedDescription: v.string(),
+      economicNature: economicNatureValidator,
+      decidedAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    recordedAt: v.number(),
+  }).index('by_ownerId_and_decisionId_and_revisionNumber', [
+    'ownerId',
+    'decisionId',
+    'revisionNumber',
+  ]),
   auditEvents: defineTable({
     ownerId: v.string(),
     action: v.union(
@@ -224,6 +277,12 @@ export default defineSchema({
       v.id('importBatches'),
       v.id('obligations'),
       v.id('classificationDecisions'),
+    ),
+    revisionId: v.optional(
+      v.union(
+        v.id('obligationRevisions'),
+        v.id('classificationDecisionRevisions'),
+      ),
     ),
     result: v.literal('succeeded'),
     occurredAt: v.number(),
