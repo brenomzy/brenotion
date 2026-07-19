@@ -44,6 +44,10 @@ configuração local. Nunca registre valores reais no Git.
 - Entrada financeira: importações OFX do extrato e XLSX da fatura do Itaú PF
   validadas de ponta a ponta; Gastos Informados do ciclo atual são a próxima
   adaptação, e o spike Pluggy não é dependência do MVP.
+- Configuração diária: Obrigações genéricas e Decisões de Classificação já
+  possuem persistência autorizada, idempotente e auditável, sem seed de dados
+  pessoais. Natureza Econômica e origem pagadora permanecem distintas; as
+  parcelas empresariais de obrigações mistas continuam `precisa confirmar`.
 - Aplicação: Expo SDK 57, Expo Router e Development Build Android configurados; tela Início navegável e visualmente validada no Android com retrato sintético.
 
 Nenhuma credencial, CNPJ, CPF, número de conta ou documento financeiro bruto deve ser commitido neste repositório.

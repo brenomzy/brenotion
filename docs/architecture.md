@@ -81,11 +81,21 @@ Esconde transferências internas, estornos, câmbio, pagamentos de fatura, dupli
 
 Esconde normalização de estabelecimentos, regras do Titular, recorrência e sugestões da IA. Uma sugestão nunca substitui uma Regra de Classificação confirmada.
 
+As Decisões de Classificação confirmadas são persistidas pelo identificador
+versionado do agrupamento determinístico (`description-v1`). Nesta fundação, a
+decisão registra somente a Natureza Econômica; categorias e limites permanecem
+fora da interface até a modelagem própria.
+
 ### 4.6 Obrigações
 
 **Interface**: materializa ocorrências de uma competência, concilia pagamentos e retorna exceções acionáveis.
 
 Esconde recorrência, tolerância de valor e data, correspondência de movimentações, estados e lembretes.
+
+A configuração persistida é genérica e autorizada por proprietário, sem seed de
+dados pessoais. Ela separa Natureza Econômica da origem pagadora e representa a
+parcela empresarial de uma Obrigação Mista como `precisa confirmar` ou como
+percentual explícito em basis points.
 
 ### 4.7 Planejador
 

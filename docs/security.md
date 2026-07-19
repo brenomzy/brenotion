@@ -140,6 +140,8 @@ Registrar, sem duplicar conteúdo sensível:
 - autenticação e revogação;
 - upload, validação e exclusão de arquivo;
 - confirmação de Lote de Importação;
+- criação ou alteração material de configuração de Obrigação;
+- confirmação ou alteração material de Decisão de Classificação;
 - criação, correção e conciliação de Gasto Informado;
 - confirmação de Resumo Empresarial;
 - criação e confirmação de Alteração de Plano;

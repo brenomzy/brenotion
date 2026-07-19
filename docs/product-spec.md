@@ -233,6 +233,12 @@ configurados durante o onboarding e poderão ser revisados no futuro.
 
 A central substitui os checkboxes mensais do Notion. Cada Ocorrência de Obrigação contém nome, valor esperado, vencimento, conta responsável, status e evidência.
 
+A configuração de uma Obrigação separa Natureza Econômica — Pessoal, Empresa ou
+Mista — da origem responsável pelo pagamento. A parcela empresarial de uma
+Obrigação Mista permanece `precisa confirmar` até uma decisão explícita do
+Titular; o sistema não infere percentuais nem produz cálculos oficiais a partir
+de uma configuração incompleta.
+
 Status possíveis:
 
 - prevista;

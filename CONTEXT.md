@@ -38,6 +38,10 @@ _Evitar_: Transferência, faturamento
 O valor pessoal que pode ser consumido até o próximo recebimento depois de descontados compromissos, provisões e margens de segurança.
 _Evitar_: Saldo, limite do cartão, patrimônio
 
+**Natureza Econômica**:
+A vinculação de uma Obrigação ou movimentação à vida Pessoal, à Empresa ou a ambas, independentemente da conta que realizou o pagamento.
+_Evitar_: Conta pagadora, origem do pagamento, categoria
+
 **Limite de Gasto do Ciclo**:
 O teto de consumo pessoal definido pelo Plano Financeiro para um Ciclo Financeiro; expressa intenção e não afirma quanto dinheiro existe no momento.
 _Evitar_: Saldo atual, Disponível para Gastar atualizado
@@ -125,6 +129,10 @@ _Evitar_: Compra, nova despesa, crédito de renda
 **Regra de Classificação**:
 Uma decisão reutilizável que associa movimentações semelhantes a uma finalidade financeira.
 _Evitar_: Categoria isolada, palpite da IA
+
+**Decisão de Classificação**:
+A confirmação auditável do Titular sobre a Natureza Econômica de um grupo determinístico de movimentações durante a Revisão.
+_Evitar_: Sugestão da IA, categoria, regra silenciosa
 
 **Lote de Importação**:
 O conjunto auditável de arquivos, movimentações e resultados produzidos por uma carga de dados.

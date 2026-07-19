@@ -162,6 +162,16 @@ testes de autorização/reprocessamento e uma amostra real efêmera passaram; o
 companion web e a tela Revisar distinguem extrato de fatura. O deployment Convex
 dev, 54 testes, tipos, lint, estilos, export web e Expo Doctor 20/20 passaram.
 
+Checkpoint de configuração diária de 19 de julho de 2026: Obrigações genéricas
+e Decisões de Classificação passaram a ter persistência Convex autorizada,
+idempotente e auditável. A configuração não contém seed de dados pessoais,
+separa Natureza Econômica de origem pagadora e mantém a parcela empresarial das
+obrigações mistas como `precisa confirmar` até confirmação explícita. A decisão
+de revisão usa o agrupamento determinístico versionado e não antecipa categorias,
+limites ou fórmulas oficiais. A navegação Android mantém Revisar como ação
+principal. Sessenta e quatro testes, tipos, lint e estilos passaram neste
+checkpoint.
+
 ## 6. Fase 3 — Importação histórica e calibração
 
 ### Ordem de formatos
