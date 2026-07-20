@@ -10,6 +10,7 @@ import { SYNTHETIC_OFX } from './testFixtures/syntheticOfx';
 
 const modules = import.meta.glob('./**/*.ts');
 const SYNTHETIC_OWNER_ID = 'user_test_authorized_owner';
+const SYNTHETIC_OWNER_TOKEN = `https://convex.test|${SYNTHETIC_OWNER_ID}`;
 const SYNTHETIC_OTHER_ID = 'user_test_someone_else';
 
 type TestBackend = TestConvex<typeof schema>;
@@ -26,12 +27,20 @@ describe('imports', () => {
     const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
     const otherUser = t.withIdentity({ subject: SYNTHETIC_OTHER_ID });
 
-    await expect(t.mutation(api.imports.generateUploadUrl)).rejects.toMatchObject({
+    await expect(
+      t.mutation(api.imports.generateUploadUrl, {
+        format: 'ofx',
+        sourcePatrimony: 'personal',
+      }),
+    ).rejects.toMatchObject({
       data: { code: 'AUTHENTICATION_REQUIRED' },
     });
-    await expect(otherUser.mutation(api.imports.generateUploadUrl)).rejects.toMatchObject({
-      data: { code: 'ACCESS_DENIED' },
-    });
+    await expect(
+      otherUser.mutation(api.imports.generateUploadUrl, {
+        format: 'ofx',
+        sourcePatrimony: 'personal',
+      }),
+    ).rejects.toMatchObject({ data: { code: 'ACCESS_DENIED' } });
 
     const stored = await storeSyntheticUpload(t, owner);
     await expect(
@@ -60,6 +69,7 @@ describe('imports', () => {
 
     expect(preview).toMatchObject({
       status: 'preview',
+      sourcePatrimony: 'personal',
       periodStart: '2026-06-01',
       periodEnd: '2026-06-30',
       transactionCount: 2,
@@ -78,10 +88,15 @@ describe('imports', () => {
       auditEvents: await ctx.db.query('auditEvents').take(6),
     }));
     expect(persisted.uploads).toHaveLength(1);
-    expect(persisted.uploads[0]).toMatchObject({ status: 'consumed' });
+    expect(persisted.uploads[0]).toMatchObject({
+      status: 'consumed',
+      sourcePatrimony: 'personal',
+    });
     expect(persisted.uploads[0].storageId).toBeUndefined();
     expect(persisted.batches).toHaveLength(1);
     expect(persisted.entries).toHaveLength(2);
+    expect(persisted.batches[0]).toMatchObject({ sourcePatrimony: 'personal' });
+    expect(persisted.entries[0]).toMatchObject({ sourcePatrimony: 'personal' });
     expect(persisted.auditEvents.map((event) => event.action)).toEqual([
       'import_batch.preview_created',
       'bank_file.deleted',
@@ -114,6 +129,7 @@ describe('imports', () => {
       ),
     }));
     expect(persisted.sources).toHaveLength(2);
+    expect(persisted.sources[0]).toMatchObject({ sourcePatrimony: 'personal' });
     expect(persisted.confirmedAudits).toHaveLength(1);
   });
 
@@ -149,6 +165,66 @@ describe('imports', () => {
     });
     await expect(
       t.run((ctx) => ctx.db.query('sourceTransactions').take(5)),
+    ).resolves.toHaveLength(2);
+  });
+
+  it('creates an explicit-origin preview instead of reusing a legacy confirmed batch', async () => {
+    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
+    const stored = await storeSyntheticUpload(t, owner);
+    const fileHash = await t.run(async (ctx) => {
+      const metadata = await ctx.db.system.get('_storage', stored.storageId);
+      if (!metadata) throw new Error('Synthetic upload metadata not found');
+      return metadata.sha256;
+    });
+    const legacyBatchId = await t.run((ctx) =>
+      ctx.db.insert('importBatches', {
+        ownerId: SYNTHETIC_OWNER_TOKEN,
+        fileHash,
+        format: 'ofx',
+        sourceAccountKind: 'bankAccount',
+        parserVersion: 'legacy-itau-ofx-v1',
+        status: 'confirmed',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
+        transactionCount: 2,
+        duplicateCount: 0,
+        creditTotal: {
+          amountInMinorUnits: 250_000n,
+          currency: 'BRL',
+          minorUnit: 'cent',
+        },
+        debitTotal: {
+          amountInMinorUnits: 12_345n,
+          currency: 'BRL',
+          minorUnit: 'cent',
+        },
+        rawFileStatus: 'deleted',
+        rawDeletedAt: 1,
+        insertedCount: 2,
+        createdAt: 1,
+        updatedAt: 1,
+        confirmedAt: 1,
+      }),
+    );
+
+    const preview = await owner.action(api.imports.createPreview, stored);
+
+    expect(preview).toMatchObject({
+      status: 'preview',
+      sourcePatrimony: 'personal',
+    });
+    expect(preview.batchId).not.toBe(legacyBatchId);
+    await expect(
+      t.run((ctx) =>
+        ctx.db
+          .query('importBatches')
+          .withIndex('by_ownerId_and_fileHash', (q) =>
+            q.eq('ownerId', SYNTHETIC_OWNER_TOKEN).eq('fileHash', fileHash),
+          )
+          .take(3),
+      ),
     ).resolves.toHaveLength(2);
   });
 
@@ -218,7 +294,10 @@ async function storeUpload(
   content: string,
   contentType: string,
 ): Promise<{ uploadId: Id<'importUploads'>; storageId: Id<'_storage'> }> {
-  const upload = await owner.mutation(api.imports.generateUploadUrl);
+  const upload = await owner.mutation(api.imports.generateUploadUrl, {
+    format: 'ofx',
+    sourcePatrimony: 'personal',
+  });
   const storageId = await t.run((ctx) => ctx.storage.store(new Blob([content], { type: contentType })));
   return { uploadId: upload.uploadId, storageId };
 }

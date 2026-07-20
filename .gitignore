@@ -30,8 +30,11 @@ data/raw/
 uploads/
 *.ofx
 *.qfx
+*.xls
+*.xlsx
 !**/fixtures/sanitized/**/*.ofx
 !**/fixtures/sanitized/**/*.qfx
+!**/testFixtures/sanitized/**/*.xlsx
 
 # Logs and temporary files
 .codex-remote-attachments/

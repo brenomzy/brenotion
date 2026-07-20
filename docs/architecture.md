@@ -6,6 +6,12 @@ A arquitetura concentra regras complexas atrás de interfaces pequenas. A interf
 
 O sistema começa como uma única aplicação universal Expo Router, com Convex como fonte de verdade em nuvem. Android é a experiência principal; a web começa com upload e cofre documental.
 
+A direção de produto aprovada em 19 de julho de 2026 organiza a experiência como
+um Brenotion mensal inteligente. Início, Checklist Mensal e Atualizar mês formam
+o caminho principal. Os módulos abaixo preservam rigor, auditoria e separação de
+patrimônios, mas a interface revela essa complexidade apenas quando existe uma
+exceção ou decisão que a justifique.
+
 ## 2. Topologia
 
 ```mermaid
@@ -28,7 +34,10 @@ flowchart LR
 - Expo Router fornece rotas Android e web no mesmo projeto.
 - Rotas e elementos específicos usam extensões de plataforma somente quando o comportamento realmente divergir.
 - A web inicial contém autenticação, upload e consulta do Cofre Fiscal.
-- O Android contém consultas, revisões periódicas, biometria e notificações acionáveis.
+- O Android contém Início, Checklist Mensal, consultas, biometria e notificações
+  acionáveis.
+- Atualizar mês orquestra no mesmo fluxo a cobertura, o upload disponível na
+  plataforma, as exceções de classificação e o resultado retrospectivo.
 - Um frontend web separado só será considerado se a experiência desktop exigir uma arquitetura própria.
 
 Referências: [Expo Router](https://docs.expo.dev/router/introduction/), [publicação web com Expo](https://docs.expo.dev/guides/publishing-websites/) e [Clerk com Expo Web](https://clerk.com/docs/guides/development/web-support/overview).
@@ -54,18 +63,51 @@ extração temporária de uma imagem escolhida pelo Titular e correspondência c
 importação posterior. Não acessa notificações de outros aplicativos e não
 transforma um registro provisório em fato financeiro definitivo.
 
+A fundação implementada abre um Ciclo Financeiro somente por ação explícita, com
+datas e fuso próprios, e persiste Gastos Informados versionados em centavos
+exatos. Candidatos de conciliação exigem valor oposto exato, distância máxima de
+sete dias e Patrimônio de Origem compatível quando confirmado. Liquidações do
+Cartão e movimentações já conciliadas ficam fora dos candidatos. A confirmação
+cria um vínculo um-para-um auditável; sem Plano Financeiro, o impacto sobre
+Limites permanece explicitamente indisponível.
+
 O diagnóstico Pluggy do spike anterior foi removido do aplicativo e do backend.
 Ele não faz parte da arquitetura alvo do MVP, não deixou dados persistidos e não
 alimentou o Livro Financeiro.
+
+Esse módulo implementado permanece disponível para compatibilidade e possíveis
+usos excepcionais, mas Gastos Informados e a abertura explícita de Ciclo
+Financeiro não pertencem ao caminho principal mensal. A interface não exige
+lançamentos diários.
 
 ### 4.3 Pipeline de Importação
 
 **Interface**: recebe um arquivo, produz uma prévia auditável e confirma ou descarta um Lote de Importação.
 
 Esconde parsing, normalização, deduplicação, agrupamento, validação e descarte do
-arquivo bruto. OFX/CSV e PDF do Itaú PF são adaptações internas da mesma
-interface. A confirmação também procura correspondências com Gastos Informados
-para impedir dupla contagem.
+arquivo bruto. Extratos OFX do Itaú Pessoal ou Empresa e a fatura XLSX são
+adapters validados da mesma interface; CSV e PDF permanecem fallbacks candidatos.
+Todo novo upload exige Patrimônio de Origem explícito, propagado à intenção, ao
+lote e às Movimentações de Origem. O adapter XLSX
+roda em Action Node isolada, enquanto persistência e autorização permanecem em
+mutations do runtime padrão. A confirmação também procura correspondências com
+Gastos Informados para impedir dupla contagem.
+
+O plano de importação de cada competência trata o OFX do Itaú Pessoal, a fatura
+XLSX e o OFX do Itaú Empresa como três entradas do ciclo mensal normal. A
+cobertura é acompanhada por fonte; reunir as entradas no mesmo fluxo não combina
+seus Patrimônios de Origem nem infere Natureza Econômica pela conta pagadora.
+Para a fatura do Itaú, `statementCompetence` preserva o mês de pagamento
+declarado no arquivo; uma regra determinística compartilhada deriva a
+Competência dos Gastos do Cartão como o mês imediatamente anterior. Cobertura,
+Início, preparação da classificação e Fechamento consomem a competência
+derivada, sem alterar as datas individuais das Movimentações de Origem.
+
+**Orquestração de produto — Atualizar mês**: compõe cobertura, Pipeline de
+Importação, Classificação, conciliações, Fechamento Mensal e resumo
+retrospectivo atrás de uma interface retomável. Escolher um slot de fonte torna
+seu Patrimônio de Origem explícito. Lote de Importação, Movimentação de Origem,
+fingerprint e políticas de fechamento permanecem detalhes progressivos.
 
 ### 4.4 Livro Financeiro
 
@@ -75,9 +117,43 @@ Esconde transferências internas, estornos, câmbio, pagamentos de fatura, dupli
 
 ### 4.5 Classificação
 
-**Interface**: classifica um conjunto de movimentações e explica a regra ou incerteza aplicada.
+**Interface**: classifica um conjunto de movimentações e explica a regra ou
+incerteza aplicada, priorizando regras confirmadas antes de consultar IA.
 
-Esconde normalização de estabelecimentos, regras do Titular, recorrência e sugestões da IA. Uma sugestão nunca substitui uma Regra de Classificação confirmada.
+Esconde normalização de estabelecimentos, regras do Titular, categorias,
+recorrência e sugestões da IA. Uma sugestão nunca substitui uma Regra de
+Classificação confirmada. Somente descrições novas, ambíguas ou materiais devem
+chegar ao Titular; uma confirmação cria memória auditável para competências
+futuras.
+
+As Decisões de Classificação confirmadas são persistidas pelo identificador
+versionado do agrupamento determinístico (`description-v1`). Nesta fundação, a
+decisão registra somente a Natureza Econômica; categorias e limites permanecem
+fora da interface até a modelagem própria. Revisar consulta e confirma essas
+decisões diretamente, mas exclui do conjunto classificável os dois lados de uma
+Liquidação do Cartão conciliada.
+
+A Categoria usa uma memória própria e independente da Decisão de Classificação
+de Natureza Econômica. `classificationRules` associa o `groupKey` interno a uma
+Categoria versionada; `aiClassificationSuggestions` guarda propostas separadas
+e `aiClassificationJobs` registra somente telemetria sanitizada. A mutation
+pública autenticada agrupa a competência completa no backend, aplica regras,
+cria um job idempotente e agenda `aiClassificationAction`. A `internalAction`
+envia à Responses API apenas IDs opacos, descrições sanitizadas, direção,
+Patrimônio de Origem separado e contagem. Uma `internalMutation` revalida a
+bijecção de IDs e persiste sugestões. Confirmar ou corrigir cria a regra;
+abster-se não cria.
+
+Uma competência pode conter até 300 grupos revisáveis. A action divide os grupos
+destinados ao modelo em chamadas sequenciais de no máximo 40 itens, preserva
+falha atômica na persistência das sugestões e soma chamadas, tokens, latência e
+custo na telemetria do job. O limite é operacional e de tamanho de resposta, não
+um teto monetário mensal; qualquer política de gasto continua exigindo decisão
+explícita do Titular.
+
+Cada alteração material cria uma revisão imutável numerada e o evento de
+auditoria referencia essa revisão. O documento corrente serve à leitura reativa;
+as revisões preservam os estados anteriores sem recalculá-los.
 
 ### 4.6 Obrigações
 
@@ -85,31 +161,76 @@ Esconde normalização de estabelecimentos, regras do Titular, recorrência e su
 
 Esconde recorrência, tolerância de valor e data, correspondência de movimentações, estados e lembretes.
 
-### 4.7 Planejador
+A configuração persistida é genérica e autorizada por proprietário, sem seed de
+dados pessoais. Ela separa a Natureza Econômica binária — Pessoal ou Empresa —
+da origem pagadora. Criações e alterações materiais também produzem revisões
+imutáveis numeradas.
+
+A rota universal de configuração consulta inclusive Obrigações desativadas e usa
+o `upsert` idempotente existente para criar, editar, desativar ou reativar. A
+chave lógica permanece técnica e estável durante a edição; a interface não a
+expõe nem representa a configuração recorrente como Ocorrência de Obrigação já
+materializada.
+
+A central mensal materializa Ocorrências por competência somente após ação do
+Titular. Cada ocorrência preserva o snapshot da configuração usado naquele mês,
+inclusive Natureza Econômica e origem pagadora. Conclusão manual, dispensa e
+necessidade de atenção são estados auditáveis; conclusão manual nunca é tratada
+como Pagamento Identificado.
+
+A Checklist Mensal é a interface de produto sobre essas ocorrências. Preparar ou
+copiar o mês deve ser idempotente e não duplicar itens. Concluir um checkbox
+registra apenas uma declaração do Titular; conciliação posterior pode acrescentar
+evidência, mas somente uma Movimentação de Origem conciliada constitui Pagamento
+Identificado.
+
+### 4.7 Fechamento Mensal
+
+**Interface**: deriva a prontidão de uma competência e registra uma revisão
+imutável após confirmação explícita do Titular.
+
+O primeiro adapter implementado é `metadata-only-partial-v1`. Ele registra
+cobertura das três fontes, resumo das Ocorrências, lacunas reconhecidas,
+fingerprint dos insumos e capacidades ainda indisponíveis. Buscas truncadas,
+perfil ausente ou fuso ausente bloqueiam o fechamento. Uma correção cria nova
+revisão e referencia a anterior. Esta etapa nunca produz `availableToSpend` nem
+promove o registro mutável legado de `financialSnapshots` a retrato fechado.
+
+O adapter parcial atual é infraestrutura e não deve aparecer como uma etapa
+técnica independente no caminho principal. Atualizar mês pode usá-lo para
+preservar progresso, mas só apresenta ao Titular capacidades e resultados que
+realmente existam.
+
+### 4.8 Planejador
 
 **Interface**: recebe um retrato financeiro versionado e retorna um Plano Financeiro determinístico com valores, justificativas e nível de confiança.
 
 Esconde cálculo de disponibilidade, provisões, base essencial, reservas, prioridades e políticas trimestrais. Não faz I/O e deve ser o principal módulo testado por exemplos e propriedades.
 
-### 4.8 Fiscal
+### 4.9 Fiscal
 
 **Interface**: calcula fatos fiscais suportados a partir de regras versionadas e valida documentos contra os resultados esperados.
 
 Esconde PTAX, calendário de dias úteis, pró-labore, INSS, preparação de NFS-e e limites acompanhados. Regra provisória e regra confirmada usam versões distintas; histórico nunca é recalculado silenciosamente.
 
-### 4.9 Cofre Fiscal
+### 4.10 Cofre Fiscal
 
 **Interface**: recebe um documento, extrai metadados, relaciona-o a uma obrigação e aplica a política de retenção adequada.
 
 Esconde armazenamento, hash, duplicidade, extração, validação e geração de pacotes. Documentos bancários brutos não usam a política de retenção do Cofre Fiscal.
 
-### 4.10 Advisor
+### 4.11 Advisor
 
 **Interface**: recebe um retrato financeiro minimizado e retorna três cenários estruturados e Alterações de Plano propostas.
 
 Esconde preparação de contexto, redação de dados, escolha Luna/Terra, chamada ao modelo, validação do resultado e memória conversacional. O Advisor consome cálculos; não os cria.
 
-### 4.11 Notificações
+Antes do Advisor amplo, a mesma infraestrutura de modelo pode apoiar
+Classificação e redigir o resumo retrospectivo mensal. Esse uso recebe categorias
+e agregados sanitizados, não documentos brutos ou identificadores financeiros, e
+não produz valores oficiais nem altera o Plano.
+
+### 4.12 Notificações
 
 **Interface**: recebe eventos acionáveis e aplica preferência, prioridade, deduplicação e janela de silêncio.
 
@@ -119,7 +240,7 @@ Esconde tokens, canais Android, entrega e deep links. O restante do sistema não
 
 | Seam | Adapter de produção inicial | Adapter de teste ou alternativa | Critério de substituição |
 |---|---|---|---|
-| Importação financeira | arquivos do Itaú PF | fixtures sanitizadas e fake em memória | novo formato real ou nova fonte aprovada |
+| Importação financeira | arquivos do Itaú com Patrimônio de Origem explícito | fixtures sanitizadas e fake em memória | novo formato real ou nova fonte aprovada |
 | Registro do ciclo atual | entrada textual explícita | entrada por imagem escolhida e fake em memória | atrito, qualidade de extração e segurança |
 | Fonte de câmbio | API oficial do Banco Central | fixture histórica | indisponibilidade ou mudança de contrato |
 | Modelo de IA | OpenAI Responses API | fake estruturado | custo, qualidade ou política de dados |
@@ -133,15 +254,19 @@ A seam existe porque há um adapter de produção e um adapter de teste ou fallb
 
 ```mermaid
 flowchart TD
-    R["Arquivo Itaú PF"] --> B["Lote de Importação"]
+    U["Atualizar mês"] --> R["Três fontes Itaú com origem explícita"]
+    R --> B["Pipeline de Importação"]
     B --> I["Movimentações de Origem"]
-    G["Gasto Informado"] --> D["Conciliação e deduplicação"]
-    I --> D
+    I --> D["Conciliação e deduplicação"]
     D --> L["Livro Financeiro"]
-    L --> C["Classificação"]
+    L --> C["Regras e exceções de Classificação"]
     C --> O["Conciliação de Obrigações"]
-    O --> P["Planejador determinístico"]
-    P --> H["Tela inicial e ações"]
+    O --> F["Fechamento Mensal"]
+    F --> S["Resumo retrospectivo sanitizado"]
+    F --> P["Planejador determinístico"]
+    S --> H["Início"]
+    O --> K["Checklist Mensal"]
+    P --> H
     P --> A["Advisor"]
     A --> X["Alteração de Plano"]
     X --> Q["Confirmação do Titular"]
@@ -158,12 +283,15 @@ Os nomes finais serão definidos no schema, mas estes registros devem existir co
 | Intenção de upload | proprietário, expiração e estado operacional do arquivo bancário temporário |
 | Lote de importação | origem, hash, prévia, erros e confirmação |
 | Movimentação de origem | registro imutável recebido ou importado |
+| Conciliação da liquidação do cartão | vínculo confirmado entre o pagamento estruturado da fatura e o débito bancário correspondente |
 | Gasto informado | registro provisório, impacto estimado e conciliação posterior |
+| Conciliação de gasto informado | vínculo confirmado um-para-um com a Movimentação de Origem correspondente |
 | Lançamento financeiro | interpretação canônica, conciliação e transferências internas |
 | Regra de classificação | padrão confirmado e vigência |
 | Ciclo financeiro | datas, recebimento e estado de fechamento |
 | Obrigação | modelo recorrente |
 | Ocorrência de obrigação | compromisso de uma competência |
+| Fechamento mensal | revisão imutável dos insumos, lacunas e capacidades de uma competência |
 | Plano financeiro | entradas, regra, resultado e confiança |
 | Alocação | valor destinado a provisão, consumo, margem ou reserva |
 | Limite por categoria | teto confirmado, consumo conhecido e estimativa restante |
@@ -181,11 +309,37 @@ Todos os registros financeiros devem carregar `ownerId`, moeda, timezone relevan
 ## 8. Ingestão e consistência
 
 - Cada Lote de Importação mantém competência, período coberto e instante de confirmação.
+- A cobertura mensal é apurada separadamente para Itaú Pessoal, cartão e Itaú
+  Empresa; ausência ou defasagem de uma fonte reduz a confiança da competência.
+- O lote registra formato, tipo de conta, Patrimônio de Origem e versão do parser.
+  Lotes legados podem manter a origem ausente; novos uploads não recebem default.
+  Faturas também preservam título, mês de pagamento, vencimento, total
+  reconciliado e agregados separados de compras, créditos/estornos e Liquidação
+  do Cartão. A Competência dos Gastos do Cartão é derivada como o mês anterior ao
+  pagamento e não substitui o metadado original.
 - Operações de ingestão são idempotentes.
-- O hash do arquivo identifica reimportações: lotes confirmados são devolvidos sem novas Movimentações de Origem, enquanto lotes descartados ou rejeitados podem voltar ao estado de prévia.
+- A identidade de reimportação combina Titular, hash do arquivo e Patrimônio de
+  Origem. Um lote confirmado com a mesma identidade é devolvido sem novas
+  Movimentações de Origem; lotes descartados ou rejeitados podem voltar à
+  prévia. Um lote legado sem origem não captura silenciosamente uma nova
+  importação com origem explícita.
 - Uma prévia só é persistida depois que o objeto bruto correspondente foi apagado do Convex Storage.
 - Movimentações de Origem são imutáveis; correções criam interpretações ou vínculos novos.
-- Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação de Origem correspondente.
+- Chaves de novas Movimentações de Origem incluem o Patrimônio de Origem para
+  impedir falsa deduplicação entre contas pessoais e empresariais.
+- Na conta de cartão, compra é saída negativa; crédito ou estorno e Liquidação
+  do Cartão são entradas positivas com tipos explícitos. A reconciliação do
+  total da fatura exclui a liquidação para não contar o pagamento como consumo.
+- Candidatos entre a Liquidação do Cartão e um débito bancário exigem valor
+  oposto exato, conta bancária com origem explícita e distância máxima de sete
+  dias. A regra apenas propõe; uma mutation revalida e cria o vínculo auditável
+  somente após confirmação explícita do Titular.
+- Gastos Informados são provisórios e reconciliados sem duplicar a Movimentação
+  de Origem correspondente. A regra inicial propõe somente valor oposto exato em
+  até sete dias, respeita Patrimônio de Origem confirmado e exige confirmação.
+- Fechamentos parciais preservam fingerprint, versões, reconhecimentos e
+  cobertura usada na época; ausência de cálculo financeiro produz ausência de
+  valor, nunca zero.
 - O Disponível para Gastar contém `asOf` e nível de confiança.
 - O Limite de Gasto do Ciclo e seus Limites por Categoria preservam o plano mesmo sem dados atuais completos.
 - Dados desatualizados bloqueiam linguagem de certeza; valores do ciclo atual permanecem identificados como estimativas.
@@ -226,9 +380,20 @@ Upload não concede confiança ao conteúdo. Tamanho, hash, moeda, período, tra
 - Manter memória e histórico no Convex, sob política própria.
 - Remover CPF, CNPJ, números de conta, credenciais e texto bruto desnecessário.
 - Enviar agregados e IDs opacos sempre que possível.
+- Aplicar Regras de Classificação confirmadas antes de consultar um modelo.
+- Restringir sugestões a descrições desconhecidas e devolver categoria,
+  confiança e explicação em saída estruturada.
+- Produzir o resumo retrospectivo somente a partir de categorias e totais
+  determinísticos e sanitizados.
 - Exigir saída estruturada para cenários e Alterações de Plano.
 - Validar schema e referências antes de mostrar uma recomendação.
-- Luna atende rotina e análise semanal; Terra atende fechamento ou decisão profunda.
+- `gpt-5.6-sol` permanece a referência de qualidade do eval. Em 19 de julho de
+  2026, `gpt-5.6-luna` foi o modelo mais barato que atingiu acurácia mínima de
+  `0,90` sem falsos positivos de baixa incerteza e foi aprovado para a primeira
+  fatia. O deployment usa esse único modelo em `OPENAI_CLASSIFICATION_MODEL`;
+  trocar modelo ou prompt exige novo eval.
+- O adapter fake existe exclusivamente para testes e ambientes explicitamente
+  marcados. Ausência de chave, modelo ou configuração falha fechada.
 - Toda recomendação registra modelo, versão de prompt, dados resumidos e decisão do Titular.
 
 ## 12. Interface e design system
@@ -244,6 +409,10 @@ Upload não concede confiança ao conteúdo. Tamanho, hash, moeda, período, tra
 - Código copiado é tratado como código próprio, com origem e data registradas, acessibilidade, testes e atualização manual deliberada.
 - Valores financeiros usam numerais tabulares e formatação centralizada.
 - Componentes do domínio são construídos sobre os primitivos, sem acoplar cálculos à apresentação.
+- A navegação principal contém Início e Checklist Mensal; Atualizar mês é uma
+  ação de primeiro nível. Plano, Revisar, Mais, lotes, ocorrências e fechamento
+  não competem como destinos principais.
+- Estados técnicos e metadados de auditoria aparecem por divulgação progressiva.
 
 Referências: [matriz de adoção](./design/react-native-reusables-adoption-matrix.md), [React Native Reusables](https://reactnativereusables.com/docs), [instalação manual](https://reactnativereusables.com/docs/installation/manual) e [NativeWind](https://www.nativewind.dev/docs/getting-started/installation).
 

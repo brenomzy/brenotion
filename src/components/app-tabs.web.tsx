@@ -1,8 +1,6 @@
 /* eslint-disable import/no-unresolved -- HugeIcons publishes per-icon JS subpaths without per-icon declarations. */
-import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import CheckListIcon from '@hugeicons/core-free-icons/CheckListIcon';
 import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
-import MoreHorizontalCircle01Icon from '@hugeicons/core-free-icons/MoreHorizontalCircle01Icon';
-import PieChartIcon from '@hugeicons/core-free-icons/PieChartIcon';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 import {
   TabList,
@@ -26,35 +24,39 @@ const TAB_ITEMS = [
     icon: Home01Icon,
   },
   {
-    name: 'plan',
-    href: '/plan',
-    label: 'Plano',
-    icon: PieChartIcon,
+    name: 'checklist',
+    href: '/checklist',
+    label: 'Checklist',
+    icon: CheckListIcon,
   },
-  {
-    name: 'review',
-    href: '/review',
-    label: 'Revisar',
-    icon: CheckmarkCircle02Icon,
-  },
-  {
-    name: 'more',
-    href: '/more',
-    label: 'Mais',
-    icon: MoreHorizontalCircle01Icon,
-  },
+] as const;
+
+const HIDDEN_TAB_ITEMS = [
+  { name: 'review', href: '/review' },
+  { name: 'plan', href: '/plan' },
+  { name: 'more', href: '/more' },
 ] as const;
 
 export default function AppTabs() {
   return (
     <Tabs>
-      <TabSlot className="h-full" />
+      <TabSlot style={{ flex: 1, minHeight: 0 }} />
       <TabList asChild>
         <CustomTabList>
           {TAB_ITEMS.map((item) => (
             <TabTrigger key={item.name} name={item.name} href={item.href} asChild>
               <TabButton icon={item.icon}>{item.label}</TabButton>
             </TabTrigger>
+          ))}
+          {HIDDEN_TAB_ITEMS.map((item) => (
+            <TabTrigger
+              key={item.name}
+              name={item.name}
+              href={item.href}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={{ display: 'none' }}
+            />
           ))}
         </CustomTabList>
       </TabList>

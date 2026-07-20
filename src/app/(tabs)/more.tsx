@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 
 import { inMemoryMoreScreenSource } from '@/modules/more/in-memory-more-screen-source';
-import { MoreScreen } from '@/modules/more/more-screen';
+import { MoreScreen, SyntheticMoreScreen } from '@/modules/more/more-screen';
 import { type MoreScenario } from '@/modules/more/more-screen-model';
 
 const MORE_SCENARIOS = new Set<MoreScenario>([
@@ -20,7 +20,11 @@ export default function MoreRoute() {
   const activeScenario =
     requestedScenario && MORE_SCENARIOS.has(requestedScenario as MoreScenario)
       ? (requestedScenario as MoreScenario)
-      : 'recent';
+      : null;
 
-  return <MoreScreen model={inMemoryMoreScreenSource.get(activeScenario)} />;
+  return activeScenario ? (
+    <SyntheticMoreScreen model={inMemoryMoreScreenSource.get(activeScenario)} />
+  ) : (
+    <MoreScreen />
+  );
 }

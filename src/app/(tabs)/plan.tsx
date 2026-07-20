@@ -1,7 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 
 import { inMemoryPlanScreenSource } from '@/modules/plan/in-memory-plan-screen-source';
-import { PlanScreen } from '@/modules/plan/plan-screen';
+import {
+  PlanScreen,
+  SyntheticPlanScreen,
+} from '@/modules/plan/plan-screen';
 import { type PlanScenario } from '@/modules/plan/plan-screen-model';
 
 const PLAN_SCENARIOS = new Set<PlanScenario>([
@@ -20,7 +23,11 @@ export default function PlanRoute() {
   const activeScenario =
     requestedScenario && PLAN_SCENARIOS.has(requestedScenario as PlanScenario)
       ? (requestedScenario as PlanScenario)
-      : 'recent';
+      : null;
 
-  return <PlanScreen model={inMemoryPlanScreenSource.get(activeScenario)} />;
+  return activeScenario ? (
+    <SyntheticPlanScreen model={inMemoryPlanScreenSource.get(activeScenario)} />
+  ) : (
+    <PlanScreen />
+  );
 }

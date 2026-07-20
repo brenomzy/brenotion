@@ -76,7 +76,7 @@ Prioridade R não substitui a prioridade P do inventário de telas: P ordena val
 | O03 Mapeamento e prévia | `Select`, `Input`, `Label`, `Tabs`, `Alert`, `Badge` | R1 | Mapeamento usa controles genéricos; grade/prévia, erros e duplicidades exigem composição própria web responsiva. |
 | O04 Resultado do Lote de Importação | `Alert`, `Badge`, `Accordion`, `Separator`, `Button` | R1 | Resumo, hash e confirmação de exclusão do bruto pertencem a `ImportBatchSummary`. |
 | O05 Revisão agrupada | `Checkbox`, `Select`, `Badge`, `Alert Dialog` | R1 | Seleção em lote é válida; regras aplicadas ao histórico e ao futuro precisam de escopo e confirmação explícitos. |
-| O06 Natureza econômica | `Radio Group`, `Input`, `Label`, `Alert` | R1 | Adaptar a escolha Empresa/mista/Pessoal; percentual misto exige validação numérica própria. |
+| O06 Natureza econômica | `Radio Group`, `Label`, `Alert` | R1 | Adaptar a escolha binária entre Empresa e Pessoal. |
 | O07 Proposta de base essencial | `Card`, `Accordion`, `Badge`, `Alert Dialog` | R1 | A composição e estabilidade trimestral são domínio; disclosure apenas para evidências secundárias. |
 | O08 Proposta de obrigações | `Input`, `Label`, `Select`, `Radio Group`, `Alert Dialog` | R1 | Data, recorrência e conta responsável precisam de validação de fronteira além dos controles visuais. |
 | O09 Retrato histórico | `Tabs`, `Card`, `Badge`, `Alert`, `Accordion` | R1 | Tabs podem separar patrimônios ou períodos; confiança histórica e lacunas permanecem visíveis. |

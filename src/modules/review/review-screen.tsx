@@ -1,47 +1,664 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DataConfidence, ScreenStatePanel } from '@/components/domain';
+import { MoneyValue, ScreenStatePanel } from '@/components/domain';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
-import { type ReviewAction, type ReviewScreenModel } from './review-screen-model';
+import { MonthlyClassificationReview } from './monthly-classification-review';
+import { type EconomicNature } from './review-classification-model';
+import {
+  formatReviewDate,
+  formatReviewPeriod,
+  formatSourcePatrimony,
+  formatReviewTimestamp,
+  getSelectedBatch,
+  type ReviewImportBatch,
+  type ReviewReadyModel,
+  type ReviewScreenActions,
+  type ReviewScreenModel,
+  type ReviewSourceTransaction,
+} from './review-screen-model';
+import { useCardSettlementReconciliation } from './use-card-settlement-reconciliation';
+import {
+  type ReviewClassificationGroup,
+  useReviewClassificationDecisions,
+} from './use-review-classification-decisions';
+import {
+  type MonthlyClassificationReviewSource,
+  useMonthlyClassificationReview,
+} from './use-monthly-classification-review';
+
+const ECONOMIC_NATURE_OPTIONS: readonly Readonly<{
+  value: EconomicNature;
+  label: string;
+}>[] = [
+  { value: 'personal', label: 'Pessoal' },
+  { value: 'business', label: 'Empresa' },
+];
 
 function ReviewLoading() {
   return (
     <View accessibilityLiveRegion="polite" className="gap-4">
-      <Text variant="sectionTitle">Preparando sua revisão</Text>
-      <Text variant="caption">Reunindo pendências sem mostrar uma contagem provisória.</Text>
-      <View className="h-20 rounded-card bg-surface-muted" />
-      <View className="h-28 rounded-card bg-surface-muted" />
-      <View className="h-28 rounded-card bg-surface-muted" />
+      <View className="h-36 rounded-card bg-surface-muted" />
+      <View className="h-24 rounded-card bg-surface-muted" />
+      <View className="h-64 rounded-card bg-surface-muted" />
+      <Text variant="caption">Carregando importações confirmadas…</Text>
     </View>
   );
 }
 
-function ReviewActionCard({ action }: { action: ReviewAction }) {
+function SummaryMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="gap-0 py-0">
-      <CardHeader className="gap-1 pb-3 pt-4">
-        <Text variant="overline">{action.scope}</Text>
-        <CardTitle>{action.title}</CardTitle>
-        <Text variant="caption" className="leading-5">
-          {action.description}
-        </Text>
+    <View className="min-w-[132px] flex-1 gap-1 rounded-control bg-surface-muted px-4 py-3">
+      <Text variant="caption">{label}</Text>
+      <Text variant="label" className="tabular-nums">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function ImportBatchSummary({ batch }: { batch: ReviewImportBatch }) {
+  const isCreditCardStatement = batch.format === 'itauCreditCardXlsx';
+
+  return (
+    <Card>
+      <CardHeader className="gap-2">
+        <View className="gap-1">
+          <Text variant="overline">Lote de Importação confirmado</Text>
+          <CardTitle>{formatReviewPeriod(batch)}</CardTitle>
+          {isCreditCardStatement && batch.statementTitle ? (
+            <Text variant="caption">{batch.statementTitle}</Text>
+          ) : null}
+          {isCreditCardStatement && batch.statementDueOn ? (
+            <Text variant="caption">
+              Vencimento em {formatReviewDate(batch.statementDueOn)}
+            </Text>
+          ) : null}
+          <Text variant="caption">
+            Confirmado em {formatReviewTimestamp(batch.confirmedAt)}
+          </Text>
+          <Text variant="caption">
+            Patrimônio de Origem: {formatSourcePatrimony(batch.sourcePatrimony)}
+          </Text>
+        </View>
       </CardHeader>
-      <CardFooter className="pb-4">
-        <Button variant="secondary" className="w-full" disabled={!action.enabled}>
-          <Text>{action.enabled ? action.actionLabel : 'Disponível após atualizar'}</Text>
-        </Button>
-      </CardFooter>
+      <CardContent className="gap-4">
+        <View className="flex-row flex-wrap gap-2">
+          <SummaryMetric label="No arquivo" value={`${batch.transactionCount}`} />
+          <SummaryMetric label="Movimentações salvas" value={`${batch.insertedCount}`} />
+          <SummaryMetric label="Duplicidades ignoradas" value={`${batch.duplicateCount}`} />
+        </View>
+        {isCreditCardStatement ? (
+          <View className="gap-3 border-t border-divider pt-4">
+            <ReviewMoneyLine label="Total da fatura" money={batch.statementTotal} />
+            <ReviewMoneyLine label="Compras" money={batch.purchaseTotal} />
+            <ReviewMoneyLine
+              label="Créditos e estornos"
+              money={batch.creditAdjustmentTotal}
+            />
+            <ReviewMoneyLine
+              label="Pagamento identificado"
+              money={batch.settlementTotal}
+            />
+            <Text variant="caption" className="leading-5">
+              O pagamento é liquidação do cartão e não uma nova despesa.
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-3 border-t border-divider pt-4">
+            <ReviewMoneyLine label="Créditos no arquivo" money={batch.creditTotal} />
+            <ReviewMoneyLine label="Débitos no arquivo" money={batch.debitTotal} />
+          </View>
+        )}
+      </CardContent>
     </Card>
   );
 }
 
-export function ReviewScreen({ model }: { model: ReviewScreenModel }) {
+function ReviewMoneyLine({
+  label,
+  money,
+}: {
+  label: string;
+  money: ReviewImportBatch['statementTotal'];
+}) {
+  return (
+    <View className="flex-row items-center justify-between gap-4">
+      <Text variant="caption">{label}</Text>
+      {money ? (
+        <MoneyValue
+          minorUnits={money.amountInMinorUnits}
+          currency="BRL"
+          size="label"
+        />
+      ) : (
+        <Text variant="caption">Não informado</Text>
+      )}
+    </View>
+  );
+}
+
+function ClassificationNotice() {
+  return (
+    <View
+      accessibilityRole="summary"
+      className="flex-row items-start gap-3 rounded-card bg-status-warning-soft p-4">
+      <View
+        aria-hidden
+        importantForAccessibility="no-hide-descendants"
+        className="h-11 w-11 shrink-0 items-center justify-center rounded-control bg-surface">
+        <Text variant="sectionTitle">!</Text>
+      </View>
+      <View className="min-w-0 flex-1 gap-1">
+        <Text variant="label">Ainda não é um Fechamento Mensal</Text>
+        <Text variant="caption" className="leading-5 text-ink">
+          Você pode confirmar a Natureza Econômica dos grupos abaixo. Isso ainda não faz
+          classificação automática nem altera valores oficiais do Plano Financeiro.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function ClassificationGroups({ model }: { model: ReviewReadyModel }) {
+  const source = useReviewClassificationDecisions({
+    transactions: model.transactions,
+    isLoadingTransactions: model.isLoadingTransactions,
+    hasMoreTransactions: model.hasMoreTransactions,
+  });
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Natureza Econômica</Text>
+        <Text variant="caption" className="leading-5">
+          Confirme se cada grupo é Pessoal ou Empresa. Nenhuma opção é escolhida
+          automaticamente.
+        </Text>
+      </View>
+
+      {source.status === 'error' ? (
+        <View
+          accessibilityLiveRegion="polite"
+          className="gap-1 rounded-card bg-status-danger-soft p-4">
+          <Text variant="label">Não foi possível carregar as decisões</Text>
+          <Text variant="caption" className="leading-5 text-ink">
+            Nenhuma decisão foi alterada. Recarregue a tela para tentar novamente.
+          </Text>
+        </View>
+      ) : source.groups.length === 0 ? (
+        <View accessibilityLiveRegion="polite" className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">
+            {source.status === 'loading'
+              ? 'Preparando grupos para classificação…'
+              : 'Nenhum grupo disponível neste lote.'}
+          </Text>
+        </View>
+      ) : (
+        <View className="gap-3">
+          {source.status === 'loading' ? (
+            <Text accessibilityLiveRegion="polite" variant="caption">
+              Carregando decisões já confirmadas…
+            </Text>
+          ) : null}
+          {source.groups.map((group) => (
+            <ClassificationGroupCard
+              key={group.groupKey}
+              group={group}
+              decisionsAreLoading={source.status === 'loading'}
+              onSelect={(economicNature) =>
+                void source.setEconomicNature(group.groupKey, economicNature)
+              }
+            />
+          ))}
+        </View>
+      )}
+
+      {!source.isComplete && source.groups.length > 0 ? (
+        <Text variant="caption" className="leading-5">
+          Estes grupos consideram somente as movimentações carregadas. Use “Carregar mais” para
+          revisar os demais grupos deste lote.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function ClassificationGroupCard({
+  group,
+  decisionsAreLoading,
+  onSelect,
+}: {
+  group: ReviewClassificationGroup;
+  decisionsAreLoading: boolean;
+  onSelect: (economicNature: EconomicNature) => void;
+}) {
+  const isSaving = group.saveStatus === 'saving';
+  const selectedLabel = ECONOMIC_NATURE_OPTIONS.find(
+    (option) => option.value === group.economicNature,
+  )?.label;
+
+  return (
+    <Card className="gap-3 py-4">
+      <CardContent className="gap-3">
+        <View className="gap-1">
+          <Text variant="label" className="leading-5">
+            {group.representativeDescription}
+          </Text>
+          <Text variant="caption" className="tabular-nums">
+            {group.count} {group.count === 1 ? 'movimentação' : 'movimentações'} ·{' '}
+            {formatReviewDate(group.firstPostedOn)}
+            {group.firstPostedOn === group.lastPostedOn
+              ? ''
+              : ` – ${formatReviewDate(group.lastPostedOn)}`}
+          </Text>
+        </View>
+
+        <View className="gap-2">
+          <Text variant="caption" accessibilityLiveRegion="polite">
+            {isSaving
+              ? 'Salvando decisão…'
+              : decisionsAreLoading
+                ? 'Carregando decisão…'
+                : selectedLabel
+                  ? `Decisão atual: ${selectedLabel}`
+                  : 'Ainda não confirmado'}
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {ECONOMIC_NATURE_OPTIONS.map((option) => {
+              const selected = group.economicNature === option.value;
+
+              return (
+                <Button
+                  key={option.value}
+                  size="compact"
+                  variant={selected ? 'secondary' : 'outline'}
+                  static={selected}
+                  disabled={decisionsAreLoading || isSaving}
+                  accessibilityLabel={`Definir ${group.representativeDescription} como ${option.label}`}
+                  accessibilityState={{
+                    selected,
+                    disabled: decisionsAreLoading || isSaving,
+                    busy: isSaving,
+                  }}
+                  className="min-w-[104px] flex-1"
+                  onPress={() => onSelect(option.value)}>
+                  <Text>{option.label}</Text>
+                </Button>
+              );
+            })}
+          </View>
+        </View>
+
+        {group.saveStatus === 'error' ? (
+          <Text accessibilityLiveRegion="polite" variant="caption" className="text-status-danger">
+            Não foi possível salvar. Sua escolha anterior foi preservada; tente novamente.
+          </Text>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ImportHistory({
+  model,
+  actions,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+}) {
+  if (model.batches.length <= 1 && !model.hasMoreBatches) {
+    return null;
+  }
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Importações confirmadas</Text>
+        <Text variant="caption">Escolha um período para conferir suas movimentações.</Text>
+      </View>
+      <View className="gap-2">
+        {model.batches.map((batch) => {
+          const selected = batch.id === model.selectedBatchId;
+
+          return (
+            <Button
+              key={batch.id}
+              variant={selected ? 'secondary' : 'outline'}
+              static={selected}
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${formatReviewPeriod(batch)}, ${batch.insertedCount} movimentações salvas`}
+              className="h-auto min-h-14 w-full justify-between px-4 py-3"
+              onPress={() => actions.selectBatch(batch.id)}>
+              <View className="min-w-0 flex-1 items-start gap-0.5">
+                <Text variant="label">{formatReviewPeriod(batch)}</Text>
+                <Text variant="caption" className="tabular-nums">
+                  {batch.insertedCount} movimentações salvas
+                </Text>
+              </View>
+              <Text variant="label">{selected ? 'Em exibição' : 'Ver'}</Text>
+            </Button>
+          );
+        })}
+      </View>
+      {model.hasMoreBatches ? (
+        <Button
+          variant="ghost"
+          disabled={model.isLoadingMoreBatches}
+          onPress={actions.loadMoreBatches}>
+          <Text>
+            {model.isLoadingMoreBatches ? 'Carregando períodos…' : 'Ver importações anteriores'}
+          </Text>
+        </Button>
+      ) : null}
+    </View>
+  );
+}
+
+function TransactionRow({ transaction }: { transaction: ReviewSourceTransaction }) {
+  return (
+    <View className="gap-3 border-t border-divider py-4 first:border-t-0">
+      <View className="flex-row items-start justify-between gap-4">
+        <View className="min-w-0 flex-1 gap-1">
+          <Text variant="label" className="leading-5">
+            {transaction.description}
+          </Text>
+          <Text variant="caption" className="tabular-nums">
+            {formatReviewDate(transaction.postedOn)}
+            {transaction.installmentCurrent && transaction.installmentTotal
+              ? ` · parcela ${transaction.installmentCurrent} de ${transaction.installmentTotal}`
+              : ''}
+          </Text>
+        </View>
+        <MoneyValue
+          minorUnits={transaction.amount.amountInMinorUnits}
+          currency="BRL"
+          size="label"
+        />
+      </View>
+      <View className="self-start rounded-full bg-surface-muted px-3 py-1.5">
+        <Text variant="caption" className="text-ink">
+          {transaction.transactionType === 'statementPayment'
+            ? 'Liquidação do cartão'
+            : transaction.cardSettlementRole === 'bankDebit'
+              ? 'Liquidação do cartão · débito bancário conciliado'
+            : transaction.transactionType === 'creditAdjustment'
+              ? 'Crédito/estorno'
+              : 'Movimentação de Origem'}
+        </Text>
+      </View>
+      <Text variant="caption">
+        Patrimônio de Origem: {formatSourcePatrimony(transaction.sourcePatrimony)}
+      </Text>
+    </View>
+  );
+}
+
+function CardSettlementReconciliation({ batch }: { batch: ReviewImportBatch }) {
+  const source = useCardSettlementReconciliation(batch);
+
+  if (batch.format !== 'itauCreditCardXlsx') {
+    return null;
+  }
+
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Liquidação do Cartão</Text>
+        <Text variant="caption" className="leading-5">
+          O Brenotion procura um débito bancário de valor exatamente oposto em até sete dias.
+          Nada é conciliado sem sua confirmação.
+        </Text>
+      </View>
+
+      {source.status === 'loading' ? (
+        <View className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">Procurando candidatos determinísticos…</Text>
+        </View>
+      ) : source.result?.statementPayments.length === 0 ? (
+        <View className="rounded-card bg-surface-muted p-4">
+          <Text variant="caption">Esta fatura não contém pagamento estruturado.</Text>
+        </View>
+      ) : (
+        source.result?.statementPayments.map((payment) => (
+          <Card key={payment.transactionId} className="gap-3 py-4">
+            <CardContent className="gap-3">
+              <View className="flex-row items-center justify-between gap-4">
+                <View className="min-w-0 flex-1 gap-1">
+                  <Text variant="label">Pagamento identificado na fatura</Text>
+                  <Text variant="caption">
+                    {formatReviewDate(payment.postedOn)} · origem{' '}
+                    {formatSourcePatrimony(payment.sourcePatrimony)}
+                  </Text>
+                </View>
+                <MoneyValue
+                  minorUnits={payment.amount.amountInMinorUnits}
+                  currency="BRL"
+                  size="label"
+                />
+              </View>
+
+              {payment.reconciliation ? (
+                <View className="gap-1 rounded-control bg-status-recent-soft p-4">
+                  <Text variant="label">Conciliação confirmada</Text>
+                  <Text variant="caption" className="leading-5 text-ink">
+                    Vinculado ao débito bancário de{' '}
+                    {formatReviewDate(payment.reconciliation.bankDebit.postedOn)} · Patrimônio de
+                    Origem{' '}
+                    {formatSourcePatrimony(
+                      payment.reconciliation.bankDebit.sourcePatrimony,
+                    )}. O débito passa a ser tratado como Liquidação do Cartão, não como nova
+                    despesa.
+                  </Text>
+                </View>
+              ) : payment.candidates.length === 0 ? (
+                <View className="gap-1 rounded-control bg-status-warning-soft p-4">
+                  <Text variant="label">Nenhum candidato exato</Text>
+                  <Text variant="caption" className="leading-5 text-ink">
+                    Nenhum débito bancário com origem explícita, valor oposto exato e data
+                    compatível foi encontrado.
+                  </Text>
+                </View>
+              ) : (
+                <View className="gap-3">
+                  {payment.candidates.map((candidate) => {
+                    const isSaving = source.savingCandidateId === candidate.transactionId;
+                    const hasError = source.errorCandidateId === candidate.transactionId;
+
+                    return (
+                      <View
+                        key={candidate.transactionId}
+                        className="gap-3 rounded-control bg-surface-muted p-4">
+                        <View className="flex-row items-center justify-between gap-4">
+                          <View className="min-w-0 flex-1 gap-1">
+                            <Text variant="label">Débito bancário candidato</Text>
+                            <Text variant="caption">
+                              {formatReviewDate(candidate.postedOn)} · Patrimônio de Origem{' '}
+                              {formatSourcePatrimony(candidate.sourcePatrimony)} · diferença de{' '}
+                              {candidate.dayDistance}{' '}
+                              {candidate.dayDistance === 1 ? 'dia' : 'dias'}
+                            </Text>
+                          </View>
+                          <MoneyValue
+                            minorUnits={candidate.amount.amountInMinorUnits}
+                            currency="BRL"
+                            size="label"
+                          />
+                        </View>
+                        <Text variant="caption" className="leading-5">
+                          Confirmar cria somente o vínculo auditável e impede que este débito seja
+                          tratado como outra despesa. Nenhum valor ou Natureza Econômica é alterado.
+                        </Text>
+                        <Button
+                          variant="secondary"
+                          disabled={isSaving}
+                          accessibilityState={{ busy: isSaving, disabled: isSaving }}
+                          onPress={() =>
+                            void source.confirm(
+                              payment.transactionId,
+                              candidate.transactionId,
+                            )
+                          }>
+                          <Text>
+                            {isSaving ? 'Confirmando conciliação…' : 'Confirmar conciliação'}
+                          </Text>
+                        </Button>
+                        {hasError ? (
+                          <Text variant="caption" className="text-status-danger">
+                            Não foi possível confirmar. Nenhum vínculo foi alterado; tente novamente.
+                          </Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </View>
+  );
+}
+
+function SourceTransactions({
+  model,
+  actions,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+}) {
+  return (
+    <View className="gap-3">
+      <View className="gap-1">
+        <Text variant="sectionTitle">Movimentações de Origem</Text>
+        <Text variant="caption">
+          {model.transactions.length} carregadas neste Lote de Importação
+        </Text>
+      </View>
+      <Card className="gap-0 py-0 shadow-none">
+        <CardContent className="px-5">
+          {model.isLoadingTransactions ? (
+            <View accessibilityLiveRegion="polite" className="gap-3 py-5">
+              <View className="h-16 rounded-control bg-surface-muted" />
+              <View className="h-16 rounded-control bg-surface-muted" />
+              <Text variant="caption">Carregando movimentações deste período…</Text>
+            </View>
+          ) : model.transactions.length > 0 ? (
+            model.transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))
+          ) : (
+            <View className="gap-1 py-5">
+              <Text variant="label">Nenhuma movimentação foi salva neste lote</Text>
+              <Text variant="caption" className="leading-5">
+                Todas as entradas podem ter sido identificadas como duplicidades.
+              </Text>
+            </View>
+          )}
+        </CardContent>
+      </Card>
+      {model.hasMoreTransactions ? (
+        <Button
+          variant="outline"
+          disabled={model.isLoadingMoreTransactions}
+          onPress={actions.loadMoreTransactions}>
+          <Text>
+            {model.isLoadingMoreTransactions ? 'Carregando movimentações…' : 'Carregar mais'}
+          </Text>
+        </Button>
+      ) : null}
+    </View>
+  );
+}
+
+function ReviewReady({
+  model,
+  actions,
+  onContinue,
+  classificationSource,
+}: {
+  model: ReviewReadyModel;
+  actions: ReviewScreenActions;
+  onContinue: () => void;
+  classificationSource: MonthlyClassificationReviewSource;
+}) {
+  const batch = getSelectedBatch(model);
+
+  return (
+    <>
+      <ImportBatchSummary batch={batch} />
+      <MonthlyClassificationReview source={classificationSource} />
+      <ClassificationNotice />
+      <ImportHistory model={model} actions={actions} />
+      <CardSettlementReconciliation batch={batch} />
+      <ClassificationGroups model={model} />
+      <SourceTransactions model={model} actions={actions} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Conferência concluída?</CardTitle>
+          <Text variant="caption" className="leading-5">
+            Quando as exceções importantes estiverem resolvidas, continue para finalizar a
+            atualização do mês.
+          </Text>
+        </CardHeader>
+        <CardContent>
+          <Button
+            className="w-full"
+            disabled={!classificationSource.canContinue}
+            onPress={onContinue}>
+            <Text>Finalizar atualização do mês</Text>
+          </Button>
+          {!classificationSource.canContinue ? (
+            <Text variant="caption" className="leading-5">
+              Resolva cada categoria acima ou marque “não sei” para continuar.
+            </Text>
+          ) : null}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export function ReviewScreen({
+  model,
+  actions,
+}: {
+  model: ReviewScreenModel;
+  actions: ReviewScreenActions;
+}) {
   const insets = useSafeAreaInsets();
+  const { competence: competenceParam } = useLocalSearchParams<{
+    competence?: string | string[];
+  }>();
+  const competence = Array.isArray(competenceParam)
+    ? competenceParam[0]
+    : competenceParam;
+  const validCompetence =
+    competence && /^\d{4}-(0[1-9]|1[0-2])$/.test(competence)
+      ? competence
+      : null;
+  const classificationSource =
+    useMonthlyClassificationReview(validCompetence);
+  const continueMonthlyUpdate = () => {
+    if (!validCompetence || !classificationSource.canContinue) return;
+    router.push({ pathname: '/close', params: { competence: validCompetence } });
+  };
+  const returnToMonthlyUpdate = () => {
+    if (validCompetence) {
+      router.replace({
+        pathname: '/import',
+        params: { competence: validCompetence },
+      });
+      return;
+    }
+
+    router.replace('/import');
+  };
 
   return (
     <ScrollView
@@ -52,101 +669,53 @@ export function ReviewScreen({ model }: { model: ReviewScreenModel }) {
         paddingBottom: insets.bottom + BottomTabInset + 32,
       }}>
       <View className="w-full max-w-[720px] self-center gap-6 px-5 web:px-8">
+        <Button
+          variant="ghost"
+          size="compact"
+          className="self-start"
+          onPress={returnToMonthlyUpdate}>
+          <Text>Voltar a Atualizar mês</Text>
+        </Button>
         <View className="gap-1">
-          <Text variant="overline">Demonstração com dados sintéticos</Text>
-          <Text variant="screenTitle">Revisar</Text>
-          <Text variant="caption">{model.periodLabel} · Empresa e Pessoal</Text>
+          {model.origin.kind === 'synthetic' ? (
+            <Text variant="overline">{model.origin.label}</Text>
+          ) : (
+            <Text variant="overline">Dados persistidos</Text>
+          )}
+          <Text variant="screenTitle">Conferir atualização</Text>
+          <Text variant="caption">Revise somente o que precisa da sua atenção</Text>
         </View>
 
-        {model.scenario === 'loading' ? (
+        {model.status === 'loading' ? (
           <ReviewLoading />
+        ) : model.status === 'empty' ? (
+          <ScreenStatePanel
+            state="empty"
+            title={model.title}
+            description={model.description}
+            actionLabel="Enviar arquivo"
+            onActionPress={actions.startImport}
+          />
+        ) : model.status === 'error' ? (
+          <ScreenStatePanel
+            state="error"
+            title={model.title}
+            description={model.description}
+            actionLabel="Tentar novamente"
+            onActionPress={actions.retry}
+            secondaryAction={
+              <Button variant="outline" className="w-full" onPress={returnToMonthlyUpdate}>
+                <Text>Voltar a Atualizar mês</Text>
+              </Button>
+            }
+          />
         ) : (
-          <>
-            {model.scenario === 'recent' ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{model.state.title}</CardTitle>
-                  <DataConfidence
-                    status="recent"
-                    description={model.state.description}
-                    referenceLabel={model.periodLabel}
-                  />
-                </CardHeader>
-                <CardContent className="gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <Text variant="caption">Progresso confirmado</Text>
-                    <Text variant="label" className="tabular-nums">
-                      {model.completedCount} de {model.totalCount}
-                    </Text>
-                  </View>
-                  <View className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                    <View
-                      className="h-full rounded-full bg-ink"
-                      style={{ width: `${model.progressPercent}%` }}
-                    />
-                  </View>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full">
-                    <Text>{model.state.actionLabel}</Text>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ) : (
-              <ScreenStatePanel
-                state={model.scenario}
-                title={model.state.title}
-                description={model.state.description}
-                referenceLabel={model.periodLabel}
-                actionLabel={model.state.actionLabel!}
-                onActionPress={() => {
-                  if (model.scenario === 'empty') {
-                    router.push('/');
-                  }
-                }}
-                secondaryAction={
-                  model.scenario === 'uncertain' ? (
-                    <Button variant="outline" className="w-full">
-                      <Text>Corrigir</Text>
-                    </Button>
-                  ) : undefined
-                }
-              />
-            )}
-
-            {model.scenario !== 'recent' && model.scenario !== 'empty' ? (
-              <Card>
-                <CardContent className="gap-2 py-5">
-                  <View className="flex-row items-center justify-between">
-                    <Text variant="caption">Progresso confirmado</Text>
-                    <Text variant="label" className="tabular-nums">
-                      {model.completedCount} de {model.totalCount}
-                    </Text>
-                  </View>
-                  <View className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                    <View
-                      className="h-full rounded-full bg-ink"
-                      style={{ width: `${model.progressPercent}%` }}
-                    />
-                  </View>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {model.showsSnapshot ? (
-              <View className="gap-3">
-                <View className="gap-1">
-                  <Text variant="sectionTitle">
-                    {model.actions.length} {model.actions.length === 1 ? 'ação' : 'ações'} para agora
-                  </Text>
-                  <Text variant="caption">Até três ações, ordenadas por impacto demonstrativo</Text>
-                </View>
-                {model.actions.map((action) => (
-                  <ReviewActionCard key={action.id} action={action} />
-                ))}
-              </View>
-            ) : null}
-          </>
+          <ReviewReady
+            model={model}
+            actions={actions}
+            onContinue={continueMonthlyUpdate}
+            classificationSource={classificationSource}
+          />
         )}
       </View>
     </ScrollView>

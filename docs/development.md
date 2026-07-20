@@ -59,8 +59,31 @@ No deployment de desenvolvimento, configure diretamente pelo Convex Dashboard:
 
 - `CLERK_JWT_ISSUER_DOMAIN`: Frontend API URL da integração Convex ativada no Clerk;
 - `AUTHORIZED_CLERK_USER_ID`: Clerk User ID do único Titular autorizado.
+- `OPENAI_API_KEY`: chave exclusiva do projeto OpenAI de desenvolvimento;
+- `OPENAI_CLASSIFICATION_MODEL`: modelo aprovado pelo eval sintético;
+- `AI_CLASSIFICATION_ADAPTER`: `openai` no fluxo real; `fake` somente em testes
+  explicitamente identificados.
 
-Não coloque o Clerk User ID real em documentação, fixture, comando versionado ou conversa. `npx convex env list --names-only` verifica somente a presença dos nomes. `npx convex dev --once` aplica `auth.config.ts`, gera a API tipada e implanta as funções. `npm test` executa os cenários sintéticos de autorização; `npx convex run access:verifyOwner` sem identidade deve falhar com `AUTHENTICATION_REQUIRED`.
+Não coloque o Clerk User ID ou a chave OpenAI em documentação, fixture, comando
+versionado ou conversa. Configure a chave pelo Dashboard ou envie-a ao CLI por
+stdin, sem argumento ou histórico de shell. `npx convex env list --names-only`
+verifica somente a presença dos nomes. `npx convex dev --once` aplica
+`auth.config.ts`, gera a API tipada e implanta as funções. `npm test` executa os
+cenários sintéticos de autorização; `npx convex run access:verifyOwner` sem
+identidade deve falhar com `AUTHENTICATION_REQUIRED`.
+
+O eval local usa somente fixtures sintéticas e imprime métricas agregadas:
+
+```powershell
+node scripts/run-ai-classification-eval.mjs
+```
+
+Ele compara `gpt-5.6-sol`, `gpt-5.6-luna` e `gpt-5.4-nano` por padrão. Não
+configure o modelo do deployment antes de um candidato barato atingir o gate.
+O script imprime também o custo estimado a partir dos tokens agregados e dos
+preços versionados no próprio eval. Em 19 de julho de 2026, `gpt-5.6-luna` foi o
+modelo mais barato aprovado e passou a ser o valor de
+`OPENAI_CLASSIFICATION_MODEL` no deployment de desenvolvimento.
 
 ## Cenários sintéticos da tela Início
 
