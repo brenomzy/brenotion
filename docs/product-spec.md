@@ -2,9 +2,20 @@
 
 ## 1. Visão
 
-Brenotion deve impedir que o saldo bancário seja confundido com dinheiro livre. Sempre que um recebimento chegar, o produto deve explicar quanto pertence a impostos e obrigações, quanto pode sair da Empresa, quanto deve ser protegido e quanto permanece disponível para a vida familiar.
+Brenotion é um produto mensal inteligente. O Titular atualiza o mês anterior com
+as três fontes do Itaú, resolve somente exceções, entende para onde foi o dinheiro
+e usa esse retrato para preparar o mês seguinte.
 
-O produto substitui a lista mensal de contas mantida no Notion e acrescenta importação e conciliação assistidas, planejamento, reservas, documentos fiscais e aconselhamento baseado em dados.
+O produto substitui a lista mensal de contas mantida no Notion por uma Checklist
+Mensal integrada. Ao registrar um Recebimento Empresarial, o Brenotion deve
+explicar quanto pertence a impostos e obrigações, quanto pode sair da Empresa,
+quanto deve ser protegido e quanto permanece disponível para a vida familiar,
+sem confundir saldo bancário com dinheiro livre.
+
+A experiência principal possui três pontos de entrada: **Início**, **Checklist
+Mensal** e **Atualizar mês**. Classificação, conciliação, lotes, ocorrências e
+fechamento continuam existindo como mecanismos internos ou detalhes
+progressivos, não como áreas que o Titular precisa operar.
 
 ## 2. Resultado esperado
 
@@ -12,16 +23,21 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 
 - entender para onde foi o dinheiro;
 - não perder vencimentos financeiros ou burocráticos;
-- compreender a fatura do cartão e seu impacto no ciclo seguinte;
-- distinguir o último Disponível para Gastar conhecido do Limite de Gasto do Ciclo;
-- executar um plano de separação no dia posterior ao pagamento;
-- observar crescimento das reservas;
-- registrar em poucos segundos um gasto atual que altere o plano;
-- fechar o mês com retiradas e documentos conciliados.
+- atualizar uma competência com o Itaú Pessoal, a fatura e o Itaú Empresa em um
+  único fluxo;
+- revisar apenas classificações novas, ambíguas ou materiais;
+- receber um resumo retrospectivo com maiores gastos, variações, recorrências e
+  oportunidades de economia;
+- preparar e executar a Checklist Mensal;
+- distinguir o último retrato confirmado de uma informação atual;
+- registrar o Recebimento Empresarial e confirmar um Plano Financeiro quando
+  essas próximas fatias estiverem implementadas.
 
 ## 3. Princípios
 
-1. **Automação com controle.** Arquivos e regras eliminam redigitação do histórico; entrada manual curta é aceitável quando atualiza deliberadamente o ciclo em andamento.
+1. **Automação com controle.** Arquivos, regras confirmadas e sugestões da IA
+   eliminam redigitação e reduzem a revisão às exceções. O produto não exige
+   lançamentos diários.
 2. **Saldo não é disponibilidade.** O produto destaca o valor disponível, não o saldo agregado.
 3. **Empresa e pessoa são patrimônios distintos.** Pagamento e natureza econômica são classificados separadamente.
 4. **Cálculos são determinísticos.** A IA interpreta e aconselha, mas não inventa valores oficiais.
@@ -31,6 +47,9 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 8. **Menos notificações, mais ação.** Alertas existem apenas quando há uma decisão relevante.
 9. **Configuração é revisável.** Regras fiscais e contábeis preservam histórico e podem mudar por competência.
 10. **Custo operacional baixo.** O total recorrente desejado é de aproximadamente R$ 100 por mês.
+11. **Complexidade progressiva.** O caminho principal usa linguagem simples;
+    detalhes de origem, conciliação, auditoria e confiança aparecem somente
+    quando ajudam a decidir ou corrigir algo.
 
 ## 4. Perímetro inicial
 
@@ -40,15 +59,21 @@ Ao final do primeiro mês de uso confiável, o Titular deve conseguir:
 - O ciclo mensal normal de ingestão financeira detalhada reúne o extrato OFX do
   Itaú Pessoal, a fatura XLSX do cartão e o extrato OFX do Itaú Empresa, sempre
   com Patrimônio de Origem escolhido explicitamente.
-- Gastos relevantes do ciclo atual podem ser fornecidos como Gastos Informados curtos e provisórios; a importação posterior os concilia sem dupla contagem.
-- Cada categoria variável ou flexível pode receber um Limite por Categoria dentro do Limite de Gasto do Ciclo.
+- Não há lançamento diário de compras no caminho principal. Gastos Informados
+  persistidos continuam conciliáveis, mas a capacidade fica fora da rotina
+  mensal aprovada.
+- Categorias e Regras de Classificação são calibradas progressivamente. Uma
+  confirmação do Titular pode ser reutilizada em competências futuras.
 - Wise Business e Wise Pessoal não recebem ingestão detalhada no MVP. O OFX do
   Itaú Empresa integra a rotina mensal porque a conta da Empresa paga também
   Obrigações de Natureza Econômica Pessoal; o Resumo Empresarial mensal continua
   responsável pelos demais agregados empresariais necessários ao planejamento.
 - Empresa e Pessoal permanecem patrimônios distintos nos registros, mas aparecem juntos na visão de planejamento do Titular.
 - Pluggy e outros agregadores não são dependências do MVP. Uma integração futura só entra se reduzir esforço sem comprometer segurança, custo ou confiabilidade.
-- O aplicativo não lê notificações. Texto ou imagem escolhidos e enviados explicitamente pelo Titular podem se tornar meios assistidos de criar um Gasto Informado.
+- O aplicativo não lê notificações de outros aplicativos.
+- A IA recebe somente dados estruturados e sanitizados. Ela sugere categorias,
+  destaca exceções e redige o resumo retrospectivo; valores oficiais continuam
+  sendo produzidos por regras determinísticas.
 - Empresa optante pelo Simples Nacional, com regras confirmadas posteriormente pelo contador quando necessário.
 - Município de prestação configurado como Paranavaí, Paraná.
 
@@ -56,25 +81,76 @@ Identificadores fiscais e bancários não pertencem ao código-fonte e devem ser
 
 ## 5. Jornada principal
 
-### 5.1 Onboarding histórico
+### 5.1 Primeiro mês útil
 
-1. Importar até 12 meses completos do Itaú Pessoal; o mês atual parcial é
-   opcional. O histórico anterior do Itaú Empresa pode se limitar aos períodos
-   necessários à visão integrada e às conciliações; depois da ativação, seu OFX
-   integra todo ciclo mensal normal.
-2. Preferir OFX ou CSV; aceitar PDF como fallback.
-3. Normalizar e deduplicar movimentações.
-4. Agrupar descrições semelhantes.
-5. Realizar uma revisão guiada de 30 a 60 minutos.
-6. Aplicar as regras confirmadas ao histórico e às movimentações futuras.
-7. Propor despesas essenciais, obrigações recorrentes, limites iniciais por categoria e uma base trimestral.
+1. Escolher uma competência concluída.
+2. Preparar a Checklist Mensal a partir das Obrigações conhecidas.
+3. Adicionar o OFX do Itaú Pessoal, a fatura XLSX e o OFX do Itaú Empresa em
+   **Atualizar mês**.
+4. Normalizar, deduplicar e agrupar descrições sem expor lotes ou movimentações
+   técnicas no caminho principal.
+5. Aplicar Regras de Classificação já confirmadas.
+6. Pedir ao Titular somente decisões novas, ambíguas ou materiais.
+7. Produzir o resumo retrospectivo e registrar a competência usada.
 8. Apagar arquivos bancários brutos após validação da extração.
 
-Lacunas diminuem o nível de confiança, mas não impedem a análise histórica.
+O uso pode começar com uma única competência. Histórico adicional é importado
+progressivamente; lacunas diminuem a confiança, mas não impedem o primeiro
+resumo.
 
-### 5.2 Recebimento empresarial
+### 5.2 Atualizar mês
 
-No dia do recebimento, o produto cria um Plano Financeiro com esta ordem:
+O fluxo reúne as três fontes, mostra a cobertura da competência e pode ser
+interrompido e retomado. Escolher o slot Itaú Pessoal, fatura ou Itaú Empresa
+torna explícito o Patrimônio de Origem aplicável sem exigir um segundo formulário
+técnico.
+
+Reimportar um arquivo já confirmado é idempotente somente dentro do mesmo
+Patrimônio de Origem. Um lote legado sem origem não substitui uma nova prévia
+explicitamente marcada como Pessoal ou Empresa.
+
+Na fatura XLSX do Itaú, o mês informado no título representa o pagamento. A
+Competência dos Gastos do Cartão é o mês imediatamente anterior. Atualizar mês
+preserva os dois: usa a competência dos gastos para cobertura, classificação,
+resumo e Fechamento Mensal, sem apagar nem reinterpretar o mês de pagamento
+declarado pela fonte.
+
+Regras confirmadas classificam correspondências conhecidas. A IA sugere
+categorias para descrições desconhecidas a partir de dados sanitizados e informa
+incerteza; nenhuma sugestão incerta ou material é confirmada silenciosamente.
+Cada correção do Titular produz memória auditável para as competências futuras.
+
+Conferir atualização apresenta somente grupos ainda não cobertos por uma Regra
+de Classificação. O Titular pode confirmar a Categoria sugerida, escolher outra
+Categoria ou responder “não sei”. Confirmar e corrigir criam ou atualizam uma
+Regra de Classificação versionada; “não sei” encerra a revisão daquele grupo sem
+criar memória. Recusa, timeout, limite de requisições, saída inválida, Categoria
+desconhecida ou identificador de grupo inválido deixam o fluxo recuperável e
+nunca aplicam uma Categoria padrão.
+
+Ao concluir, o produto apresenta totais determinísticos e um resumo retrospectivo
+com maiores destinos do dinheiro, mudanças relevantes, recorrências e
+oportunidades de economia. O resumo não altera categorias, Plano Financeiro ou
+valores oficiais.
+
+### 5.3 Checklist Mensal
+
+A Checklist Mensal apresenta as Ocorrências de Obrigação da competência em
+linguagem operacional. O Titular pode preparar o mês, copiar itens aplicáveis do
+mês anterior, adicionar ou remover itens e concluir uma ação.
+
+Marcar um item como concluído registra uma declaração do Titular; não cria um
+Pagamento Identificado. A importação posterior pode conciliar uma movimentação e
+acrescentar evidência sem apagar o histórico da conclusão informada.
+
+### 5.4 Recebimento empresarial e Plano
+
+O registro do Recebimento Empresarial e a criação do Plano Financeiro são as
+fatias seguintes à experiência mensal básica. O valor deve respeitar a definição
+canônica de recebimento bruto; um crédito líquido em conta não pode substituí-lo
+silenciosamente.
+
+Quando implementado, o Plano Financeiro segue esta ordem:
 
 1. provisionar impostos e obrigações da Empresa;
 2. provisionar pró-labore e INSS;
@@ -83,66 +159,28 @@ No dia do recebimento, o produto cria um Plano Financeiro com esta ordem:
 5. financiar as reservas conforme a política vigente;
 6. apresentar ações com valor, origem e destino;
 7. aguardar execução manual nos aplicativos financeiros;
-8. confirmar as ações pelo Resumo Empresarial, pelos Gastos Informados e pelas importações posteriores aplicáveis.
+8. confirmar as ações pelo Resumo Empresarial e pelas importações posteriores
+   aplicáveis.
 
 O MVP não inicia Pix, transferências, pagamentos ou investimentos.
 
-### 5.3 Acompanhamento periódico
+### 5.5 Uso durante o mês
 
-O Titular consulta o produto principalmente no Fechamento Mensal, em checkpoints
-curtos e antes de decisões financeiras relevantes. Ao abrir a aplicação, o último
-retrato fechado aparece imediatamente com sua data de referência e confiança. O
-plano do ciclo atual é atualizado somente por informações importadas, calculadas
-ou fornecidas explicitamente pelo Titular.
+Durante o mês, o Titular usa principalmente a Checklist Mensal. Não existe rotina
+obrigatória de registro de compras nem revisão semanal.
 
 A tela inicial prioriza:
 
-- último Disponível para Gastar conhecido e sua data de referência;
-- Limite de Gasto do Ciclo e estimativas restantes por categoria;
-- fatura fechada, Gastos Informados e compromissos futuros do cartão;
-- obrigações pendentes;
-- dinheiro protegido;
+- competência em foco e data da última atualização;
+- progresso da Checklist Mensal;
+- cobertura das três fontes;
 - próxima ação necessária;
-- data do último fechamento, dados provisórios e nível de confiança.
+- último retrato oficial disponível, sua data e confiança, quando o núcleo
+  determinístico puder produzi-lo.
 
-Um Gasto Informado reduz imediatamente o limite aplicável, mas permanece
-provisório até ser conciliado com a Movimentação de Origem importada. A entrada
-rápida prioriza valor e descrição; data, categoria e meio de pagamento usam
-sugestões confirmáveis. Imagens escolhidas pelo Titular podem ser processadas
-temporariamente como conveniência futura, sem acesso ao fluxo de notificações.
-
-Compras importadas são reconhecidas na data da compra. Parcelas futuras reduzem
-a liberdade dos ciclos correspondentes.
-
-### 5.4 Revisão semanal
-
-A revisão semanal é um checkpoint opcional de aproximadamente cinco minutos e apresenta somente:
-
-- anomalias de categorização;
-- gastos acima do ritmo planejado;
-- fatura e parcelamentos relevantes;
-- obrigações em risco;
-- impacto sobre as reservas;
-- até três ações recomendadas.
-
-Na fundação inicial, Revisar agrupa Movimentações de Origem por descrição
-normalizada e permite confirmar somente sua Natureza Econômica. Liquidação do
-Cartão permanece fora dessa decisão, e nenhuma confirmação classifica categorias,
-concilia pagamentos ou altera valores oficiais.
-
-### 5.5 Fechamento mensal
-
-O fechamento mensal:
-
-- verifica a cobertura do Itaú Pessoal, da fatura e do Itaú Empresa como três
-  entradas separadas do mesmo ciclo, sem fundir seus Patrimônios de Origem;
-- concilia obrigações e pagamentos;
-- concilia Gastos Informados com Movimentações de Origem sem dupla contagem;
-- confirma ou sinaliza distribuições projetadas;
-- transfere a sobra da Margem de Imprevistos para a reserva aplicável;
-- registra documentos faltantes;
-- fecha a competência sem alterar históricos;
-- produz um resumo explicável do mês.
+Início nunca apresenta um retrato antigo como atual nem exige que o Titular
+entenda Ciclo Financeiro, Lote de Importação, conciliação ou Fechamento parcial
+para descobrir o que fazer.
 
 ## 6. Disponível para gastar
 
@@ -170,11 +208,10 @@ Restante estimado da categoria =
   - movimentações do ciclo já importadas e conciliadas
 ```
 
-Sem dados completos do ciclo atual, esse resultado é uma estimativa de aderência
-ao plano, não um saldo ou um Disponível para Gastar atualizado. Gastos flexíveis
-reduzem sua categoria; gastos essenciais variáveis reduzem a provisão aplicável;
-imprevistos essenciais usam primeiro a Margem de Imprevistos; uma nova obrigação
-recorrente pode exigir uma Alteração de Plano.
+Sem lançamentos diários e dados completos do ciclo atual, esse resultado não é
+um saldo nem um Disponível para Gastar atualizado. O produto preserva a data do
+cálculo e apresenta o Plano Financeiro como plano vigente, não como leitura em
+tempo real.
 
 ## 7. Base essencial
 
@@ -242,9 +279,12 @@ contada novamente como saída da conta pessoal. Quando uma despesa beneficiar os
 dois patrimônios, o Titular escolhe qual deles deve assumir integralmente sua
 Natureza Econômica; o produto não mantém rateios.
 
-## 11. Central de obrigações
+## 11. Checklist Mensal e Obrigações
 
-A central substitui os checkboxes mensais do Notion. Cada Ocorrência de Obrigação contém nome, valor esperado, vencimento, conta responsável, status e evidência.
+A Checklist Mensal substitui os checkboxes mensais do Notion sem transformar
+interface em evidência financeira. Cada item é sustentado por uma Ocorrência de
+Obrigação com nome, valor esperado, vencimento, conta responsável, status e
+evidência.
 
 A configuração de uma Obrigação separa Natureza Econômica — Pessoal ou Empresa —
 da origem responsável pelo pagamento. A conta pagadora não muda essa decisão, e
@@ -259,14 +299,16 @@ Status possíveis:
 - atrasada;
 - precisa de confirmação.
 
-Pagamentos identificados concluem ocorrências automaticamente. Ação manual existe apenas para correção ou ausência de correspondência.
+Uma conclusão informada mantém estado próprio e pode ser reaberta. Pagamentos
+identificados podem concluir ocorrências automaticamente ou acrescentar
+evidência, mas marcar o item manualmente nunca comprova pagamento.
 
 Exemplos iniciais incluem internet, carro, casa, saúde, energia, água, contabilidade, celular e fatura do cartão.
 
 ## 12. Cartão de crédito
 
 - Um cartão no perímetro inicial.
-- Compras reduzem o limite aplicável quando são informadas ou importadas.
+- Compras importadas integram a análise da competência.
 - A fatura apresenta o último fechamento importado, vencimento, pagamento e total atual somente quando informado explicitamente.
 - Compras são saídas da conta de cartão; créditos, estornos e Liquidação do
   Cartão são entradas com tipos explícitos. O pagamento da fatura não cria nova
@@ -276,12 +318,17 @@ Exemplos iniciais incluem internet, carro, casa, saúde, energia, água, contabi
   Patrimônio de Origem de ambos os registros e impede dupla contagem sem alterar
   a Natureza Econômica.
 - Parcelamentos são projetados nos ciclos futuros.
-- Alertas imediatos ocorrem apenas para compra atípica, comprometimento relevante ou marcos de 75%, 90% e 100% de um Limite por Categoria.
-- Demais informações aparecem na revisão semanal.
+- Alertas imediatos ocorrem apenas quando existe uma ação material e confiável.
+- Demais informações aparecem no resumo retrospectivo de Atualizar mês.
 
-## 13. Advisor
+## 13. Resumo retrospectivo e Advisor
 
-O Advisor oferece três cenários:
+Na rotina mensal, a IA classifica somente o que não foi resolvido por regras
+confirmadas, explica incertezas e redige o resumo retrospectivo sobre agregados
+determinísticos e sanitizados. Esse uso não é um Plano Financeiro e não aplica
+mudanças.
+
+Em fase posterior, o Advisor oferece três cenários:
 
 1. confortável;
 2. equilibrado e recomendado;
@@ -361,13 +408,15 @@ ler notificações de outros aplicativos.
 - suporte a múltiplas instituições além das necessárias ao Titular;
 - captura automática de notificações;
 - integração bancária automática como requisito do MVP;
-- leitura assistida de prints antes de o registro textual provar valor.
+- lançamento diário obrigatório de compras.
 
 ## 18. Dependências de validação
 
 - Formatos reais de exportação dos extratos Itaú Pessoal/Empresa e da fatura do cartão.
 - Qualidade dos PDFs de fatura e extrato.
-- Qualidade da conciliação entre Gastos Informados e arquivos importados.
+- Qualidade das sugestões de categoria, agrupamento e reaplicação das Regras de
+  Classificação confirmadas.
+- Utilidade do resumo retrospectivo produzido somente com dados sanitizados.
 - Campos mínimos e cadência confortável para o Resumo Empresarial.
 - Regra fiscal definitiva de conversão cambial.
 - Documentos disponibilizados pelo contador e cadência de confirmação.

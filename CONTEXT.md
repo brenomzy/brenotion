@@ -42,6 +42,13 @@ _Evitar_: Saldo, limite do cartão, patrimônio
 A vinculação exclusiva de uma Obrigação ou movimentação à vida Pessoal ou à Empresa, independentemente da conta que realizou o pagamento.
 _Evitar_: Mista, conta pagadora, origem do pagamento, categoria
 
+**Categoria**:
+A finalidade financeira usada para organizar movimentações semelhantes. A
+taxonomia inicial contém Moradia, Alimentação, Transporte, Saúde, Educação,
+Lazer, Assinaturas e serviços, Impostos e tarifas, Operação da Empresa e Outros.
+Categoria não determina Natureza Econômica nem Patrimônio de Origem.
+_Evitar_: Natureza Econômica, conta pagadora, regra silenciosa
+
 **Patrimônio de Origem**:
 A proveniência Pessoal ou Empresa da conta ou cartão que produziu uma Movimentação de Origem, independentemente de sua Natureza Econômica.
 _Evitar_: Natureza Econômica, categoria, patrimônio unificado
@@ -71,6 +78,12 @@ _Evitar_: Tarefa, lembrete, checkbox
 **Ocorrência de Obrigação**:
 A instância de uma Obrigação em uma competência específica.
 _Evitar_: Obrigação, pagamento
+
+**Checklist Mensal**:
+A apresentação operacional das Ocorrências de Obrigação de uma competência. Ela
+permite preparar o mês, copiar itens aplicáveis do mês anterior e informar que
+uma ação foi concluída, sem transformar um checkbox em evidência bancária.
+_Evitar_: Lista genérica de tarefas, comprovante de pagamento, Obrigação
 
 **Pagamento Identificado**:
 Uma movimentação conciliada com uma Ocorrência de Obrigação.
@@ -126,13 +139,31 @@ _Evitar_: Lançamento manual, categoria
 Um registro provisório fornecido explicitamente pelo Titular durante o ciclo atual, que reduz o limite aplicável até ser conciliado com uma Movimentação de Origem.
 _Evitar_: Movimentação de Origem, lançamento definitivo
 
+O Gasto Informado permanece no domínio para compatibilidade e usos excepcionais,
+mas não integra o caminho principal do Brenotion mensal inteligente nem cria uma
+rotina de lançamentos diários.
+
 **Liquidação do Cartão**:
 O pagamento identificado da fatura que reduz a obrigação da conta de cartão sem criar uma nova despesa; as compras já representam o consumo econômico.
 _Evitar_: Compra, nova despesa, crédito de renda
 
+**Competência dos Gastos do Cartão**:
+A competência mensal à qual as compras da fatura pertencem. No fluxo atual do
+Itaú, ela é o mês imediatamente anterior ao mês de pagamento informado no título
+da fatura. O mês de pagamento original permanece preservado como metadado da
+fonte.
+_Evitar_: Mês de pagamento da fatura, vencimento, data individual da compra
+
 **Regra de Classificação**:
-Uma decisão reutilizável que associa movimentações semelhantes a uma finalidade financeira.
+Uma decisão reutilizável e versionada que associa movimentações semelhantes a
+uma Categoria após confirmação explícita do Titular.
 _Evitar_: Categoria isolada, palpite da IA
+
+**Sugestão de Classificação**:
+Uma proposta estruturada e sanitizada de Categoria para um grupo inédito. Ela
+pode registrar incerteza ou abstinência e nunca se torna Regra de Classificação
+sem confirmação do Titular.
+_Evitar_: Regra de Classificação, Decisão de Classificação, categoria confirmada
 
 **Decisão de Classificação**:
 A confirmação auditável do Titular sobre a Natureza Econômica de um grupo determinístico de movimentações durante a Revisão.

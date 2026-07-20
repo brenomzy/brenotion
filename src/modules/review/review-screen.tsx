@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
+import { MonthlyClassificationReview } from './monthly-classification-review';
 import { type EconomicNature } from './review-classification-model';
 import {
   formatReviewDate,
@@ -25,6 +26,10 @@ import {
   type ReviewClassificationGroup,
   useReviewClassificationDecisions,
 } from './use-review-classification-decisions';
+import {
+  type MonthlyClassificationReviewSource,
+  useMonthlyClassificationReview,
+} from './use-monthly-classification-review';
 
 const ECONOMIC_NATURE_OPTIONS: readonly Readonly<{
   value: EconomicNature;
@@ -574,20 +579,47 @@ function SourceTransactions({
 function ReviewReady({
   model,
   actions,
+  onContinue,
+  classificationSource,
 }: {
   model: ReviewReadyModel;
   actions: ReviewScreenActions;
+  onContinue: () => void;
+  classificationSource: MonthlyClassificationReviewSource;
 }) {
   const batch = getSelectedBatch(model);
 
   return (
     <>
       <ImportBatchSummary batch={batch} />
+      <MonthlyClassificationReview source={classificationSource} />
       <ClassificationNotice />
       <ImportHistory model={model} actions={actions} />
       <CardSettlementReconciliation batch={batch} />
       <ClassificationGroups model={model} />
       <SourceTransactions model={model} actions={actions} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Conferência concluída?</CardTitle>
+          <Text variant="caption" className="leading-5">
+            Quando as exceções importantes estiverem resolvidas, continue para finalizar a
+            atualização do mês.
+          </Text>
+        </CardHeader>
+        <CardContent>
+          <Button
+            className="w-full"
+            disabled={!classificationSource.canContinue}
+            onPress={onContinue}>
+            <Text>Finalizar atualização do mês</Text>
+          </Button>
+          {!classificationSource.canContinue ? (
+            <Text variant="caption" className="leading-5">
+              Resolva cada categoria acima ou marque “não sei” para continuar.
+            </Text>
+          ) : null}
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -600,6 +632,33 @@ export function ReviewScreen({
   actions: ReviewScreenActions;
 }) {
   const insets = useSafeAreaInsets();
+  const { competence: competenceParam } = useLocalSearchParams<{
+    competence?: string | string[];
+  }>();
+  const competence = Array.isArray(competenceParam)
+    ? competenceParam[0]
+    : competenceParam;
+  const validCompetence =
+    competence && /^\d{4}-(0[1-9]|1[0-2])$/.test(competence)
+      ? competence
+      : null;
+  const classificationSource =
+    useMonthlyClassificationReview(validCompetence);
+  const continueMonthlyUpdate = () => {
+    if (!validCompetence || !classificationSource.canContinue) return;
+    router.push({ pathname: '/close', params: { competence: validCompetence } });
+  };
+  const returnToMonthlyUpdate = () => {
+    if (validCompetence) {
+      router.replace({
+        pathname: '/import',
+        params: { competence: validCompetence },
+      });
+      return;
+    }
+
+    router.replace('/import');
+  };
 
   return (
     <ScrollView
@@ -610,14 +669,21 @@ export function ReviewScreen({
         paddingBottom: insets.bottom + BottomTabInset + 32,
       }}>
       <View className="w-full max-w-[720px] self-center gap-6 px-5 web:px-8">
+        <Button
+          variant="ghost"
+          size="compact"
+          className="self-start"
+          onPress={returnToMonthlyUpdate}>
+          <Text>Voltar a Atualizar mês</Text>
+        </Button>
         <View className="gap-1">
           {model.origin.kind === 'synthetic' ? (
             <Text variant="overline">{model.origin.label}</Text>
           ) : (
             <Text variant="overline">Dados persistidos</Text>
           )}
-          <Text variant="screenTitle">Revisar</Text>
-          <Text variant="caption">Extratos e faturas importados do Itaú</Text>
+          <Text variant="screenTitle">Conferir atualização</Text>
+          <Text variant="caption">Revise somente o que precisa da sua atenção</Text>
         </View>
 
         {model.status === 'loading' ? (
@@ -638,13 +704,18 @@ export function ReviewScreen({
             actionLabel="Tentar novamente"
             onActionPress={actions.retry}
             secondaryAction={
-              <Button variant="outline" className="w-full" onPress={() => router.push('/more')}>
-                <Text>Ver opções de importação</Text>
+              <Button variant="outline" className="w-full" onPress={returnToMonthlyUpdate}>
+                <Text>Voltar a Atualizar mês</Text>
               </Button>
             }
           />
         ) : (
-          <ReviewReady model={model} actions={actions} />
+          <ReviewReady
+            model={model}
+            actions={actions}
+            onContinue={continueMonthlyUpdate}
+            classificationSource={classificationSource}
+          />
         )}
       </View>
     </ScrollView>

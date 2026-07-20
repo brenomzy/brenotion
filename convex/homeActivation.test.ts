@@ -145,7 +145,7 @@ describe('homeActivation', () => {
         status: 'preview',
         periodStart: '2026-06-05',
         periodEnd: '2026-07-05',
-        statementCompetence: '2026-07',
+        statementCompetence: '2026-08',
         transactionCount: 2,
         duplicateCount: 0,
         creditTotal: money(0n),

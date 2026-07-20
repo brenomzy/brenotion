@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
 import { useQuery } from 'convex/react';
-import { useState } from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,11 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { BottomTabInset } from '@/constants/theme';
-import { cn } from '@/lib/utils';
 import {
   buildHomeActivationModel,
   currentHomeCompetence,
-  shiftHomeCompetence,
   type HomeActivationModel,
 } from './home-activation-model';
 import { formatAsOf, formatDueDate, formatLongDate } from './home-formatters';
@@ -182,9 +179,18 @@ export function SyntheticHomeScreen({ scenario }: { scenario: HomeScenario }) {
 
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const [competence, setCompetence] = useState(currentHomeCompetence);
+  const competence = currentHomeCompetence();
   const activation = useQuery(api.homeActivation.get, { competence });
+  const financialSnapshot = useQuery(api.financialSnapshot.getCurrent);
+  const checklist = useQuery(api.obligationOccurrences.listForCompetence, {
+    competence,
+  });
   const model = activation ? buildHomeActivationModel(activation) : null;
+  const checklistTotal = checklist?.items.length ?? 0;
+  const checklistResolved =
+    checklist?.items.filter(
+      (item) => item.status === 'completed' || item.status === 'waived',
+    ).length ?? 0;
 
   return (
     <ScrollView
@@ -196,23 +202,20 @@ export function HomeScreen() {
       }}>
       <View className="w-full max-w-[720px] self-center gap-6 px-5 web:px-8">
         <View className="gap-1">
-          <Text variant="overline">Seu caminho agora</Text>
-          <Text variant="screenTitle">Início</Text>
+          <Text variant="overline">Seu mês em um só lugar</Text>
+          <Text variant="screenTitle">Visão geral</Text>
           <Text variant="caption" className="leading-5">
-            Dados persistidos, pendências explícitas e nenhuma estimativa
-            apresentada como valor oficial.
+            Entenda o mês, acompanhe sua checklist e atualize os dados sem
+            lançamentos diários.
           </Text>
         </View>
 
-        {model ? (
+        {model && financialSnapshot !== undefined && checklist !== undefined ? (
           <ActivationContent
             model={model}
-            onPreviousCompetence={() =>
-              setCompetence((current) => shiftHomeCompetence(current, -1))
-            }
-            onNextCompetence={() =>
-              setCompetence((current) => shiftHomeCompetence(current, 1))
-            }
+            financialSnapshot={financialSnapshot}
+            checklistTotal={checklistTotal}
+            checklistResolved={checklistResolved}
           />
         ) : (
           <HomeActivationLoading />
@@ -225,196 +228,197 @@ export function HomeScreen() {
 function HomeActivationLoading() {
   return (
     <View accessibilityLiveRegion="polite" className="gap-4">
-      <Text variant="sectionTitle">Preparando seu caminho</Text>
+      <Text variant="sectionTitle">Preparando sua visão geral</Text>
       <Text variant="caption">
-        Consultando entradas, revisão e configurações recorrentes.
+        Consultando a atualização mensal e sua checklist.
       </Text>
+      <View className="h-44 rounded-card bg-surface-muted" />
       <View className="h-36 rounded-card bg-surface-muted" />
-      <View className="h-48 rounded-card bg-surface-muted" />
-      <View className="h-40 rounded-card bg-surface-muted" />
     </View>
   );
 }
 
 function ActivationContent({
   model,
-  onPreviousCompetence,
-  onNextCompetence,
+  financialSnapshot,
+  checklistTotal,
+  checklistResolved,
 }: {
   model: HomeActivationModel;
-  onPreviousCompetence: () => void;
-  onNextCompetence: () => void;
+  financialSnapshot: CurrentFinancialSnapshot | null;
+  checklistTotal: number;
+  checklistResolved: number;
 }) {
+  const checklistDescription =
+    checklistTotal === 0
+      ? 'Adicione os compromissos que você quer acompanhar neste mês.'
+      : `${checklistResolved} de ${checklistTotal} itens resolvidos.`;
+
   return (
     <View className="gap-6">
-      <Card className="gap-4">
-        <CardHeader className="gap-3">
-          <Text variant="overline">Competência acompanhada</Text>
-          <Text variant="sectionTitle" className="capitalize">
-            {model.competenceLabel}
-          </Text>
-          <Text variant="body" className="leading-6 text-ink-muted">
-            {model.coverageSummary}
-          </Text>
-        </CardHeader>
-        <CardContent className="flex-row gap-2">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onPress={onPreviousCompetence}>
-            <Text>Mês anterior</Text>
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1"
-            onPress={onNextCompetence}>
-            <Text>Próximo mês</Text>
-          </Button>
-        </CardContent>
-      </Card>
+      {financialSnapshot ? (
+        <Card className="gap-0 py-0">
+          <CardHeader className="gap-3 pb-3 pt-5">
+            <Text variant="overline">Último cálculo oficial</Text>
+            <Text variant="label">Disponível para Gastar</Text>
+            <MoneyValue
+              minorUnits={
+                financialSnapshot.availableToSpend.amountInMinorUnits
+              }
+              currency="BRL"
+              size="display"
+              showCents="when-needed"
+            />
+          </CardHeader>
+          <CardContent className="pb-5">
+            <DataConfidence
+              status={financialSnapshot.confidence}
+              title={confidenceTitle(financialSnapshot.confidence)}
+              description={confidenceDescription(
+                financialSnapshot.confidence,
+              )}
+              referenceLabel={`Referência: ${formatAsOf(
+                new Date(financialSnapshot.asOf).toISOString(),
+              )}`}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="gap-2">
+            <Text variant="overline">Visibilidade financeira</Text>
+            <Text variant="sectionTitle">
+              Seu primeiro retrato começa pela atualização mensal
+            </Text>
+            <Text variant="body" className="leading-6 text-ink-muted">
+              O Brenotion ainda não possui um cálculo oficial para mostrar.
+              Organize uma competência por vez sem preencher gastos todos os
+              dias.
+            </Text>
+          </CardHeader>
+        </Card>
+      )}
 
       <Card className="border border-action-primary/20">
         <CardHeader className="gap-2">
-          <Text variant="overline">Próxima ação</Text>
+          <Text variant="overline" className="capitalize">
+            {model.competenceLabel}
+          </Text>
           <Text variant="sectionTitle">{model.nextAction.title}</Text>
           <Text variant="body" className="leading-6 text-ink-muted">
             {model.nextAction.description}
           </Text>
+          <Text variant="caption">{model.coverageSummary}</Text>
         </CardHeader>
-        <CardContent>
-          <Button onPress={() => router.push(model.nextAction.route)}>
+        <CardContent className="gap-2 sm:flex-row">
+          <Button
+            onPress={() =>
+              router.push({
+                pathname: model.nextAction.route,
+                params: { competence: model.competence },
+              })
+            }>
             <Text>{model.nextAction.label}</Text>
           </Button>
+          {model.nextAction.route !== '/import' ? (
+            <Button
+              variant="outline"
+              onPress={() =>
+                router.push({
+                  pathname: '/import',
+                  params: { competence: model.competence },
+                })
+              }>
+              <Text>Atualizar mês</Text>
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
-
-      <View className="gap-3">
-        <View className="gap-1">
-          <Text variant="sectionTitle">Ativação operacional</Text>
-          <Text variant="caption" className="leading-5">
-            O progresso mostra o que existe. O Fechamento abaixo continua
-            parcial enquanto não houver cálculo financeiro oficial.
-          </Text>
-        </View>
-        <Card className="gap-0 py-0">
-          {model.steps.map((step, index) => (
-            <View
-              key={step.id}
-              className={cn(
-                'gap-2 px-5 py-4',
-                index > 0 && 'border-t border-divider',
-              )}>
-              <View className="flex-row flex-wrap items-center justify-between gap-2">
-                <Text variant="label">{step.title}</Text>
-                <View
-                  className={cn(
-                    'rounded-full px-2.5 py-1',
-                    step.status === 'done'
-                      ? 'bg-status-recent-soft'
-                      : step.status === 'attention'
-                        ? 'bg-status-warning-soft'
-                        : 'bg-surface-muted',
-                  )}>
-                  <Text variant="caption" className="text-ink">
-                    {step.statusLabel}
-                  </Text>
-                </View>
-              </View>
-              <Text variant="caption" className="leading-5">
-                {step.description}
-              </Text>
-            </View>
-          ))}
-        </Card>
-      </View>
 
       <Card>
         <CardHeader className="gap-2">
-          <Text variant="overline">Registro parcial da competência</Text>
-          <Text variant="sectionTitle">{model.monthlyClosure.title}</Text>
+          <Text variant="overline">Durante o mês</Text>
+          <Text variant="sectionTitle">Checklist mensal</Text>
           <Text variant="body" className="leading-6 text-ink-muted">
-            {model.monthlyClosure.description}
+            {checklistDescription}
           </Text>
         </CardHeader>
-        <CardContent className="gap-3">
-          {model.monthlyClosure.closedAt &&
-          model.monthlyClosure.revisionLabel ? (
-            <View className="rounded-control bg-status-warning-soft px-4 py-3">
-              <Text variant="label">{model.monthlyClosure.revisionLabel}</Text>
-              <Text variant="caption" className="mt-1 text-ink">
-                Registrada em{' '}
-                {formatAsOf(
-                  new Date(model.monthlyClosure.closedAt).toISOString(),
-                )}
-              </Text>
-            </View>
-          ) : null}
+        <CardContent>
           <Button
             variant="secondary"
-            className="w-full"
-            onPress={() => router.push('/close')}>
-            <Text>
-              {model.monthlyClosure.status === 'closed'
-                ? 'Ver Fechamento'
-                : 'Preparar Fechamento'}
-            </Text>
+            onPress={() => router.push('/checklist')}>
+            <Text>Abrir checklist</Text>
           </Button>
         </CardContent>
       </Card>
-
-      <View className="gap-3">
-        <View className="gap-1">
-          <Text variant="sectionTitle">Entradas do mês</Text>
-          <Text variant="caption">
-            Patrimônio de Origem permanece explícito em cada lote.
-          </Text>
-        </View>
-        <View className="gap-3 sm:flex-row">
-          {model.sources.map((source) => (
-            <Card key={source.id} className="flex-1 gap-2 py-4 shadow-none">
-              <CardHeader className="gap-1">
-                <Text variant="label">{source.title}</Text>
-                <Text
-                  variant="caption"
-                  className={cn(
-                    source.status === 'confirmed'
-                      ? 'text-status-recent'
-                      : 'text-ink',
-                  )}>
-                  {source.statusLabel}
-                </Text>
-              </CardHeader>
-              <CardContent>
-                <Text variant="caption" className="leading-5">
-                  {source.description}
-                </Text>
-              </CardContent>
-            </Card>
-          ))}
-        </View>
-      </View>
-
-      <ScreenStatePanel
-        state={model.officialSnapshot.asOf ? 'partial' : 'empty'}
-        title={model.officialSnapshot.title}
-        description={model.officialSnapshot.description}
-        referenceLabel={
-          model.officialSnapshot.asOf
-            ? `Referência: ${formatAsOf(
-                new Date(model.officialSnapshot.asOf).toISOString(),
-              )}`
-            : undefined
-        }
-      />
 
       {model.hasBoundedSearchWarning ? (
         <View className="rounded-card bg-status-warning-soft p-4">
           <Text variant="caption" className="leading-5 text-ink">
-            O histórico excede a janela operacional desta tela. Os números
-            exibidos são mínimos confirmados, não totais completos.
+            Parte do histórico ficou fora desta visão resumida. Abra a
+            atualização mensal para conferir os detalhes.
           </Text>
         </View>
       ) : null}
+
+      <View className="gap-2">
+        <Text variant="caption">Detalhes e configurações</Text>
+        <View className="flex-row flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            size="compact"
+            onPress={() => router.push('/obligations')}>
+            <Text>Gerenciar recorrências</Text>
+          </Button>
+          <Button
+            variant="ghost"
+            size="compact"
+            onPress={() => router.push('/more')}>
+            <Text>Configurações</Text>
+          </Button>
+        </View>
+      </View>
     </View>
   );
+}
+
+type CurrentFinancialSnapshot = Readonly<{
+  availableToSpend: Readonly<{
+    amountInMinorUnits: bigint;
+    currency: 'BRL';
+    minorUnit: 'cent';
+  }>;
+  asOf: number;
+  timeZone: string;
+  confidence: 'recent' | 'partial' | 'stale';
+  calculationVersion: string;
+  updatedAt: number;
+}>;
+
+function confidenceTitle(
+  confidence: CurrentFinancialSnapshot['confidence'],
+): string {
+  if (confidence === 'recent') {
+    return 'Dados recentes';
+  }
+
+  if (confidence === 'partial') {
+    return 'Retrato parcial';
+  }
+
+  return 'Atualização recomendada';
+}
+
+function confidenceDescription(
+  confidence: CurrentFinancialSnapshot['confidence'],
+): string {
+  if (confidence === 'recent') {
+    return 'Este valor veio do último cálculo financeiro versionado.';
+  }
+
+  if (confidence === 'partial') {
+    return 'O cálculo preserva lacunas reconhecidas na competência.';
+  }
+
+  return 'Use Atualizar mês antes de tomar uma nova decisão financeira.';
 }

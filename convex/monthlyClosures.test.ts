@@ -398,7 +398,7 @@ async function insertCompleteCoverage(
     fileHash: 'synthetic-card',
     format: 'itauCreditCardXlsx',
     sourcePatrimony: 'personal',
-    statementCompetence: competence,
+    statementCompetence: nextCompetence(competence),
     periodStart: `${competence}-01`,
     periodEnd: `${competence}-28`,
     timestamp: 20,
@@ -411,6 +411,15 @@ async function insertCompleteCoverage(
     periodEnd: `${competence}-28`,
     timestamp: 30,
   });
+}
+
+function nextCompetence(competence: string): string {
+  const [yearText, monthText] = competence.split('-');
+  const next = new Date(Date.UTC(Number(yearText), Number(monthText), 1));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(
+    2,
+    '0',
+  )}`;
 }
 
 async function insertBatch(

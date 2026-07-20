@@ -25,8 +25,11 @@ import type { DataModel } from "./dataModel.js";
  * Typesafe environment variables declared in `convex.config.ts`.
  */
 type Env = {
+  readonly AI_CLASSIFICATION_ADAPTER: string | undefined;
   readonly AUTHORIZED_CLERK_USER_ID: string | undefined;
   readonly CLERK_JWT_ISSUER_DOMAIN: string;
+  readonly OPENAI_API_KEY: string | undefined;
+  readonly OPENAI_CLASSIFICATION_MODEL: string | undefined;
 };
 
 /**

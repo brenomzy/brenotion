@@ -69,8 +69,8 @@ describe('monthlyImportCoverage', () => {
       format: 'ofx',
       sourcePatrimony: 'personal',
       status: 'confirmed',
-      periodStart: '2026-07-01',
-      periodEnd: '2026-07-31',
+      periodStart: '2026-06-01',
+      periodEnd: '2026-06-30',
       timestamp: 10,
     });
     const cardBatchId = await insertBatch(t, ownerId, {
@@ -88,8 +88,8 @@ describe('monthlyImportCoverage', () => {
       format: 'ofx',
       sourcePatrimony: 'business',
       status: 'confirmed',
-      periodStart: '2026-07-01',
-      periodEnd: '2026-07-31',
+      periodStart: '2026-06-01',
+      periodEnd: '2026-06-30',
       timestamp: 30,
     });
     await insertBatch(t, 'https://convex.test|isolated-owner', {
@@ -103,11 +103,11 @@ describe('monthlyImportCoverage', () => {
     });
 
     const result = await owner.query(getMonthlyImportCoverage, {
-      competence: '2026-07',
+      competence: '2026-06',
     });
 
     expect(result).toEqual({
-      competence: '2026-07',
+      competence: '2026-06',
       complete: true,
       isSearchExhaustive: true,
       sources: [
@@ -197,7 +197,7 @@ describe('monthlyImportCoverage', () => {
     ]);
   });
 
-  it('uses statement competence for the card and validates the requested competence', async () => {
+  it('maps the card payment competence to the previous spending competence', async () => {
     vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
     const t = convexTest(schema, modules);
     const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
@@ -217,7 +217,11 @@ describe('monthlyImportCoverage', () => {
     const result = await owner.query(getMonthlyImportCoverage, {
       competence: '2026-07',
     });
-    expect(result.sources[1].status).toBe('missing');
+    expect(result.sources[1]).toMatchObject({
+      source: 'creditCard',
+      status: 'confirmed',
+      statementCompetence: '2026-08',
+    });
 
     await expect(
       owner.query(getMonthlyImportCoverage, { competence: '2026-13' }),

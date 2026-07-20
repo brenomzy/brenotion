@@ -10,6 +10,7 @@ import { SYNTHETIC_OFX } from './testFixtures/syntheticOfx';
 
 const modules = import.meta.glob('./**/*.ts');
 const SYNTHETIC_OWNER_ID = 'user_test_authorized_owner';
+const SYNTHETIC_OWNER_TOKEN = `https://convex.test|${SYNTHETIC_OWNER_ID}`;
 const SYNTHETIC_OTHER_ID = 'user_test_someone_else';
 
 type TestBackend = TestConvex<typeof schema>;
@@ -164,6 +165,66 @@ describe('imports', () => {
     });
     await expect(
       t.run((ctx) => ctx.db.query('sourceTransactions').take(5)),
+    ).resolves.toHaveLength(2);
+  });
+
+  it('creates an explicit-origin preview instead of reusing a legacy confirmed batch', async () => {
+    vi.stubEnv('AUTHORIZED_CLERK_USER_ID', SYNTHETIC_OWNER_ID);
+    const t = convexTest(schema, modules);
+    const owner = t.withIdentity({ subject: SYNTHETIC_OWNER_ID });
+    const stored = await storeSyntheticUpload(t, owner);
+    const fileHash = await t.run(async (ctx) => {
+      const metadata = await ctx.db.system.get('_storage', stored.storageId);
+      if (!metadata) throw new Error('Synthetic upload metadata not found');
+      return metadata.sha256;
+    });
+    const legacyBatchId = await t.run((ctx) =>
+      ctx.db.insert('importBatches', {
+        ownerId: SYNTHETIC_OWNER_TOKEN,
+        fileHash,
+        format: 'ofx',
+        sourceAccountKind: 'bankAccount',
+        parserVersion: 'legacy-itau-ofx-v1',
+        status: 'confirmed',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
+        transactionCount: 2,
+        duplicateCount: 0,
+        creditTotal: {
+          amountInMinorUnits: 250_000n,
+          currency: 'BRL',
+          minorUnit: 'cent',
+        },
+        debitTotal: {
+          amountInMinorUnits: 12_345n,
+          currency: 'BRL',
+          minorUnit: 'cent',
+        },
+        rawFileStatus: 'deleted',
+        rawDeletedAt: 1,
+        insertedCount: 2,
+        createdAt: 1,
+        updatedAt: 1,
+        confirmedAt: 1,
+      }),
+    );
+
+    const preview = await owner.action(api.imports.createPreview, stored);
+
+    expect(preview).toMatchObject({
+      status: 'preview',
+      sourcePatrimony: 'personal',
+    });
+    expect(preview.batchId).not.toBe(legacyBatchId);
+    await expect(
+      t.run((ctx) =>
+        ctx.db
+          .query('importBatches')
+          .withIndex('by_ownerId_and_fileHash', (q) =>
+            q.eq('ownerId', SYNTHETIC_OWNER_TOKEN).eq('fileHash', fileHash),
+          )
+          .take(3),
+      ),
     ).resolves.toHaveLength(2);
   });
 

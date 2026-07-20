@@ -1,7 +1,7 @@
 /* eslint-disable import/no-unresolved -- HugeIcons publishes per-icon JS subpaths without per-icon declarations. */
 import type { FunctionReturnType } from 'convex/server';
 import { useAction, useMutation } from 'convex/react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
 import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
@@ -16,12 +16,14 @@ import { useRef, useState } from 'react';
 
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
+import { creditCardSpendingCompetence } from '../../../shared/credit-card-competence';
 import { WebButton } from '@/components/web/ui/button.web';
 import { WebProgress } from '@/components/web/ui/progress.web';
 import { cn } from '@/lib/utils';
 import { MonthlyImportCoverage } from './monthly-import-coverage.web';
 import {
   currentCompetence,
+  expectedSourcePatrimonyFor,
   type MonthlyImportSourceId,
 } from './monthly-import-coverage-model';
 
@@ -43,8 +45,15 @@ type ImportStage =
 
 export function ImportScreen() {
   const router = useRouter();
+  const { competence: competenceParam } = useLocalSearchParams<{
+    competence?: string | string[];
+  }>();
+  const requestedCompetence = Array.isArray(competenceParam)
+    ? competenceParam[0]
+    : competenceParam;
   const inputRef = useRef<HTMLInputElement>(null);
   const importFormRef = useRef<HTMLDivElement>(null);
+  const previewSectionRef = useRef<HTMLDivElement>(null);
   const generateUploadUrl = useMutation(api.imports.generateUploadUrl);
   const cleanupUpload = useMutation(api.imports.cleanupUpload);
   const createOfxPreview = useAction(api.imports.createPreview);
@@ -57,7 +66,12 @@ export function ImportScreen() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [competence, setCompetence] = useState(() => currentCompetence());
+  const [competence, setCompetence] = useState(() =>
+    requestedCompetence &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedCompetence)
+      ? requestedCompetence
+      : currentCompetence(),
+  );
   const [importTarget, setImportTarget] = useState<MonthlyImportSourceId | null>(
     null,
   );
@@ -83,12 +97,15 @@ export function ImportScreen() {
 
   const startNextImport = () => {
     resetFlow();
-    inputRef.current?.click();
+    document
+      .getElementById('monthly-import-coverage-title')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const startImportForSource = (source: MonthlyImportSourceId) => {
     resetFlow();
     setImportTarget(source);
+    setSourcePatrimony(expectedSourcePatrimonyFor(source));
     requestAnimationFrame(() => {
       importFormRef.current?.focus();
       importFormRef.current?.scrollIntoView({
@@ -128,6 +145,12 @@ export function ImportScreen() {
           : await createXlsxPreview({ uploadId, storageId });
       setPreview(result);
       setStage(result.status === 'confirmed' ? 'confirmed' : 'preview');
+      requestAnimationFrame(() => {
+        previewSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
     } catch (error) {
       if (uploadId && storageId) {
         try {
@@ -173,26 +196,26 @@ export function ImportScreen() {
     <main className="h-screen overflow-y-auto bg-canvas px-5 pb-32 pt-8 font-sans text-ink antialiased sm:px-8 sm:pt-10">
       <div className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid gap-4">
-          <WebButton variant="ghost" className="w-fit pl-3 pr-4" onClick={() => router.replace('/more')}>
+          <WebButton variant="ghost" className="w-fit pl-3 pr-4" onClick={() => router.replace('/')}>
             <HugeiconsIcon
               aria-hidden
               icon={ArrowLeft01Icon}
               size={16}
               strokeWidth={1.8}
             />
-            Voltar
+            Voltar ao Início
           </WebButton>
           <div className="grid gap-2">
             <p className="text-overline font-sans-bold uppercase tracking-[0.04em] text-ink-muted">
-              Companion web
+              Organização mensal
             </p>
             <h1 className="max-w-2xl text-balance text-title-screen font-sans-bold leading-tight tracking-[-0.02em]">
-              Importar dados do Itaú
+              Atualizar mês
             </h1>
             <p className="max-w-2xl text-pretty text-body leading-relaxed text-ink-muted">
-              Envie um extrato do Itaú em OFX ou a fatura do cartão em XLSX, confira a prévia
-              estruturada e só então confirme as movimentações. O arquivo bruto é apagado
-              antes de qualquer prévia ser persistida.
+              Adicione as três fontes do mês: Itaú Pessoal, fatura do cartão e Itaú Empresa.
+              Você confere cada prévia antes de confirmar e depois continua somente para as
+              exceções que precisam da sua atenção.
             </p>
           </div>
         </header>
@@ -202,7 +225,9 @@ export function ImportScreen() {
           disabled={busy}
           onCompetenceChange={setCompetence}
           onStartImport={startImportForSource}
-          onOpenReview={() => router.push('/review')}
+          onOpenReview={() =>
+            router.push(`/review?competence=${encodeURIComponent(competence)}`)
+          }
         />
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
@@ -224,12 +249,12 @@ export function ImportScreen() {
                   <h2 className="text-title-section font-sans-bold leading-tight">
                     {importTarget
                       ? `Adicionar ${importTargetLabel(importTarget)}`
-                      : 'Extrato ou fatura'}
+                      : 'Adicionar uma fonte'}
                   </h2>
                   <p className="text-pretty text-body leading-relaxed text-ink-muted">
                     {importTarget
-                      ? 'Escolha o arquivo indicado e confirme manualmente a origem antes do envio.'
-                      : 'Use o extrato OFX ou a fatura XLSX exportados pelo Itaú. Limite de 5 MB por arquivo.'}
+                      ? 'Escolha o arquivo indicado. A origem esperada já vem selecionada e continua visível para sua confirmação.'
+                      : 'Escolha uma das três fontes acima e use o arquivo exportado pelo Itaú. Limite de 5 MB por arquivo.'}
                   </p>
                 </div>
               </div>
@@ -237,7 +262,7 @@ export function ImportScreen() {
               {importTarget ? (
                 <p className="rounded-control bg-action-primary-soft px-4 py-3 text-body leading-relaxed">
                   Entrada do mês: <span className="font-sans-bold">{importTargetLabel(importTarget)}</span>
-                  . A sugestão do fluxo não seleciona o Patrimônio de Origem por você.
+                  . O Patrimônio de Origem esperado foi selecionado a partir desta fonte.
                 </p>
               ) : null}
 
@@ -407,14 +432,18 @@ export function ImportScreen() {
         </section>
 
         {preview ? (
-          <PreviewSection
-            preview={preview}
-            stage={stage}
-            onConfirm={handleConfirm}
-            onDiscard={handleDiscard}
-            onReview={() => router.push('/review')}
-            onReset={startNextImport}
-          />
+          <div ref={previewSectionRef} className="scroll-mt-6">
+            <PreviewSection
+              preview={preview}
+              stage={stage}
+              onConfirm={handleConfirm}
+              onDiscard={handleDiscard}
+              onReview={() =>
+                router.push(`/review?competence=${encodeURIComponent(competence)}`)
+              }
+              onReset={startNextImport}
+            />
+          </div>
         ) : null}
       </div>
     </main>
@@ -449,9 +478,9 @@ function PreviewSection({
           </p>
           <h2 className="text-balance text-title-section font-sans-bold leading-tight">
             {isConfirmed
-              ? 'Lote confirmado'
+              ? 'Fonte confirmada'
               : isDiscarded
-                ? 'Lote descartado'
+                ? 'Prévia descartada'
                 : 'Confira antes de confirmar'}
           </h2>
         </div>
@@ -474,7 +503,7 @@ function PreviewSection({
         </StatusMessage>
       ) : isDiscarded ? (
         <StatusMessage>
-          A prévia foi descartada e nenhuma Movimentação de Origem foi criada.
+          A prévia foi descartada e nenhuma movimentação foi adicionada.
         </StatusMessage>
       ) : null}
 
@@ -483,9 +512,19 @@ function PreviewSection({
           <p className="text-body font-sans-semibold">
             {preview.statementTitle ?? 'Fatura do cartão'}
           </p>
+          <p className="text-caption leading-relaxed text-ink-muted">
+            O mês informado pela fatura representa o pagamento. Os gastos entram
+            na competência imediatamente anterior.
+          </p>
           <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Metric
-              label="Competência"
+              label="Competência dos gastos"
+              value={formatCompetence(
+                creditCardSpendingCompetence(preview.statementCompetence),
+              )}
+            />
+            <Metric
+              label="Pagamento da fatura"
               value={formatCompetence(preview.statementCompetence)}
             />
             <Metric
@@ -566,9 +605,8 @@ function PreviewSection({
 
       {!isConfirmed && !isDiscarded ? (
         <p className="rounded-control bg-canvas px-4 py-3 text-body leading-relaxed text-ink-muted">
-          Para importar outro arquivo, confirme este Lote de Importação ou descarte a prévia.
-          Confirmar persiste as movimentações estruturadas; descartar não cria Movimentações de
-          Origem.
+          Confirme ou descarte esta prévia antes de adicionar outra fonte. Confirmar salva as
+          movimentações estruturadas; descartar não adiciona nenhum dado.
         </p>
       ) : null}
 
@@ -592,7 +630,7 @@ function PreviewSection({
                   strokeWidth={1.8}
                 />
               )}
-              Confirmar lote
+              Confirmar arquivo
             </WebButton>
             <WebButton variant="outline" onClick={onDiscard} disabled={isChanging}>
               {stage === 'discarding' ? (
@@ -623,7 +661,7 @@ function PreviewSection({
                 size={16}
                 strokeWidth={1.8}
               />
-              Revisar movimentações
+              Continuar atualização
             </WebButton>
             <WebButton variant="secondary" onClick={onReset}>
               <HugeiconsIcon
@@ -632,7 +670,7 @@ function PreviewSection({
                 size={16}
                 strokeWidth={1.8}
               />
-              Importar outro arquivo
+              Adicionar próxima fonte
             </WebButton>
           </>
         ) : (
@@ -643,7 +681,7 @@ function PreviewSection({
               size={16}
               strokeWidth={1.8}
             />
-            Importar outro arquivo
+            Escolher outra fonte
           </WebButton>
         )}
       </div>

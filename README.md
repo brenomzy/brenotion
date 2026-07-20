@@ -1,6 +1,10 @@
 # Brenotion
 
-Brenotion é um aplicativo financeiro pessoal e empresarial para um único empreendedor brasileiro que presta serviços ao exterior. O produto transforma movimentações financeiras em decisões práticas: quanto reservar, quanto pode sair da empresa, quanto está disponível até o próximo recebimento e quais obrigações ainda exigem ação.
+Brenotion é um aplicativo financeiro pessoal e empresarial para um único
+empreendedor brasileiro que presta serviços ao exterior. O produto mensal
+inteligente transforma as três fontes do Itaú em um resumo do mês anterior, uma
+Checklist Mensal e decisões práticas para o mês seguinte: quanto reservar,
+quanto pode sair da Empresa e quais obrigações ainda exigem ação.
 
 O projeto está em desenvolvimento incremental. A aplicação universal já possui um
 scaffold Expo executável; cada nova capacidade entra como uma fatia vertical
@@ -20,6 +24,7 @@ próprio fluxo do produto.
 - [Ambiente de desenvolvimento](./docs/development.md)
 - [Exploração visual e design system](./docs/design/README.md)
 - [Referências](./docs/references.md)
+- [Pesquisa da fundação de IA](./docs/research/ai-classification-foundation.md)
 - [Decisões arquiteturais](./docs/adr/)
 
 ## Desenvolvimento
@@ -36,6 +41,10 @@ configuração local. Nunca registre valores reais no Git.
 
 - Plataforma principal: Android.
 - Companion web inicial: upload e cofre documental.
+- Direção de produto aprovada: Início, Checklist Mensal e Atualizar mês formam o
+  caminho principal. O uso cotidiano se limita à checklist; não existe rotina
+  obrigatória de lançamentos diários. A primeira simplificação dessas rotas já
+  está implementada.
 - Fonte de verdade operacional: Convex, com importações, revisão, Obrigações,
   Ocorrências de Obrigação, Fechamentos Mensais parciais, Ciclos Financeiros e
   Gastos Informados persistidos e isolados por Titular. O Início normal consulta
@@ -48,10 +57,11 @@ configuração local. Nunca registre valores reais no Git.
   nos novos lotes. Uma Obrigação paga pela Empresa pode manter Natureza Econômica
   Pessoal. A Liquidação do Cartão pode ser conciliada com um débito bancário por
   confirmação auditável. O companion web mostra a cobertura das três entradas por
-  competência. Gastos Informados podem ser registrados em um Ciclo Financeiro
+  competência; na fatura, preserva o mês de pagamento e associa os gastos ao mês
+  imediatamente anterior. Gastos Informados podem ser registrados em um Ciclo Financeiro
   explícito e conciliados posteriormente por confirmação, sem recalcular Plano ou
   Limites ainda indisponíveis. O spike Pluggy não é dependência do MVP.
-- Configuração diária: Obrigações genéricas e Decisões de Classificação já
+- Configuração existente: Obrigações genéricas e Decisões de Classificação já
   possuem persistência autorizada, idempotente e auditável, sem seed de dados
   pessoais. Natureza Econômica é exclusivamente Pessoal ou Empresa e permanece
   distinta da origem pagadora. A rota Obrigações permite listar, criar, editar,
@@ -65,5 +75,21 @@ configuração local. Nunca registre valores reais no Git.
   rotas universais. Início, Plano e Mais não usam dados demonstrativos no caminho
   normal; seus cenários sintéticos permanecem somente para desenvolvimento
   explícito.
+- Demonstração local: `/checklist?scenario=demo` apresenta uma Checklist
+  interativa com dados inteiramente sintéticos e conecta a
+  `/obligations?scenario=demo`, que explica como Recorrências geram itens
+  mensais. Nenhuma ação desses cenários persiste dados.
+- A primeira fatia de Categoria e classificação assistida está implementada no
+  backend e em Conferir atualização: regras confirmadas resolvem grupos
+  conhecidos; somente grupos inéditos sanitizados seguem ao adapter configurado;
+  confirmar ou corrigir cria memória determinística, enquanto “não sei” não cria
+  regra. O eval sintético aprovou `gpt-5.6-luna` como o candidato mais barato que
+  atingiu o gate, e o deployment Convex de desenvolvimento já usa esse modelo.
+  A primeira execução real de `2026-06` concluiu com 145 grupos pendentes de
+  revisão humana, três chamadas agregadas e nenhuma regra criada
+  automaticamente.
+- Ainda não implementados: resumo retrospectivo, registro do Recebimento
+  Empresarial e Plano Financeiro determinístico. A IA não é fonte de valores
+  financeiros oficiais.
 
 Nenhuma credencial, CNPJ, CPF, número de conta ou documento financeiro bruto deve ser commitido neste repositório.

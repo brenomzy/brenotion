@@ -10,8 +10,19 @@ import { useReviewScreenSource } from '@/modules/review/use-review-screen-source
 const SYNTHETIC_SCENARIOS = new Set<SyntheticReviewScenario>(['loading', 'empty', 'error']);
 
 export default function ReviewRoute() {
-  const { scenario } = useLocalSearchParams<{ scenario?: string | string[] }>();
+  const { scenario, competence } = useLocalSearchParams<{
+    scenario?: string | string[];
+    competence?: string | string[];
+  }>();
   const requestedScenario = Array.isArray(scenario) ? scenario[0] : scenario;
+  const requestedCompetence = Array.isArray(competence)
+    ? competence[0]
+    : competence;
+  const validCompetence =
+    requestedCompetence &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedCompetence)
+      ? requestedCompetence
+      : null;
   const source = useReviewScreenSource();
   const syntheticScenario =
     requestedScenario &&
@@ -27,8 +38,16 @@ export default function ReviewRoute() {
         selectBatch: source.selectBatch,
         loadMoreBatches: source.loadMoreBatches,
         loadMoreTransactions: source.loadMoreTransactions,
-        retry: () => router.replace('/review'),
-        startImport: () => router.push('/import'),
+        retry: () =>
+          router.replace({
+            pathname: '/review',
+            params: validCompetence ? { competence: validCompetence } : {},
+          }),
+        startImport: () =>
+          router.push({
+            pathname: '/import',
+            params: validCompetence ? { competence: validCompetence } : {},
+          }),
       }}
     />
   );

@@ -1,3 +1,4 @@
+import { creditCardStatementMatchesSpendingCompetence } from '../../shared/credit-card-competence';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 
@@ -276,7 +277,10 @@ function sourceCheckCode(source: SourceCoverage): MonthlyClosureCheckCode | null
 
 function matchesCompetence(batch: Doc<'importBatches'>, competence: string): boolean {
   if (batch.format === 'itauCreditCardXlsx') {
-    return batch.statementCompetence === competence;
+    return creditCardStatementMatchesSpendingCompetence(
+      batch.statementCompetence,
+      competence,
+    );
   }
   if (!batch.periodStart || !batch.periodEnd) return false;
   const monthStart = `${competence}-01`;

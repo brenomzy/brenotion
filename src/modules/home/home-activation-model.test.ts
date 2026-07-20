@@ -16,7 +16,7 @@ describe('home activation model', () => {
     );
     expect(model.nextAction).toMatchObject({
       route: '/import',
-      label: 'Adicionar arquivo',
+      label: 'Atualizar mês',
     });
     expect(model.officialSnapshot).toEqual({
       title: 'Retrato financeiro ainda não publicado',
@@ -47,7 +47,7 @@ describe('home activation model', () => {
       },
     });
     expect(buildHomeActivationModel(reviewStarted).nextAction.route).toBe(
-      '/obligations',
+      '/checklist',
     );
 
     const configured = baseData({
@@ -104,11 +104,11 @@ describe('home activation model', () => {
       status: 'done',
       statusLabel: 'Revisão 2 registrada',
     });
-    expect(model.nextAction.route).toBe('/review');
-    expect(model.nextAction.title).toBe('Continue o acompanhamento mensal');
+    expect(model.nextAction.route).toBe('/checklist');
+    expect(model.nextAction.title).toBe('Mês organizado');
   });
 
-  it('offers closure readiness after every operational area has started', () => {
+  it('finishes coverage before offering the remaining monthly steps', () => {
     const model = buildHomeActivationModel(
       baseData({
         coverage: {
@@ -142,8 +142,8 @@ describe('home activation model', () => {
     );
 
     expect(model.nextAction).toMatchObject({
-      route: '/close',
-      label: 'Revisar Fechamento',
+      route: '/import',
+      label: 'Atualizar mês',
     });
   });
 

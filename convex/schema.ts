@@ -64,6 +64,47 @@ export const economicNatureValidator = v.union(
   v.literal('business'),
 );
 
+export const classificationCategoryValidator = v.union(
+  v.literal('housing'),
+  v.literal('food'),
+  v.literal('transport'),
+  v.literal('health'),
+  v.literal('education'),
+  v.literal('leisure'),
+  v.literal('subscriptions'),
+  v.literal('taxes_and_fees'),
+  v.literal('business_operations'),
+  v.literal('other'),
+);
+
+export const aiClassificationJobStatusValidator = v.union(
+  v.literal('queued'),
+  v.literal('running'),
+  v.literal('needs_review'),
+  v.literal('completed'),
+  v.literal('failed'),
+);
+
+export const aiClassificationEvidenceValidator = v.union(
+  v.literal('known_merchant'),
+  v.literal('description_semantics'),
+  v.literal('recurring_pattern'),
+  v.literal('insufficient'),
+);
+
+export const aiClassificationUncertaintyValidator = v.union(
+  v.literal('low'),
+  v.literal('medium'),
+  v.literal('high'),
+);
+
+export const aiClassificationSuggestionStatusValidator = v.union(
+  v.literal('pending'),
+  v.literal('confirmed'),
+  v.literal('corrected'),
+  v.literal('abstained'),
+);
+
 export const paymentOriginValidator = v.union(
   v.literal('personal'),
   v.literal('business'),
@@ -193,6 +234,11 @@ export default defineSchema({
     discardedAt: v.optional(v.number()),
   })
     .index('by_ownerId_and_fileHash', ['ownerId', 'fileHash'])
+    .index('by_ownerId_and_fileHash_and_sourcePatrimony', [
+      'ownerId',
+      'fileHash',
+      'sourcePatrimony',
+    ])
     .index('by_ownerId_and_createdAt', ['ownerId', 'createdAt'])
     .index('by_ownerId_and_status_and_confirmedAt', [
       'ownerId',
@@ -424,6 +470,99 @@ export default defineSchema({
     revisionNumber: v.optional(v.int64()),
     currentRevisionId: v.optional(v.id('classificationDecisionRevisions')),
   }).index('by_ownerId_and_groupKey', ['ownerId', 'groupKey']),
+  classificationRules: defineTable({
+    ownerId: v.string(),
+    groupKey: v.string(),
+    categoryId: classificationCategoryValidator,
+    taxonomyVersion: v.literal('classification-taxonomy-v1'),
+    ruleVersion: v.literal('classification-rule-v1'),
+    confirmedAt: v.number(),
+    updatedAt: v.number(),
+    revisionNumber: v.int64(),
+    currentRevisionId: v.optional(v.id('classificationRuleRevisions')),
+  }).index('by_ownerId_and_groupKey', ['ownerId', 'groupKey']),
+  classificationRuleRevisions: defineTable({
+    ownerId: v.string(),
+    ruleId: v.id('classificationRules'),
+    revisionNumber: v.int64(),
+    reason: v.union(v.literal('created'), v.literal('updated')),
+    snapshot: v.object({
+      groupKey: v.string(),
+      categoryId: classificationCategoryValidator,
+      taxonomyVersion: v.literal('classification-taxonomy-v1'),
+      ruleVersion: v.literal('classification-rule-v1'),
+      confirmedAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    recordedAt: v.number(),
+  }).index('by_ownerId_and_ruleId_and_revisionNumber', [
+    'ownerId',
+    'ruleId',
+    'revisionNumber',
+  ]),
+  aiClassificationJobs: defineTable({
+    ownerId: v.string(),
+    competence: v.string(),
+    inputHash: v.string(),
+    status: aiClassificationJobStatusValidator,
+    adapter: v.union(v.literal('openai'), v.literal('fake')),
+    model: v.string(),
+    promptVersion: v.literal('monthly-classification-prompt-v1'),
+    schemaVersion: v.literal('monthly-classification-schema-v1'),
+    taxonomyVersion: v.literal('classification-taxonomy-v1'),
+    sanitizerVersion: v.literal('classification-sanitizer-v1'),
+    attemptCount: v.number(),
+    modelCallCount: v.number(),
+    totalGroupCount: v.number(),
+    resolvedByRuleCount: v.number(),
+    manualReviewCount: v.number(),
+    suggestedCount: v.number(),
+    abstainedCount: v.number(),
+    rejectedCount: v.number(),
+    requestedAt: v.number(),
+    updatedAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
+    latencyMs: v.optional(v.number()),
+    estimatedCostInUsdMicros: v.optional(v.number()),
+    pricingVersion: v.optional(v.literal('openai-standard-2026-07-19')),
+    responseId: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    retryable: v.optional(v.boolean()),
+  })
+    .index('by_ownerId_and_inputHash', ['ownerId', 'inputHash'])
+    .index('by_ownerId_and_competence_and_requestedAt', [
+      'ownerId',
+      'competence',
+      'requestedAt',
+    ]),
+  aiClassificationSuggestions: defineTable({
+    ownerId: v.string(),
+    jobId: v.id('aiClassificationJobs'),
+    groupId: v.string(),
+    groupKey: v.string(),
+    sanitizedDescription: v.union(v.string(), v.null()),
+    source: v.union(v.literal('model'), v.literal('manual_review')),
+    manualReviewReason: v.optional(
+      v.union(
+        v.literal('sensitive_transfer'),
+        v.literal('possible_prompt_injection'),
+        v.literal('empty_after_redaction'),
+      ),
+    ),
+    suggestedCategoryId: v.union(classificationCategoryValidator, v.null()),
+    evidence: aiClassificationEvidenceValidator,
+    uncertainty: aiClassificationUncertaintyValidator,
+    status: aiClassificationSuggestionStatusValidator,
+    selectedCategoryId: v.optional(classificationCategoryValidator),
+    createdAt: v.number(),
+    decidedAt: v.optional(v.number()),
+  })
+    .index('by_jobId_and_groupId', ['jobId', 'groupId'])
+    .index('by_ownerId_and_jobId', ['ownerId', 'jobId']),
   obligationRevisions: defineTable({
     ownerId: v.string(),
     obligationId: v.id('obligations'),
@@ -499,6 +638,9 @@ export default defineSchema({
       v.literal('reported_expense.voided'),
       v.literal('reported_expense.reconciled'),
       v.literal('classification_decision.upserted'),
+      v.literal('classification_job.requested'),
+      v.literal('classification_suggestion.reviewed'),
+      v.literal('classification_rule.upserted'),
       v.literal('card_settlement.reconciled'),
     ),
     targetType: v.union(
@@ -513,6 +655,9 @@ export default defineSchema({
       v.literal('reported_expense'),
       v.literal('reported_expense_reconciliation'),
       v.literal('classification_decision'),
+      v.literal('classification_job'),
+      v.literal('classification_suggestion'),
+      v.literal('classification_rule'),
       v.literal('card_settlement_reconciliation'),
     ),
     targetId: v.union(
@@ -527,12 +672,16 @@ export default defineSchema({
       v.id('reportedExpenses'),
       v.id('reportedExpenseReconciliations'),
       v.id('classificationDecisions'),
+      v.id('aiClassificationJobs'),
+      v.id('aiClassificationSuggestions'),
+      v.id('classificationRules'),
       v.id('cardSettlementReconciliations'),
     ),
     revisionId: v.optional(
       v.union(
         v.id('obligationRevisions'),
         v.id('classificationDecisionRevisions'),
+        v.id('classificationRuleRevisions'),
         v.id('reportedExpenseRevisions'),
       ),
     ),

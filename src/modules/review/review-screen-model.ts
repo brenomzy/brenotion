@@ -1,3 +1,5 @@
+import { creditCardSpendingCompetence } from '../../../shared/credit-card-competence';
+
 export type ReviewMoney = Readonly<{
   amountInMinorUnits: bigint;
   currency: 'BRL';
@@ -129,12 +131,13 @@ export function formatSourcePatrimony(
 }
 
 export function formatReviewPeriod(batch: ReviewImportBatch): string {
-  if (
-    batch.format === 'itauCreditCardXlsx' &&
-    batch.statementCompetence &&
-    /^\d{4}-\d{2}$/.test(batch.statementCompetence)
-  ) {
-    const [year, month] = batch.statementCompetence.split('-').map(Number);
+  const spendingCompetence =
+    batch.format === 'itauCreditCardXlsx'
+      ? creditCardSpendingCompetence(batch.statementCompetence)
+      : null;
+
+  if (spendingCompetence) {
+    const [year, month] = spendingCompetence.split('-').map(Number);
     return new Intl.DateTimeFormat('pt-BR', {
       month: 'long',
       year: 'numeric',

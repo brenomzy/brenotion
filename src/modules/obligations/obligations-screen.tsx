@@ -23,7 +23,6 @@ import {
 import { Text } from '@/components/ui/text';
 import { BottomTabInset, Colors } from '@/constants/theme';
 import { cn } from '@/lib/utils';
-import { ObligationOccurrencesCenter } from './obligation-occurrences-center';
 import {
   buildObligationFormViewState,
   createObligationKey,
@@ -180,43 +179,35 @@ export function ObligationsScreen() {
           variant="ghost"
           size="compact"
           className="self-start"
-          onPress={() => router.replace('/more')}>
-          <Text>Voltar para Mais</Text>
+          onPress={() => router.replace('/checklist')}>
+          <Text>Voltar para Checklist</Text>
         </Button>
 
         <View className="gap-1">
-          <Text variant="overline">Configurações recorrentes</Text>
-          <Text variant="screenTitle">Obrigações</Text>
+          <Text variant="overline">Configuração da checklist</Text>
+          <Text variant="screenTitle">Recorrências</Text>
           <Text variant="caption" className="leading-5">
-            Defina o que vence todo mês e separe a Natureza Econômica da conta
-            que costuma pagar.
+            Cadastre uma vez o que costuma acontecer todo mês. O Brenotion
+            prepara os próximos itens da Checklist automaticamente.
           </Text>
         </View>
 
         <Card>
           <CardHeader>
-            <CardTitle>Conta pagadora não muda a Natureza Econômica</CardTitle>
+            <CardTitle>Uma configuração, um item novo a cada mês</CardTitle>
             <CardDescription className="text-body leading-6">
-              Uma Obrigação Pessoal pode ser paga pela Empresa e continuar
-              Pessoal. O Brenotion registra as duas decisões separadamente.
+              Aqui você define o modelo recorrente. Concluir, adiar ou retirar
+              um item de um mês específico acontece somente na Checklist.
             </CardDescription>
           </CardHeader>
         </Card>
 
-        <ObligationOccurrencesCenter
-          activeObligationCount={
-            source.obligations.filter((obligation) => obligation.isActive)
-              .length
-          }
-          obligationsAreLoading={source.status === 'loading'}
-        />
-
-        <View className="gap-1 border-t border-divider pt-6">
-          <Text variant="overline">Base recorrente</Text>
-          <Text variant="sectionTitle">Configurações de Obrigações</Text>
+        <View className="gap-1">
+          <Text variant="overline">Base dos próximos meses</Text>
+          <Text variant="sectionTitle">Itens recorrentes</Text>
           <Text variant="caption" className="leading-5">
-            Edite aqui o modelo usado nas próximas materializações. Ocorrências
-            já criadas preservam o retrato da configuração do momento.
+            Alterações valem para as próximas checklists. Meses anteriores
+            preservam o que estava configurado na época.
           </Text>
         </View>
 
@@ -280,7 +271,7 @@ export function ObligationsScreen() {
                 size="compact"
                 onPress={startCreate}
                 disabled={formValues !== null}>
-                <Text>Nova Obrigação</Text>
+                <Text>Nova recorrência</Text>
               </Button>
             </View>
 
@@ -295,15 +286,15 @@ export function ObligationsScreen() {
             {visibleItems.length === 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Nenhuma Obrigação configurada</CardTitle>
+                  <CardTitle>Nenhuma recorrência configurada</CardTitle>
                   <CardDescription className="text-body leading-6">
-                    Cadastre seu primeiro compromisso recorrente. Nenhuma
-                    movimentação será alterada ou paga pelo Brenotion.
+                    Cadastre algo que costuma se repetir. O Brenotion não
+                    inicia pagamentos nem altera movimentações.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button onPress={startCreate} disabled={formValues !== null}>
-                    <Text>Criar primeira Obrigação</Text>
+                    <Text>Criar primeira recorrência</Text>
                   </Button>
                 </CardContent>
               </Card>
@@ -407,7 +398,7 @@ function ObligationForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditing ? 'Editar Obrigação' : 'Nova Obrigação'}</CardTitle>
+        <CardTitle>{isEditing ? 'Editar recorrência' : 'Nova recorrência'}</CardTitle>
         <CardDescription className="text-body leading-6">
           Valor e vencimento são opcionais. Nenhum pagamento será iniciado.
         </CardDescription>
@@ -472,7 +463,7 @@ function ObligationForm({
         {isEditing ? (
           <View className="flex-row items-center justify-between gap-4 rounded-control bg-canvas px-4 py-3">
             <View className="flex-1 gap-1">
-              <Text variant="label">Obrigação ativa</Text>
+              <Text variant="label">Recorrência ativa</Text>
               <Text variant="caption">
                 Desativar preserva o histórico e remove a configuração da lista
                 principal.
@@ -486,7 +477,7 @@ function ObligationForm({
                 false: Colors.light.divider,
                 true: Colors.light.actionPrimary,
               }}
-              accessibilityLabel="Obrigação ativa"
+              accessibilityLabel="Recorrência ativa"
             />
           </View>
         ) : null}
@@ -504,7 +495,7 @@ function ObligationForm({
 
         <View className="flex-row flex-wrap gap-3">
           <Button onPress={onSave} disabled={isSubmitting}>
-            <Text>{isSubmitting ? 'Salvando…' : 'Salvar Obrigação'}</Text>
+            <Text>{isSubmitting ? 'Salvando…' : 'Salvar recorrência'}</Text>
           </Button>
           <Button
             variant="ghost"

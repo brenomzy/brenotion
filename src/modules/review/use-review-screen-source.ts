@@ -64,9 +64,9 @@ export function useReviewScreenSource() {
       return {
         status: 'empty',
         origin: { kind: 'persisted' },
-        title: 'Importe seu primeiro período',
+        title: 'Comece pela atualização do mês',
         description:
-          'Nenhum Lote de Importação confirmado foi encontrado. Envie um arquivo OFX ou XLSX pelo companion web para começar.',
+          'Nenhuma fonte confirmada foi encontrada. Adicione os arquivos do mês pelo companion web para começar.',
       };
     }
 

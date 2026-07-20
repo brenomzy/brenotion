@@ -1,5 +1,6 @@
 import { ConvexError, v } from 'convex/values';
 
+import { creditCardStatementMatchesSpendingCompetence } from '../shared/credit-card-competence';
 import type { Doc } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { requireAuthorizedOwner } from './lib/authorization';
@@ -173,7 +174,10 @@ function batchMatchesCompetence(
   competence: string,
 ): boolean {
   if (batch.format === 'itauCreditCardXlsx') {
-    return batch.statementCompetence === competence;
+    return creditCardStatementMatchesSpendingCompetence(
+      batch.statementCompetence,
+      competence,
+    );
   }
 
   if (!isIsoDate(batch.periodStart) || !isIsoDate(batch.periodEnd)) {

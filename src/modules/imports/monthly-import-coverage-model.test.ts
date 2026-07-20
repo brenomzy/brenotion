@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   buildMonthlyImportCoverageView,
   currentCompetence,
+  expectedSourcePatrimonyFor,
   formatCompetenceLabel,
   shiftCompetence,
   type MonthlyImportCoverage,
@@ -12,7 +13,7 @@ function coverage(
   statuses: MonthlyImportCoverage['sources'][number]['status'][],
 ): MonthlyImportCoverage {
   return {
-    competence: '2026-07',
+    competence: '2026-06',
     complete: statuses.every((status) => status === 'confirmed'),
     isSearchExhaustive: true,
     sources: [
@@ -21,8 +22,8 @@ function coverage(
         expectedFormat: 'ofx',
         expectedSourcePatrimony: 'personal',
         status: statuses[0],
-        periodStart: '2026-07-01',
-        periodEnd: '2026-07-31',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
         statementCompetence: null,
         transactionCount: 12,
         importedAt: statuses[0] === 'confirmed' ? 1 : null,
@@ -80,10 +81,13 @@ describe('buildMonthlyImportCoverageView', () => {
       'Pendente',
     ]);
     expect(model.items[0].description).toBe(
-      '12 movimentações estruturadas nesta competência.',
+      '12 movimentações adicionadas neste mês.',
     );
-    expect(model.items[1].description).toContain('ainda não confirmada');
-    expect(model.items[2].description).toContain('Nenhum lote confirmado');
+    expect(model.items[1].description).toContain(
+      'Fatura paga em julho de 2026, com gastos de junho de 2026.',
+    );
+    expect(model.items[1].description).toContain('precisa ser confirmada');
+    expect(model.items[2].description).toContain('Adicione o arquivo');
   });
 
   test('marks the competence complete only when every source is confirmed', () => {
@@ -94,7 +98,7 @@ describe('buildMonthlyImportCoverageView', () => {
     expect(model.complete).toBe(true);
     expect(model.confirmedCount).toBe(3);
     expect(model.summary).toBe(
-      'As três fontes desta competência estão confirmadas.',
+      'As três fontes estão prontas. Continue para conferir somente o que precisa da sua atenção.',
     );
   });
 
@@ -104,7 +108,7 @@ describe('buildMonthlyImportCoverageView', () => {
 
     const model = buildMonthlyImportCoverageView(input);
 
-    expect(model.summary).toContain('lotes recentes');
+    expect(model.summary).toContain('dados recentes');
     expect(model.summary).toContain('histórico completo ainda não foi verificado');
   });
 });
@@ -115,6 +119,12 @@ describe('competence helpers', () => {
     expect(shiftCompetence('2026-01', -1)).toBe('2025-12');
     expect(shiftCompetence('2026-12', 1)).toBe('2027-01');
     expect(formatCompetenceLabel('2026-07')).toBe('julho de 2026');
+  });
+
+  test('derives the expected Patrimônio de Origem from the selected source', () => {
+    expect(expectedSourcePatrimonyFor('personalBank')).toBe('personal');
+    expect(expectedSourcePatrimonyFor('creditCard')).toBe('personal');
+    expect(expectedSourcePatrimonyFor('businessBank')).toBe('business');
   });
 
   test('rejects invalid competences', () => {

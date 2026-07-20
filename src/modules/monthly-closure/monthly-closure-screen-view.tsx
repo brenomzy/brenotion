@@ -67,12 +67,12 @@ export function MonthlyClosureScreenView({
           size="compact"
           className="self-start"
           onPress={onBack}>
-          <Text>Voltar para Mais</Text>
+          <Text>Voltar ao Início</Text>
         </Button>
 
         <View className="gap-1">
-          <Text variant="overline">Revisão da competência</Text>
-          <Text variant="screenTitle">Fechamento Mensal</Text>
+          <Text variant="overline">Última etapa da atualização</Text>
+          <Text variant="screenTitle">Finalizar mês</Text>
           <Text variant="caption" className="max-w-2xl leading-5">
             Confira cobertura e lacunas antes de registrar esta revisão. O
             Brenotion não calcula nem confirma valores financeiros nesta etapa.

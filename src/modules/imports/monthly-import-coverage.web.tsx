@@ -44,19 +44,19 @@ export function MonthlyImportCoverage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="grid gap-1">
             <p className="text-overline font-sans-bold uppercase tracking-[0.04em] text-ink-muted">
-              Competência mensal
+              Três fontes do mês
             </p>
             <h2
               id="monthly-import-coverage-title"
               className="text-balance text-title-section font-sans-bold leading-tight">
-              {model ? `Arquivos de ${model.competenceLabel}` : 'Verificando arquivos do mês'}
+              {model ? `Atualizar ${model.competenceLabel}` : 'Verificando o mês'}
             </h2>
             <p
               aria-live="polite"
               className="max-w-2xl text-pretty text-body leading-relaxed text-ink-muted">
               {model
                 ? model.summary
-                : 'Consultando os lotes recentes sem alterar nenhuma movimentação.'}
+                : 'Consultando os dados recentes sem alterar nenhuma movimentação.'}
             </p>
           </div>
 
@@ -161,9 +161,29 @@ export function MonthlyImportCoverage({
           </div>
         )}
 
+        {model?.complete ? (
+          <div className="flex flex-col gap-4 rounded-card bg-status-recent-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="grid gap-1">
+              <p className="text-label font-sans-bold">Arquivos do mês prontos</p>
+              <p className="text-caption leading-relaxed text-ink-muted">
+                Agora confira as exceções e classificações que realmente precisam de você.
+              </p>
+            </div>
+            <WebButton className="shrink-0" disabled={disabled} onClick={onOpenReview}>
+              Continuar atualização
+              <HugeiconsIcon
+                aria-hidden
+                icon={ArrowRight01Icon}
+                size={16}
+                strokeWidth={1.8}
+              />
+            </WebButton>
+          </div>
+        ) : null}
+
         <p className="text-caption leading-relaxed text-ink-muted">
-          Três entradas confirmadas não fecham a competência nem classificam movimentações.
-          Patrimônio de Origem e Natureza Econômica continuam independentes.
+          Cada arquivo mantém seu Patrimônio de Origem. Confirmar as três fontes não classifica
+          movimentações nem encerra o mês automaticamente.
         </p>
       </div>
     </section>

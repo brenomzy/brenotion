@@ -1,3 +1,5 @@
+import { creditCardSpendingCompetence } from '../../../shared/credit-card-competence';
+
 export type MonthlyImportSourceId =
   | 'personalBank'
   | 'creditCard'
@@ -89,16 +91,22 @@ export function buildMonthlyImportCoverageView(
     complete: coverage.complete,
     confirmedCount,
     summary: !coverage.isSearchExhaustive
-      ? `${confirmedCount} de 3 fontes confirmadas entre os lotes recentes. O histórico completo ainda não foi verificado.`
+      ? `${confirmedCount} de 3 fontes adicionadas entre os dados recentes. O histórico completo ainda não foi verificado.`
       : coverage.complete
-        ? 'As três fontes desta competência estão confirmadas.'
-        : `${confirmedCount} de 3 fontes confirmadas. Dados ausentes reduzem a confiança do fechamento.`,
+        ? 'As três fontes estão prontas. Continue para conferir somente o que precisa da sua atenção.'
+        : `${confirmedCount} de 3 fontes adicionadas. Escolha a próxima fonte para continuar.`,
     items,
   };
 }
 
 export function currentCompetence(now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function expectedSourcePatrimonyFor(
+  source: MonthlyImportSourceId,
+): 'personal' | 'business' {
+  return source === 'businessBank' ? 'business' : 'personal';
 }
 
 export function shiftCompetence(competence: string, offset: number): string {
@@ -124,6 +132,14 @@ function toCoverageItem(
   const metadata = SOURCE_METADATA[source.source];
   const originLabel =
     source.expectedSourcePatrimony === 'personal' ? 'Pessoal' : 'Empresa';
+  const spendingCompetence =
+    source.source === 'creditCard'
+      ? creditCardSpendingCompetence(source.statementCompetence)
+      : null;
+  const cardTimingDescription =
+    source.statementCompetence && spendingCompetence
+      ? `Fatura paga em ${formatCompetenceLabel(source.statementCompetence)}, com gastos de ${formatCompetenceLabel(spendingCompetence)}. `
+      : '';
 
   if (source.status === 'confirmed') {
     return {
@@ -133,10 +149,11 @@ function toCoverageItem(
       status: source.status,
       statusLabel: 'Confirmado',
       description:
-        source.transactionCount === 1
-          ? '1 movimentação estruturada nesta competência.'
-          : `${source.transactionCount} movimentações estruturadas nesta competência.`,
-      actionLabel: 'Abrir Revisar',
+        cardTimingDescription +
+        (source.transactionCount === 1
+          ? '1 movimentação adicionada neste mês.'
+          : `${source.transactionCount} movimentações adicionadas neste mês.`),
+      actionLabel: 'Ver dados',
     };
   }
 
@@ -148,8 +165,9 @@ function toCoverageItem(
       status: source.status,
       statusLabel: 'Prévia pendente',
       description:
-        'Existe uma prévia ainda não confirmada. Reenvie o arquivo para continuar a conferência.',
-      actionLabel: 'Continuar conferência',
+        cardTimingDescription +
+        'A prévia ainda precisa ser confirmada para concluir esta fonte.',
+      actionLabel: 'Continuar',
     };
   }
 
@@ -159,7 +177,7 @@ function toCoverageItem(
     originLabel,
     status: source.status,
     statusLabel: 'Pendente',
-    description: 'Nenhum lote confirmado para esta competência.',
+    description: 'Adicione o arquivo desta fonte para completar o mês.',
     actionLabel: 'Adicionar arquivo',
   };
 }

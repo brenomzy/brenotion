@@ -135,6 +135,16 @@ Arquivos inválidos ou não processáveis são apagados rapidamente e não entra
 - Respostas passam por validação estrutural antes da apresentação.
 - Prompt injection em texto de transação ou documento é tratado como dado, nunca como instrução.
 - A IA não executa ações financeiras nem chama diretamente adapters bancários.
+- O identificador de grupo enviado ao modelo é opaco e não contém a descrição
+  normalizada. O `groupKey` determinístico permanece somente no backend.
+- O sanitizador de classificação remove números, CPF, CNPJ, conta, agência,
+  cartão, documento, telefone, e-mail e URLs. Pix, transferências com possível
+  nome de pessoa e tentativas de prompt injection ficam em revisão manual sem
+  texto enviado ao modelo.
+- Jobs guardam apenas competência, versões, estados, contagens, modelo, tokens,
+  latência, custo estimado e identificador técnico da resposta. Prompt, corpo da
+  resposta, descrição bruta, chave e corpo de erro do provedor não são
+  persistidos nem registrados.
 
 ## 10. Criptografia e transporte
 

@@ -54,7 +54,7 @@ describe('review screen model', () => {
     );
   });
 
-  it('uses statement competence instead of purchase-date coverage for a card bill', () => {
+  it('shows the spending competence before the card payment competence', () => {
     expect(
       formatReviewPeriod({
         ...batch,
@@ -62,7 +62,7 @@ describe('review screen model', () => {
         sourceAccountKind: 'creditCard',
         statementCompetence: '2026-07',
       }),
-    ).toBe('julho de 2026');
+    ).toBe('junho de 2026');
   });
 
   it('resolves the batch selected by the source adapter', () => {

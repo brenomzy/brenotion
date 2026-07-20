@@ -21,6 +21,21 @@ Continuam sendo gates obrigatórios:
 - distinção explícita entre fechamento confirmado, registro provisório e estimativa;
 - conciliação sem dupla contagem entre entrada manual e importação posterior.
 
+### Direção aprovada em 19 de julho de 2026
+
+O caminho de produto passa a ser um Brenotion mensal inteligente com três pontos
+de entrada: Início, Checklist Mensal e Atualizar mês. O Titular não deve operar
+Lotes de Importação, Ocorrências, conciliações, Fechamento parcial ou Ciclo
+Financeiro para receber valor, e não existe rotina obrigatória de lançamentos
+diários.
+
+Esta direção sucede a cadência diária descrita em etapas anteriores sem apagar os
+checkpoints históricos nem remover imediatamente capacidades já implementadas.
+Gastos Informados permanecem compatíveis no backend, fora da navegação principal.
+Categorias, sugestões de IA sanitizadas, resumo retrospectivo, registro do
+Recebimento Empresarial e Plano Financeiro determinístico são próximas fatias;
+não estão disponíveis no estado atual.
+
 ## 2. Estados de entrega
 
 ### Base executável
@@ -31,16 +46,17 @@ financeiras reais.
 
 ### Alpha histórica
 
-Importa arquivos, classifica o histórico, calcula bases e permite revisar o
-modelo financeiro. Não apresenta o Disponível para Gastar como atualizado
-durante o mês.
+Atualiza uma competência pelas três fontes, aplica Regras de Classificação,
+solicita somente exceções e produz um resumo retrospectivo com lacunas
+explícitas. Não apresenta o Disponível para Gastar como atualizado durante o
+mês.
 
 ### MVP de revisão
 
 Fecha uma competência do Itaú por arquivos importados com Patrimônio de Origem,
-acompanha o ciclo atual
-com Gastos Informados e Limites por Categoria, reconcilia obrigações e sustenta
-decisões relevantes com confiança explícita.
+mantém a Checklist Mensal, registra o Recebimento Empresarial e produz um Plano
+Financeiro determinístico com confiança explícita. A rotina mensal não depende
+de Gastos Informados ou Limites por Categoria atualizados diariamente.
 
 ### Produção pessoal
 
@@ -345,48 +361,108 @@ Conectar o núcleo às telas já existentes:
 O Titular deve conseguir explicar os 12 meses por categorias e ciclos, com
 lacunas e incertezas visíveis.
 
-## 9. Fase 6 — Ciclo atual e MVP de revisão
+## 9. Fase 6 — Brenotion mensal inteligente
 
 ### Fatia vertical
 
-1. Criar um Gasto Informado por texto curto.
-2. Sugerir categoria e impacto sem confirmação silenciosa.
-3. Reduzir a estimativa do Limite por Categoria aplicável.
-4. Importar o próximo arquivo relevante do Itaú com Patrimônio de Origem explícito.
-5. Conciliar o registro provisório com a Movimentação de Origem sem duplicar.
-6. Reconciliar Obrigações e recalcular o Plano Financeiro.
-7. Atualizar a tela Início com origem, `asOf` e confiança.
-8. Gerar alerta somente se necessário.
+1. Reduzir a navegação principal a Início e Checklist Mensal, com Atualizar mês
+   como ação de primeiro nível.
+2. Apresentar Ocorrências de Obrigação como checklist simples, preservando
+   conclusão informada, reabertura e auditoria.
+3. Reunir cobertura, upload, revisão e conclusão da competência em Atualizar mês.
+4. Aplicar Regras de Classificação confirmadas antes de consultar IA.
+5. Enviar somente descrições desconhecidas e dados sanitizados ao modelo.
+6. Confirmar exceções novas, ambíguas ou materiais e reutilizar a regra nos meses
+   seguintes.
+7. Gerar um resumo retrospectivo sobre totais e categorias determinísticos.
+8. Registrar o Recebimento Empresarial com semântica canônica e criar o Plano
+   Financeiro determinístico em uma fatia posterior à atualização mensal básica.
 
 ### Critérios de aceite
 
-- último fechamento sempre visível;
-- estimativa do ciclo nunca aparece como saldo ou Disponível para Gastar atualizado;
-- Gasto Informado reduz a categoria correta e mantém estado provisório;
-- importação posterior não cria dupla contagem;
-- pagamentos identificados concluem obrigações;
+- Início mostra competência, recência, progresso da Checklist Mensal e uma única
+  próxima ação sem inventar valores financeiros;
+- o caminho principal não exige abrir Ciclo Financeiro nem registrar compras;
+- preparar ou copiar a Checklist não duplica itens;
+- marcar um item como concluído não cria um Pagamento Identificado;
+- Atualizar mês preserva separadamente a cobertura das três fontes e pode ser
+  retomado;
+- reimportar o mesmo arquivo não cria duplicatas;
+- classificações conhecidas não voltam para revisão sem motivo;
+- sugestões incertas ou materiais não são confirmadas silenciosamente;
+- o resumo da IA usa somente dados sanitizados e não calcula valores oficiais;
+- dados antigos ou incompletos reduzem a confiança exibida;
 - ações financeiras continuam manuais;
-- registro textual cabe em poucos segundos;
-- checkpoint opcional cabe em aproximadamente cinco minutos.
+- a aplicação permanece executável após cada fatia.
+
+### Checkpoint da primeira fatia de classificação por IA — 19 de julho de 2026
+
+- taxonomia inicial com dez Categorias, independente de Patrimônio de Origem e
+  Natureza Econômica;
+- sanitização determinística bloqueia identificadores, transferências,
+  liquidações e instruções adversariais antes do modelo;
+- Regras de Classificação confirmadas são aplicadas antes da IA;
+- sugestões, decisões confirmadas e memória determinística permanecem separadas,
+  versionadas e auditáveis;
+- confirmação, correção e abstenção estão integradas a Conferir atualização;
+- adapter fake e fixtures totalmente sintéticas cobrem o fluxo ponta a ponta;
+- adapter OpenAI usa Responses API, `store: false` e saída estruturada estrita;
+- o eval sintético foi reexecutado em 19 de julho de 2026: `gpt-5.6-sol` e
+  `gpt-5.6-luna` atingiram acurácia `1,00` e zero falsos positivos de baixa
+  incerteza; `gpt-5.4-nano` atingiu `0,8333` e não passou;
+- `gpt-5.6-luna` foi escolhido como o candidato mais barato aprovado, com custo
+  observado de US$ 0,006301 para 1.279 tokens de entrada e 837 de saída, e foi
+  configurado no deployment Convex de desenvolvimento;
+- a fatura paga em julho passou a preservar esse mês como metadado da fonte e a
+  completar a Competência dos Gastos do Cartão de junho, conforme ADR 0007;
+- a primeira tentativa autenticada com as três fontes reais falhou fechada antes
+  de criar o job com `TOO_MANY_CLASSIFICATION_GROUPS`, sem chamadas nem custo;
+- a action passou a aceitar até 300 grupos por competência e dividir o trabalho
+  em chamadas sequenciais de no máximo 40 grupos, com telemetria agregada e
+  regressão sintética de 103 grupos em três chamadas;
+- a reexecução real concluiu em `needs_review` com 145 grupos: 42 protegidos para
+  revisão manual, 77 sugestões, 26 abstinências, zero rejeitados e zero grupos
+  resolvidos por regra; Luna usou três chamadas, 7.910 tokens de entrada, 4.128
+  de saída, 18.391 ms agregados e custo estimado de US$ 0,032678;
+- as 145 decisões permanecem pendentes do Titular; nenhuma confirmação,
+  correção, abstenção ou Regra de Classificação foi criada em seu nome;
+- o resumo retrospectivo permanece posterior à aprovação do gate de classificação.
+
+Próxima ação mínima: o Titular revisar explicitamente as 145 exceções de
+`2026-06`; depois, repetir o processamento para medir quantos grupos são
+resolvidos por regras e comprovar a redução de chamadas ao modelo.
+
+Próximos refinamentos para a Revisão, aprovados para decisão posterior:
+
+- dar aos grupos de `Revisão protegida` contexto suficiente dentro da interface
+  autenticada — descrição parcialmente redigida, quantidade, período, direção,
+  Patrimônio de Origem e acesso às Movimentações de Origem relacionadas — sem
+  enviar esse conteúdo à IA;
+- permitir que o Titular crie Categorias manualmente quando a taxonomia não
+  representar a finalidade econômica, com identificador estável, descrição,
+  renomeação e desativação sem apagar histórico;
+- separar `Outros`, como escolha residual deliberada, de `Não classificado` ou
+  `Não sei`, que não criam Regra de Classificação;
+- versionar mudanças na taxonomia e reexecutar o eval antes de confiar em
+  sugestões automáticas que usem Categorias novas ou alteradas.
 
 ## 10. Direção confirmada — Acesso a dados financeiros
 
 Decisão inicialmente confirmada em 17 de julho de 2026 e refinada pelo Titular em
 19 de julho de 2026: o MVP não depende de agregador financeiro. A ingestão
 detalhada de cada ciclo mensal normal reúne o OFX do Itaú Pessoal, a fatura do
-cartão associado e o OFX do Itaú Empresa; Gastos Informados atualizam
-seletivamente o ciclo em andamento; Wise Business e Wise Pessoal entram apenas
-pelo Resumo Empresarial.
+cartão associado e o OFX do Itaú Empresa; Wise Business e Wise Pessoal entram
+apenas pelo Resumo Empresarial. Gastos Informados foram implementados como prova,
+mas deixaram de integrar a cadência principal após a aprovação do Brenotion
+mensal inteligente.
 
 Empresa e Pessoal permanecem patrimônios distintos no Livro Financeiro. A
-interface oferece uma visão diária e de planejamento integrada ao Titular,
+interface oferece uma visão mensal e de planejamento integrada ao Titular,
 preservando Patrimônio de Origem, Natureza Econômica e tratamento contábil ainda
 não confirmado. A conta que pagou não determina a Natureza Econômica.
 
-O Brenotion não lê notificações de outros aplicativos. Um print ou texto
-escolhido e compartilhado explicitamente pelo Titular pode futuramente facilitar
-um Gasto Informado, mas a primeira fatia usa texto e deve provar valor antes de
-adicionar extração de imagem.
+O Brenotion não lê notificações de outros aplicativos e não exige captura diária
+de compras.
 
 ### Evidências que encerraram o spike Pluggy
 
@@ -422,21 +498,23 @@ superfície de acesso.
 |---|---|
 | Itaú Pessoal e cartão | entradas mensais importáveis com período e totais conferíveis |
 | Itaú Empresa | entrada mensal OFX com Patrimônio de Origem explícito e prévia antes da confirmação |
-| Classificação | regras confirmadas explicam o histórico material |
-| Plano | Limite de Gasto do Ciclo e Limites por Categoria são determinísticos |
-| Ciclo atual | Gasto Informado curto atualiza a estimativa correta |
-| Conciliação | importação posterior não cria duplicatas |
+| Classificação | regras confirmadas explicam o histórico material e só exceções retornam ao Titular |
+| Resumo | IA recebe dados sanitizados e interpreta totais determinísticos sem inventar valores |
+| Checklist | conclusão informada não é apresentada como Pagamento Identificado |
+| Plano | Recebimento Empresarial e Plano determinístico entram após a experiência mensal básica |
+| Conciliação | reimportação e reaplicação de regras não criam duplicatas |
 | Empresa | Resumo Empresarial preserva a separação patrimonial |
 | Segurança | arquivos efêmeros, nenhuma credencial bancária e nenhuma leitura de notificações |
 | Custo | total recorrente próximo ou abaixo de R$ 100/mês |
-| Esforço manual | um fechamento mensal e registros seletivos de poucos segundos |
+| Esforço manual | uma atualização mensal e somente exceções de classificação |
 
-Próxima ação: usar as rotas operacionais com dados do Titular para validar a
-cadência e então implementar o Livro Financeiro e o Plano determinístico que
-podem produzir Limite de Gasto do Ciclo, Limites por Categoria e um retrato
-financeiro oficial. Pagamento Identificado de Obrigações e reversão append-only
-de conciliações permanecem posteriores. Qualquer novo arquivo bancário real
-permanece fora do repositório.
+Próxima ação: simplificar as rotas operacionais em Início, Checklist Mensal e
+Atualizar mês usando as capacidades reais já persistidas. Depois, implementar
+categorias e memória de classificação, sugestões sanitizadas de IA, resumo
+retrospectivo, Recebimento Empresarial e Plano determinístico, nessa ordem.
+Pagamento Identificado de Obrigações e reversão append-only de conciliações
+permanecem posteriores. Qualquer novo arquivo bancário real permanece fora do
+repositório.
 
 ## 11. Fases posteriores
 
@@ -477,10 +555,19 @@ permanece fora do repositório.
 5. [x] Implementar a fatia inicial de autenticação e backend.
 6. [x] Remover o spike Pluggy do aplicativo e do backend.
 7. [x] Implementar o primeiro Lote de Importação OFX com fixture sintética.
-8. [ ] Adicionar classificação assistida e Limites por Categoria.
-9. [ ] Construir o núcleo determinístico por regressões.
-10. [x] Criar o primeiro Gasto Informado textual e sua conciliação.
-11. [ ] Adicionar o Resumo Empresarial mensal.
+8. [x] Criar o primeiro Gasto Informado textual e sua conciliação como prova,
+   depois retirado do caminho principal.
+9. [ ] Simplificar a navegação e o Início em torno da competência e da próxima
+   ação.
+10. [ ] Transformar Obrigações e Ocorrências na Checklist Mensal.
+11. [ ] Orquestrar cobertura, upload, exceções e conclusão em Atualizar mês.
+12. [ ] Adicionar categorias e memória por Regras de Classificação confirmadas.
+13. [ ] Adicionar sugestões de IA sanitizadas somente para exceções.
+14. [ ] Gerar o resumo retrospectivo sobre totais determinísticos.
+15. [ ] Registrar o Recebimento Empresarial e construir o Plano determinístico
+    por regressões.
+16. [ ] Adicionar o Resumo Empresarial mensal.
 
-Advisor amplo, Cofre Fiscal e NFS-e assistida continuam posteriores ao valor
-financeiro principal; não bloqueiam um aplicativo útil e evolutivo.
+Advisor amplo, Limites por Categoria durante o ciclo, Cofre Fiscal e NFS-e
+assistida continuam posteriores ao valor mensal principal; não bloqueiam um
+aplicativo útil e evolutivo.

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from 'convex/react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 
 import { api } from '../../../convex/_generated/api';
@@ -28,7 +28,18 @@ type CheckCode = ReadinessResult['checks'][number]['code'];
 
 export function MonthlyClosureScreen() {
   const router = useRouter();
-  const [competence, setCompetence] = useState(() => currentCompetence());
+  const { competence: competenceParam } = useLocalSearchParams<{
+    competence?: string | string[];
+  }>();
+  const requestedCompetence = Array.isArray(competenceParam)
+    ? competenceParam[0]
+    : competenceParam;
+  const [competence, setCompetence] = useState(() =>
+    requestedCompetence &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedCompetence)
+      ? requestedCompetence
+      : currentCompetence(),
+  );
   const readiness = useQuery(api.monthlyClosures.getReadiness, { competence });
   const history = useQuery(api.monthlyClosures.getByCompetence, { competence });
   const closeMonthlyClosure = useMutation(api.monthlyClosures.close);
@@ -146,7 +157,7 @@ export function MonthlyClosureScreen() {
   return (
     <MonthlyClosureScreenView
       state={state}
-      onBack={() => router.replace('/more')}
+      onBack={() => router.replace('/')}
       onPreviousCompetence={() => changeCompetence(-1)}
       onNextCompetence={() => changeCompetence(1)}
       onToggleAcknowledgement={toggleAcknowledgement}

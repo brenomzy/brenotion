@@ -59,7 +59,7 @@ export type HomeActivationModel = Readonly<{
     title: string;
     description: string;
     label: string;
-    route: '/import' | '/review' | '/obligations' | '/close';
+    route: '/import' | '/review' | '/checklist' | '/close';
   }>;
   monthlyClosure: Readonly<{
     status: 'missing' | 'closed';
@@ -268,34 +268,24 @@ function selectNextAction(
     obligationsStarted &&
     data.obligations.needsPaymentOriginConfirmationCount === 0;
 
-  if (!data.monthlyClosure && closureReadyForReview) {
-    return {
-      title: 'Prepare o Fechamento Mensal',
-      description:
-        'Revise cobertura e lacunas desta competência. O registro será parcial e não publicará valores financeiros.',
-      label: 'Revisar Fechamento',
-      route: '/close',
-    };
-  }
-
   if (!data.coverage.complete) {
     return {
       title: hasPreview
-        ? 'Conclua a conferência dos arquivos'
-        : 'Complete as entradas desta competência',
+        ? 'Continue a atualização do mês'
+        : 'Atualize o mês',
       description:
-        'Comece pela cobertura mensal. Nenhum arquivo será confirmado sem sua decisão explícita.',
-      label: hasPreview ? 'Continuar importação' : 'Adicionar arquivo',
+        'Reúna o Itaú Pessoal, a fatura e o Itaú Empresa em um único fluxo.',
+      label: hasPreview ? 'Continuar atualização' : 'Atualizar mês',
       route: '/import',
     };
   }
 
   if (!reviewStarted) {
     return {
-      title: 'Comece a revisão das movimentações',
+      title: 'Revise somente as exceções',
       description:
-        'Confirme a Natureza Econômica dos grupos. Isso ainda não é um Fechamento Mensal.',
-      label: 'Abrir Revisar',
+        'As entradas estão completas. Confirme apenas o que o Brenotion ainda não reconhece.',
+      label: 'Revisar exceções',
       route: '/review',
     };
   }
@@ -307,25 +297,35 @@ function selectNextAction(
     return {
       title:
         data.obligations.activeCount === 0
-          ? 'Configure suas Obrigações'
-          : 'Revise as Obrigações incompletas',
+          ? 'Prepare sua checklist mensal'
+          : 'Revise os itens incompletos da checklist',
       description:
-        'Registre compromissos recorrentes e mantenha Natureza Econômica e origem pagadora independentes.',
-      label: 'Abrir Obrigações',
-      route: '/obligations',
+        'Organize o que precisa ser pago ou resolvido sem transformar a checklist em extrato bancário.',
+      label: 'Abrir checklist',
+      route: '/checklist',
+    };
+  }
+
+  if (!data.monthlyClosure && closureReadyForReview) {
+    return {
+      title: 'Conclua a atualização do mês',
+      description:
+        'Confira o resultado e reconheça somente as lacunas que ainda não podem ser verificadas.',
+      label: 'Concluir atualização',
+      route: '/close',
     };
   }
 
   return {
     title: data.monthlyClosure
-      ? 'Continue o acompanhamento mensal'
-      : 'Continue a revisão mensal',
+      ? 'Mês organizado'
+      : 'Continue a atualização do mês',
     description:
       data.monthlyClosure
-        ? 'O Fechamento desta competência já foi registrado. Continue conferindo grupos e conciliações sem refazê-lo como única ação.'
-        : 'A base operacional está montada. Continue conferindo grupos e conciliações antes do futuro fechamento.',
-    label: 'Continuar revisão',
-    route: '/review',
+        ? 'A atualização desta competência foi registrada. Consulte a checklist durante o mês.'
+        : 'A base está pronta para concluir as exceções restantes.',
+    label: data.monthlyClosure ? 'Abrir checklist' : 'Revisar exceções',
+    route: data.monthlyClosure ? '/checklist' : '/review',
   };
 }
 

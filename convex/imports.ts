@@ -552,8 +552,11 @@ export const createOrReusePreview = internalMutation({
 
     const existing = await ctx.db
       .query('importBatches')
-      .withIndex('by_ownerId_and_fileHash', (q) =>
-        q.eq('ownerId', ownerId).eq('fileHash', args.fileHash),
+      .withIndex('by_ownerId_and_fileHash_and_sourcePatrimony', (q) =>
+        q
+          .eq('ownerId', ownerId)
+          .eq('fileHash', args.fileHash)
+          .eq('sourcePatrimony', args.sourcePatrimony),
       )
       .unique();
 
@@ -694,8 +697,11 @@ export const recordRejectedUpload = internalMutation({
     await consumeUpload(ctx, args.uploadId, ownerId, args.fileHash, args.rawDeletedAt);
     const existing = await ctx.db
       .query('importBatches')
-      .withIndex('by_ownerId_and_fileHash', (q) =>
-        q.eq('ownerId', ownerId).eq('fileHash', args.fileHash),
+      .withIndex('by_ownerId_and_fileHash_and_sourcePatrimony', (q) =>
+        q
+          .eq('ownerId', ownerId)
+          .eq('fileHash', args.fileHash)
+          .eq('sourcePatrimony', args.sourcePatrimony),
       )
       .unique();
     const now = Date.now();
